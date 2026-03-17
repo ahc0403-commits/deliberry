@@ -1,0 +1,9 @@
+{
+  "domain": "promotion",
+  "consumers": ["merchant-console", "admin-console"],
+  "requests": [
+    { "name": "list_promotions", "required": ["store_id"] },
+    { "name": "list_coupons", "required": ["store_id"] }
+  ],
+  "responses": ["promotion_summary", "coupon_summary"]
+}

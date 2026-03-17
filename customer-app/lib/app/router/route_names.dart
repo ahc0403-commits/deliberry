@@ -1,0 +1,28 @@
+abstract final class RouteNames {
+  static const root = '/';
+  static const entry = '/entry';
+  static const auth = '/auth';
+  static const authLogin = '/auth/login';
+  static const authPhone = '/auth/phone';
+  static const authOtp = '/auth/otp';
+  static const guest = '/guest';
+  static const onboarding = '/onboarding';
+  static const home = '/home';
+  static const discovery = '/home/discovery';
+  static const search = '/search';
+  static const filter = '/search/filter';
+  static const store = '/store';
+  static const storeMenu = '/store/menu';
+  static const groupOrder = '/group-order';
+  static const groupOrderShare = '/group-order/share';
+  static const cart = '/cart';
+  static const checkout = '/checkout';
+  static const orders = '/orders';
+  static const orderDetail = '/orders/detail';
+  static const orderStatus = '/orders/status';
+  static const reviews = '/reviews';
+  static const profile = '/profile';
+  static const settings = '/settings';
+  static const addresses = '/addresses';
+  static const notifications = '/notifications';
+}

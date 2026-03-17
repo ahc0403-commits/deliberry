@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Support Contract",
+  "type": "object",
+  "properties": {
+    "case_id": { "type": "string", "minLength": 1 },
+    "channel": { "type": "string" },
+    "subject": { "type": "string", "minLength": 1 }
+  },
+  "required": ["case_id", "channel", "subject"]
+}

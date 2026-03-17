@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"chmod +x /Users/andremacmini/Deliberry/scripts/governance-scan.sh && bash /Users/andremacmini/Deliberry/scripts/governance-scan.sh 2>&1\",\"description\":\"Run governance scan\"}",
+  "error": "Exit code 1\n=== Deliberry Governance Scan ===\n\n--- 1. Shared forbidden-content scan ---\nPASS: No UI components in shared/\n\n--- 2. Cross-surface import scan ---\nPASS: No cross-surface imports\n\n--- 3. Placeholder suffix scan ---\nPASS: No _placeholder suffixes in constants or API contracts\n\n--- 4. Excluded feature reference scan ---\nPASS: No excluded feature references\n\n--- 5. Public-website auth scan ---\nFAIL: Auth-related imports found in public-website\n/Users/andremacmini/Deliberry/public-websit...",
+  "timestamp": "2026-03-17T01:46:26.285Z",
+  "retry_count": 1
+}

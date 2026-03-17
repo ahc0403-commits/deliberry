@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Promotion Contract",
+  "type": "object",
+  "properties": {
+    "promotion_id": { "type": "string", "minLength": 1 },
+    "type": { "type": "string" },
+    "store_id": { "type": "string", "minLength": 1 }
+  },
+  "required": ["promotion_id", "type", "store_id"]
+}

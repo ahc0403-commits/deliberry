@@ -1,0 +1,19 @@
+.DS_Store
+*.log
+
+# Flutter
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+
+# Next.js / Node
+node_modules/
+.next/
+out/
+
+# Editors / local tooling
+.idea/
+.vscode/
+.omx/

@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Store Contract",
+  "type": "object",
+  "properties": {
+    "store_id": { "type": "string", "minLength": 1 },
+    "store_name": { "type": "string", "minLength": 1 },
+    "city": { "type": "string", "minLength": 1 }
+  },
+  "required": ["store_id", "store_name"]
+}

@@ -1,0 +1,542 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1773620106682,
+  "projectRoot": "/Users/andremacmini/Deliberry",
+  "techStack": {
+    "languages": [],
+    "frameworks": [],
+    "packageManager": null,
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": null,
+    "testCommand": null,
+    "lintCommand": null,
+    "devCommand": null,
+    "scripts": {}
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "docs"
+    ],
+    "gitBranches": null
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "admin-console": {
+      "path": "admin-console",
+      "purpose": null,
+      "fileCount": 8,
+      "lastAccessed": 1773620106664,
+      "keyFiles": [
+        "README.md",
+        "middleware.ts",
+        "next-env.d.ts",
+        "next.config.ts",
+        "package-lock.json"
+      ]
+    },
+    "customer-app": {
+      "path": "customer-app",
+      "purpose": null,
+      "fileCount": 7,
+      "lastAccessed": 1773620106665,
+      "keyFiles": [
+        "README.md",
+        "analysis_options.yaml",
+        "deliberry_customer_app.iml",
+        "pubspec.lock",
+        "pubspec.yaml"
+      ]
+    },
+    "docs": {
+      "path": "docs",
+      "purpose": "Documentation",
+      "fileCount": 9,
+      "lastAccessed": 1773620106665,
+      "keyFiles": [
+        "01-product-architecture.md",
+        "02-surface-ownership.md",
+        "03-navigation-ia.md",
+        "04-feature-inventory.md",
+        "05-implementation-phases.md"
+      ]
+    },
+    "merchant-console": {
+      "path": "merchant-console",
+      "purpose": null,
+      "fileCount": 8,
+      "lastAccessed": 1773620106666,
+      "keyFiles": [
+        "README.md",
+        "middleware.ts",
+        "next-env.d.ts",
+        "next.config.ts",
+        "package-lock.json"
+      ]
+    },
+    "public-website": {
+      "path": "public-website",
+      "purpose": null,
+      "fileCount": 7,
+      "lastAccessed": 1773620106666,
+      "keyFiles": [
+        "README.md",
+        "next-env.d.ts",
+        "next.config.ts",
+        "package-lock.json",
+        "package.json"
+      ]
+    },
+    "reviews": {
+      "path": "reviews",
+      "purpose": null,
+      "fileCount": 12,
+      "lastAccessed": 1773620106667,
+      "keyFiles": [
+        "admin_ui_change_log.md",
+        "admin_ui_execution_plan.md",
+        "customer_ui_change_log.md",
+        "customer_ui_execution_plan.md",
+        "customer_ui_gap_audit.md"
+      ]
+    },
+    "shared": {
+      "path": "shared",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1773620106667,
+      "keyFiles": [
+        "README.md"
+      ]
+    },
+    "admin-console/node_modules": {
+      "path": "admin-console/node_modules",
+      "purpose": "Dependencies",
+      "fileCount": 1,
+      "lastAccessed": 1773620106668,
+      "keyFiles": []
+    },
+    "admin-console/public": {
+      "path": "admin-console/public",
+      "purpose": "Public files",
+      "fileCount": 1,
+      "lastAccessed": 1773620106668,
+      "keyFiles": []
+    },
+    "customer-app/assets": {
+      "path": "customer-app/assets",
+      "purpose": "Static assets",
+      "fileCount": 0,
+      "lastAccessed": 1773620106668,
+      "keyFiles": []
+    },
+    "customer-app/build": {
+      "path": "customer-app/build",
+      "purpose": "Build output",
+      "fileCount": 1,
+      "lastAccessed": 1773620106668,
+      "keyFiles": [
+        "8730b13ca0249799964d0a71255a8f3b.cache.dill.track.dill"
+      ]
+    },
+    "merchant-console/node_modules": {
+      "path": "merchant-console/node_modules",
+      "purpose": "Dependencies",
+      "fileCount": 1,
+      "lastAccessed": 1773620106669,
+      "keyFiles": []
+    },
+    "merchant-console/public": {
+      "path": "merchant-console/public",
+      "purpose": "Public files",
+      "fileCount": 1,
+      "lastAccessed": 1773620106669,
+      "keyFiles": []
+    },
+    "public-website/node_modules": {
+      "path": "public-website/node_modules",
+      "purpose": "Dependencies",
+      "fileCount": 1,
+      "lastAccessed": 1773620106669,
+      "keyFiles": []
+    },
+    "public-website/public": {
+      "path": "public-website/public",
+      "purpose": "Public files",
+      "fileCount": 1,
+      "lastAccessed": 1773620106670,
+      "keyFiles": []
+    },
+    "public-website/src": {
+      "path": "public-website/src",
+      "purpose": "Source code",
+      "fileCount": 0,
+      "lastAccessed": 1773620106670,
+      "keyFiles": []
+    },
+    "shared/api": {
+      "path": "shared/api",
+      "purpose": "API routes",
+      "fileCount": 11,
+      "lastAccessed": 1773620106670,
+      "keyFiles": [
+        "analytics.contract.json",
+        "auth.contract.json",
+        "menu.contract.json"
+      ]
+    },
+    "shared/docs": {
+      "path": "shared/docs",
+      "purpose": "Documentation",
+      "fileCount": 3,
+      "lastAccessed": 1773620106670,
+      "keyFiles": [
+        "architecture-boundaries.md",
+        "contracts-inventory.md",
+        "customer-app-shared-adoption-strategy.md"
+      ]
+    },
+    "shared/models": {
+      "path": "shared/models",
+      "purpose": "Data models",
+      "fileCount": 2,
+      "lastAccessed": 1773620106670,
+      "keyFiles": [
+        "domain.models.ts"
+      ]
+    },
+    "shared/types": {
+      "path": "shared/types",
+      "purpose": "Type definitions",
+      "fileCount": 3,
+      "lastAccessed": 1773620106670,
+      "keyFiles": [
+        "common.types.ts",
+        "domain.types.ts"
+      ]
+    },
+    "shared/utils": {
+      "path": "shared/utils",
+      "purpose": "Utility functions",
+      "fileCount": 6,
+      "lastAccessed": 1773620106671,
+      "keyFiles": [
+        "collection.ts",
+        "currency.ts",
+        "date.ts"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "docs/governance/WAVE_TRACKER.md",
+      "accessCount": 71,
+      "lastAccessed": 1773712544568,
+      "type": "file"
+    },
+    {
+      "path": "admin-console/src/shared/data/admin-mock-data.ts",
+      "accessCount": 58,
+      "lastAccessed": 1773711939744,
+      "type": "file"
+    },
+    {
+      "path": "merchant-console/src/shared/data/merchant-mock-data.ts",
+      "accessCount": 46,
+      "lastAccessed": 1773711905121,
+      "type": "file"
+    },
+    {
+      "path": "customer-app/lib/core/data/customer_runtime_controller.dart",
+      "accessCount": 25,
+      "lastAccessed": 1773712348203,
+      "type": "file"
+    },
+    {
+      "path": "customer-app/lib/features/checkout/presentation/checkout_screen.dart",
+      "accessCount": 25,
+      "lastAccessed": 1773713085231,
+      "type": "file"
+    },
+    {
+      "path": "merchant-console/src/features/orders/presentation/orders-screen.tsx",
+      "accessCount": 25,
+      "lastAccessed": 1773715048961,
+      "type": "file"
+    },
+    {
+      "path": "docs/governance/CONSTITUTION.md",
+      "accessCount": 24,
+      "lastAccessed": 1773654919093,
+      "type": "file"
+    },
+    {
+      "path": "docs/governance/EXECUTION_PLAN.md",
+      "accessCount": 19,
+      "lastAccessed": 1773654314619,
+      "type": "file"
+    },
+    {
+      "path": "merchant-console/src/features/settlement/presentation/settlement-screen.tsx",
+      "accessCount": 19,
+      "lastAccessed": 1773715733771,
+      "type": "file"
+    },
+    {
+      "path": "docs/governance/RECONCILIATION_GAP_ANALYSIS.md",
+      "accessCount": 18,
+      "lastAccessed": 1773654315647,
+      "type": "file"
+    },
+    {
+      "path": "admin-console/src/shared/domain.ts",
+      "accessCount": 15,
+      "lastAccessed": 1773711765487,
+      "type": "file"
+    },
+    {
+      "path": "shared/constants/domain.constants.ts",
+      "accessCount": 14,
+      "lastAccessed": 1773711632905,
+      "type": "file"
+    },
+    {
+      "path": "merchant-console/src/shared/domain.ts",
+      "accessCount": 14,
+      "lastAccessed": 1773711750229,
+      "type": "file"
+    },
+    {
+      "path": "shared",
+      "accessCount": 13,
+      "lastAccessed": 1773710277176,
+      "type": "directory"
+    },
+    {
+      "path": "customer-app/lib/core/data/mock_data.dart",
+      "accessCount": 13,
+      "lastAccessed": 1773712381618,
+      "type": "file"
+    },
+    {
+      "path": "merchant-console/src/features/dashboard/presentation/dashboard-screen.tsx",
+      "accessCount": 13,
+      "lastAccessed": 1773714979037,
+      "type": "file"
+    },
+    {
+      "path": "admin-console/src/features/orders/presentation/orders-screen.tsx",
+      "accessCount": 13,
+      "lastAccessed": 1773715155677,
+      "type": "file"
+    },
+    {
+      "path": "admin-console/src/features/settlements/presentation/settlements-screen.tsx",
+      "accessCount": 12,
+      "lastAccessed": 1773715877107,
+      "type": "file"
+    },
+    {
+      "path": "shared/models/domain.models.ts",
+      "accessCount": 11,
+      "lastAccessed": 1773711679738,
+      "type": "file"
+    },
+    {
+      "path": "docs/governance/ENFORCEMENT_POINTS.md",
+      "accessCount": 9,
+      "lastAccessed": 1773654314078,
+      "type": "file"
+    },
+    {
+      "path": "customer-app/lib/features/addresses/presentation/addresses_screen.dart",
+      "accessCount": 9,
+      "lastAccessed": 1773712390563,
+      "type": "file"
+    },
+    {
+      "path": "admin-console/src/features/disputes/presentation/disputes-screen.tsx",
+      "accessCount": 9,
+      "lastAccessed": 1773715199162,
+      "type": "file"
+    },
+    {
+      "path": "admin-console/src/features/finance/presentation/finance-screen.tsx",
+      "accessCount": 9,
+      "lastAccessed": 1773715894590,
+      "type": "file"
+    },
+    {
+      "path": "shared/types/domain.types.ts",
+      "accessCount": 8,
+      "lastAccessed": 1773711647200,
+      "type": "file"
+    },
+    {
+      "path": "merchant-console/src/features/analytics/presentation/analytics-screen.tsx",
+      "accessCount": 8,
+      "lastAccessed": 1773715776136,
+      "type": "file"
+    },
+    {
+      "path": "merchant-console/src/features/promotions/presentation/promotions-screen.tsx",
+      "accessCount": 8,
+      "lastAccessed": 1773715811155,
+      "type": "file"
+    },
+    {
+      "path": "admin-console/src/features/dashboard/presentation/dashboard-screen.tsx",
+      "accessCount": 7,
+      "lastAccessed": 1773715117373,
+      "type": "file"
+    },
+    {
+      "path": "admin-console/src/features/marketing/presentation/marketing-screen.tsx",
+      "accessCount": 7,
+      "lastAccessed": 1773716576004,
+      "type": "file"
+    },
+    {
+      "path": "docs/governance/DECAY_PATH.md",
+      "accessCount": 6,
+      "lastAccessed": 1773654920889,
+      "type": "file"
+    },
+    {
+      "path": "shared/types/common.types.ts",
+      "accessCount": 6,
+      "lastAccessed": 1773710561940,
+      "type": "file"
+    },
+    {
+      "path": "merchant-console/src/features/menu/presentation/menu-screen.tsx",
+      "accessCount": 6,
+      "lastAccessed": 1773715597944,
+      "type": "file"
+    },
+    {
+      "path": "admin-console/src/features/merchants/presentation/merchants-screen.tsx",
+      "accessCount": 6,
+      "lastAccessed": 1773715908783,
+      "type": "file"
+    },
+    {
+      "path": "docs/governance/DATE_POLICY.md",
+      "accessCount": 5,
+      "lastAccessed": 1773654309301,
+      "type": "file"
+    },
+    {
+      "path": "shared/validation/order.schema.json",
+      "accessCount": 5,
+      "lastAccessed": 1773711699473,
+      "type": "file"
+    },
+    {
+      "path": "shared/api/settlement.contract.json",
+      "accessCount": 5,
+      "lastAccessed": 1773711843926,
+      "type": "file"
+    },
+    {
+      "path": "shared/api/order.contract.json",
+      "accessCount": 5,
+      "lastAccessed": 1773711858175,
+      "type": "file"
+    },
+    {
+      "path": "shared/api/promotion.contract.json",
+      "accessCount": 4,
+      "lastAccessed": 1773711869639,
+      "type": "file"
+    },
+    {
+      "path": "public-website/src",
+      "accessCount": 3,
+      "lastAccessed": 1773654992519,
+      "type": "directory"
+    },
+    {
+      "path": "shared/validation/settlement.schema.json",
+      "accessCount": 3,
+      "lastAccessed": 1773710313903,
+      "type": "file"
+    },
+    {
+      "path": "merchant-console/src/shared/data/merchant-repository.ts",
+      "accessCount": 3,
+      "lastAccessed": 1773712410833,
+      "type": "file"
+    },
+    {
+      "path": "admin-console/src/features/analytics/presentation/analytics-screen.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1773620989467,
+      "type": "file"
+    },
+    {
+      "path": "shared/validation",
+      "accessCount": 2,
+      "lastAccessed": 1773621665997,
+      "type": "directory"
+    },
+    {
+      "path": "shared/validation/menu.schema.json",
+      "accessCount": 2,
+      "lastAccessed": 1773621676360,
+      "type": "file"
+    },
+    {
+      "path": "customer-app/lib/core/data/customer_repository.dart",
+      "accessCount": 2,
+      "lastAccessed": 1773637245869,
+      "type": "file"
+    },
+    {
+      "path": "public-website/src/shared/domain.ts",
+      "accessCount": 2,
+      "lastAccessed": 1773654949270,
+      "type": "file"
+    },
+    {
+      "path": "shared/api/menu.contract.json",
+      "accessCount": 2,
+      "lastAccessed": 1773710991590,
+      "type": "file"
+    },
+    {
+      "path": "shared/api",
+      "accessCount": 2,
+      "lastAccessed": 1773711593291,
+      "type": "directory"
+    },
+    {
+      "path": "public-website/src/shared/data/content-service.ts",
+      "accessCount": 1,
+      "lastAccessed": 1773621142880,
+      "type": "file"
+    },
+    {
+      "path": "public-website/src/shared/data/public-content-repository.ts",
+      "accessCount": 1,
+      "lastAccessed": 1773621143252,
+      "type": "file"
+    },
+    {
+      "path": "public-website",
+      "accessCount": 1,
+      "lastAccessed": 1773621161029,
+      "type": "directory"
+    }
+  ],
+  "userDirectives": []
+}

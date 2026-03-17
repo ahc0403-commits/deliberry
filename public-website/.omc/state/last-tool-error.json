@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"cd /Users/andremacmini/Deliberry/customer-app && flutter analyze\",\"timeout\":300000,\"description\":\"Run flutter analyze synchronously\"}",
+  "error": "Exit code 1\nAnalyzing customer-app...                                       \n\n  error • The argument type 'CardTheme' can't be assigned to the parameter type 'CardThemeData?'.  • lib/app/app.dart:29:24 • argument_type_not_assignable\n\n1 issue found. (ran in 1.3s)",
+  "timestamp": "2026-03-11T02:01:52.461Z",
+  "retry_count": 1
+}

@@ -1,0 +1,9 @@
+{
+  "domain": "store",
+  "consumers": ["customer-app", "merchant-console", "admin-console"],
+  "requests": [
+    { "name": "list_stores", "required": [] },
+    { "name": "get_store", "required": ["store_id"] }
+  ],
+  "responses": ["store_summary", "store_details"]
+}

@@ -1,0 +1,9 @@
+{
+  "domain": "auth",
+  "consumers": ["customer-app", "merchant-console", "admin-console"],
+  "requests": [
+    { "name": "request_otp", "required": ["phone_number"] },
+    { "name": "verify_otp", "required": ["phone_number", "otp_code"] }
+  ],
+  "responses": ["auth_actor", "auth_challenge", "auth_session"]
+}

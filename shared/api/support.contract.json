@@ -1,0 +1,9 @@
+{
+  "domain": "support",
+  "consumers": ["public-website", "admin-console", "merchant-console"],
+  "requests": [
+    { "name": "submit_inquiry", "required": ["channel", "subject"] },
+    { "name": "list_support_cases", "required": [] }
+  ],
+  "responses": ["support_case_summary", "support_channel_summary"]
+}

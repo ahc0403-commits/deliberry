@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Order Contract",
+  "type": "object",
+  "properties": {
+    "order_id": { "type": "string", "minLength": 1 },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "pending", "confirmed", "preparing", "ready", "in_transit", "delivered", "cancelled", "disputed"]
+    },
+    "payment_method": {
+      "type": "string",
+      "enum": ["cash", "card", "digital_wallet"]
+    },
+    "total_centavos": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Order total in integer centavos. $42.50 = 4250."
+    },
+    "currency": {
+      "type": "string",
+      "enum": ["ARS", "USD"]
+    },
+    "created_at": { "type": "string", "description": "UTC ISO 8601 timestamp" },
+    "confirmed_at": { "type": "string", "description": "UTC ISO 8601 timestamp (optional)" },
+    "preparing_at": { "type": "string", "description": "UTC ISO 8601 timestamp (optional)" },
+    "ready_at": { "type": "string", "description": "UTC ISO 8601 timestamp (optional)" },
+    "picked_up_at": { "type": "string", "description": "UTC ISO 8601 timestamp (optional)" },
+    "delivered_at": { "type": "string", "description": "UTC ISO 8601 timestamp (optional)" },
+    "cancelled_at": { "type": "string", "description": "UTC ISO 8601 timestamp (optional)" },
+    "disputed_at": { "type": "string", "description": "UTC ISO 8601 timestamp (optional)" },
+    "updated_at": { "type": "string", "description": "UTC ISO 8601 timestamp (optional)" }
+  },
+  "required": ["order_id", "status", "payment_method"]
+}

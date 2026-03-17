@@ -1,0 +1,16 @@
+{
+  "domain": "order",
+  "consumers": ["customer-app", "merchant-console", "admin-console"],
+  "status_enum": ["draft", "pending", "confirmed", "preparing", "ready", "in_transit", "delivered", "cancelled", "disputed"],
+  "requests": [
+    { "name": "list_orders", "required": [] },
+    { "name": "get_order", "required": ["order_id"] }
+  ],
+  "responses": ["order_summary", "order_detail", "order_status_summary"],
+  "monetary_fields_note": "All monetary fields (total, subtotal, delivery_fee, item_price) are integer centavos. currency is 'ARS' | 'USD'.",
+  "example_order_total": {
+    "total_centavos": 4250,
+    "currency": "ARS",
+    "display": "$42.50"
+  }
+}

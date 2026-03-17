@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Settlement Contract",
+  "type": "object",
+  "properties": {
+    "settlement_id": { "type": "string", "minLength": 1 },
+    "state": { "type": "string" },
+    "amount": { "type": "integer", "minimum": 0, "description": "Settlement amount in integer centavos. R-010, R-011." }
+  },
+  "required": ["settlement_id", "state", "amount"]
+}

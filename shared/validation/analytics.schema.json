@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Analytics Contract",
+  "type": "object",
+  "properties": {
+    "range": { "type": "string" },
+    "label": { "type": "string", "minLength": 1 },
+    "value": { "type": "number" }
+  },
+  "required": ["range", "label", "value"]
+}

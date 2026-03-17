@@ -1,0 +1,9 @@
+{
+  "domain": "analytics",
+  "consumers": ["merchant-console", "admin-console"],
+  "requests": [
+    { "name": "get_analytics_slice", "required": ["range"] },
+    { "name": "get_report_summary", "required": ["range"] }
+  ],
+  "responses": ["analytics_slice", "report_summary"]
+}

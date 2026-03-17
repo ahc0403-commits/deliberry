@@ -1,0 +1,9 @@
+{
+  "domain": "menu",
+  "consumers": ["customer-app", "merchant-console"],
+  "requests": [
+    { "name": "list_menu_categories", "required": ["store_id"] },
+    { "name": "get_menu_item", "required": ["item_id"] }
+  ],
+  "responses": ["menu_category_summary", "menu_item_summary"]
+}

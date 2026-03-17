@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Permission Contract",
+  "type": "object",
+  "properties": {
+    "role": { "type": "string" },
+    "scopes": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "required": ["role", "scopes"]
+}

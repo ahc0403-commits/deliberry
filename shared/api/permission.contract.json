@@ -1,0 +1,9 @@
+{
+  "domain": "permission",
+  "consumers": ["admin-console"],
+  "requests": [
+    { "name": "get_role_matrix", "required": ["role"] },
+    { "name": "check_scope", "required": ["role", "scope"] }
+  ],
+  "responses": ["permission_matrix_summary", "scope_check_result"]
+}

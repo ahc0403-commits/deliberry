@@ -1,0 +1,9 @@
+{
+  "domain": "review",
+  "consumers": ["customer-app", "merchant-console", "admin-console"],
+  "requests": [
+    { "name": "list_reviews", "required": [] },
+    { "name": "respond_to_review", "required": ["review_id"] }
+  ],
+  "responses": ["review_summary", "merchant_response_summary"]
+}

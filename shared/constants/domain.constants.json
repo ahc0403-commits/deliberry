@@ -1,0 +1,52 @@
+{
+  "auth_actor_types": ["guest", "customer", "merchant_owner", "merchant_staff", "rider", "admin", "system"],
+  "order_statuses": [
+    "draft",
+    "pending",
+    "confirmed",
+    "preparing",
+    "ready",
+    "in_transit",
+    "delivered",
+    "cancelled",
+    "disputed"
+  ],
+  "payment_methods": [
+    "cash",
+    "card",
+    "digital_wallet"
+  ],
+  "payment_statuses": [
+    "pending",
+    "captured",
+    "settled",
+    "failed",
+    "refunded",
+    "partially_refunded"
+  ],
+  "promotion_types": ["percentage", "fixed", "free_delivery", "coupon", "discount"],
+  "settlement_states": [
+    "pending",
+    "scheduled",
+    "processing",
+    "paid",
+    "failed"
+  ],
+  "dispute_statuses": [
+    "open",
+    "investigating",
+    "escalated",
+    "resolved"
+  ],
+  "analytics_ranges": ["today", "7d", "30d", "custom"],
+  "permission_roles": [
+    "platform_admin",
+    "operations_admin",
+    "support_admin",
+    "finance_admin",
+    "marketing_admin"
+  ],
+  "support_ticket_statuses": ["open", "in_progress", "awaiting_reply", "resolved", "closed"],
+  "support_channels": ["faq", "email", "merchant_inquiry", "customer_support"],
+  "legal_document_types": ["privacy", "terms", "refund_policy"]
+}

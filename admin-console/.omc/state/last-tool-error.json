@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"/opt/homebrew/bin/uipro-cli --help 2>&1\",\"description\":\"Get uipro-cli help output\"}",
+  "error": "Exit code 127\n(eval):1: no such file or directory: /opt/homebrew/bin/uipro-cli",
+  "timestamp": "2026-03-11T01:36:48.041Z",
+  "retry_count": 1
+}

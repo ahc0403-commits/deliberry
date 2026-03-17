@@ -1,0 +1,4 @@
+{"t":0,"agent":"ad5447c","agent_type":"verifier","event":"agent_start","parent_mode":"none"}
+{"t":0,"agent":"ad5447c","agent_type":"verifier","event":"agent_stop","success":true,"duration_ms":229556}
+{"t":0,"agent":"a727fa5","agent_type":"analyst","event":"agent_start","parent_mode":"none"}
+{"t":0,"agent":"a3a0392","agent_type":"unknown","event":"agent_stop","success":true}

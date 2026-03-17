@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"cd /Users/andremacmini/Deliberry/customer-app && flutter analyze 2>&1\",\"timeout\":120000,\"description\":\"Run flutter analyze on customer-app\"}",
+  "error": "Exit code 1\nAnalyzing customer-app...                                       \n\n  error • Methods can't be invoked in constant expressions • lib/features/auth/presentation/auth_screen.dart:60:28 • const_eval_method_invocation\n\n1 issue found. (ran in 1.4s)",
+  "timestamp": "2026-03-16T05:58:32.312Z",
+  "retry_count": 1
+}

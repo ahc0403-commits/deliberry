@@ -1,0 +1,9 @@
+{
+  "domain": "settlement",
+  "consumers": ["merchant-console", "admin-console"],
+  "requests": [
+    { "name": "list_settlements", "required": [] },
+    { "name": "get_settlement", "required": ["settlement_id"] }
+  ],
+  "responses": ["settlement_summary", "payout_state"]
+}
