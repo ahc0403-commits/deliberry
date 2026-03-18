@@ -1,27 +1,57 @@
 "use client";
 
-import { useState } from "react";
+import { startTransition, useState } from "react";
 import { MessageSquareQuote, Sparkles, Star, Store } from "lucide-react";
-import { merchantQueryServices } from "../../../shared/data/merchant-query-services";
+import type { ReviewsData } from "../../../shared/data/merchant-repository";
+import { loadMoreMerchantReviewsAction } from "../server/review-actions";
 
 type MerchantReviewsScreenProps = {
+  data: ReviewsData;
+  source: "persisted" | "fallback";
   storeId: string;
+  initialHasMore: boolean;
 };
 
-export function MerchantReviewsScreen({ storeId }: MerchantReviewsScreenProps) {
-  const data = merchantQueryServices.getReviewsData(storeId);
+export function MerchantReviewsScreen({
+  data,
+  source,
+  storeId,
+  initialHasMore,
+}: MerchantReviewsScreenProps) {
   const [filter, setFilter] = useState<"all" | "pending" | "responded">("all");
+  const [reviews, setReviews] = useState(data.reviews);
+  const [hasMore, setHasMore] = useState(initialHasMore);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  const filteredReviews = data.reviews.filter((r) => {
+  function handleLoadMore() {
+    if (!hasMore || isLoadingMore || reviews.length === 0) return;
+    setIsLoadingMore(true);
+    const lastReview = reviews[reviews.length - 1];
+    startTransition(async () => {
+      const result = await loadMoreMerchantReviewsAction({
+        storeId,
+        cursorCreatedAt: lastReview.date,
+        cursorId: lastReview.id,
+      });
+      if (result.ok) {
+        setReviews((prev) => [...prev, ...result.reviews]);
+        setHasMore(result.hasMore);
+      }
+      setIsLoadingMore(false);
+    });
+  }
+
+  const filteredReviews = reviews.filter((r) => {
     if (filter === "pending") return !r.responded;
     if (filter === "responded") return r.responded;
     return true;
   });
 
-  const pendingCount = data.reviews.filter((r) => !r.responded).length;
-  const respondedCount = data.reviews.length - pendingCount;
-  const avgRating =
-    data.reviews.reduce((sum, r) => sum + r.rating, 0) / data.reviews.length;
+  const pendingCount = reviews.filter((r) => !r.responded).length;
+  const respondedCount = reviews.length - pendingCount;
+  const avgRating = reviews.length === 0
+    ? 0
+    : reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
 
   return (
     <div className="merchant-surface">
@@ -47,7 +77,9 @@ export function MerchantReviewsScreen({ storeId }: MerchantReviewsScreenProps) {
           <div className="merchant-hero-panel-label">Feedback focus</div>
           <div className="merchant-hero-panel-value">{pendingCount} awaiting reply</div>
           <div className="merchant-hero-panel-text">
-            Review data is fixture-backed for the current demo store, but the response-state split is still useful for triage.
+            {source === "persisted"
+              ? "Review records now come from persisted customer feedback for this store. Response controls still remain preview-only."
+              : "Review data is using the local fallback store snapshot. Response controls still remain preview-only."}
           </div>
         </div>
       </section>
@@ -56,7 +88,9 @@ export function MerchantReviewsScreen({ storeId }: MerchantReviewsScreenProps) {
         <div className="merchant-summary-card">
           <div className="merchant-summary-label">Average rating</div>
           <div className="merchant-summary-value">{avgRating.toFixed(1)}</div>
-          <div className="merchant-summary-meta">{data.reviews.length} total review entries in the current store scope</div>
+          <div className="merchant-summary-meta">
+            {reviews.length} total review entr{reviews.length === 1 ? "y" : "ies"} in the current store scope
+          </div>
         </div>
         <div className="merchant-summary-card">
           <div className="merchant-summary-label">Needs response</div>
@@ -78,7 +112,9 @@ export function MerchantReviewsScreen({ storeId }: MerchantReviewsScreenProps) {
           </div>
           <div className="merchant-inline-note">
             <MessageSquareQuote size={14} />
-            Response controls are preview-only
+            {source === "persisted"
+              ? "Responses remain preview-only even though review reads are persisted-first"
+              : "Response controls are preview-only"}
           </div>
         </div>
 
@@ -87,7 +123,7 @@ export function MerchantReviewsScreen({ storeId }: MerchantReviewsScreenProps) {
           className={`tab ${filter === "all" ? "active" : ""}`}
           onClick={() => setFilter("all")}
         >
-          All<span className="tab-count">{data.reviews.length}</span>
+          All<span className="tab-count">{reviews.length}</span>
         </button>
         <button
           className={`tab ${filter === "pending" ? "active" : ""}`}
@@ -101,7 +137,7 @@ export function MerchantReviewsScreen({ storeId }: MerchantReviewsScreenProps) {
         >
           Responded
           <span className="tab-count">
-            {data.reviews.filter((r) => r.responded).length}
+            {reviews.filter((r) => r.responded).length}
           </span>
         </button>
       </div>
@@ -176,6 +212,17 @@ export function MerchantReviewsScreen({ storeId }: MerchantReviewsScreenProps) {
           ))
         )}
       </div>
+        {hasMore && (
+          <div style={{ padding: "16px", textAlign: "center" }}>
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={handleLoadMore}
+              disabled={isLoadingMore}
+            >
+              {isLoadingMore ? "Loading…" : "Load more reviews"}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,13 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { startTransition, useMemo, useState } from "react";
 import { ArrowRight, ClipboardList, Sparkles } from "lucide-react";
-import { merchantQueryServices } from "../../../shared/data/merchant-query-services";
 import { formatMoney } from "../../../shared/domain";
-import type { MerchantOrder } from "../../../shared/data/merchant-mock-data";
+import type { OrdersData } from "../../../shared/data/merchant-repository";
+import { updateMerchantOrderStatusAction, loadMoreMerchantOrdersAction } from "../server/order-actions";
 
 type MerchantOrdersScreenProps = {
   storeId: string;
+  initialData: OrdersData;
+  initialSource: "persisted" | "fallback";
+  initialHasMore: boolean;
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -32,11 +35,23 @@ const TABS = [
   { key: "cancelled", label: "Cancelled", statuses: ["cancelled"] },
 ];
 
-export function MerchantOrdersScreen({ storeId }: MerchantOrdersScreenProps) {
-  const data = merchantQueryServices.getOrdersData(storeId);
+export function MerchantOrdersScreen({
+  storeId,
+  initialData,
+  initialSource,
+  initialHasMore,
+}: MerchantOrdersScreenProps) {
   const [activeTab, setActiveTab] = useState("active");
-  const [orders, setOrders] = useState(data.orders);
-  const [selectedOrder, setSelectedOrder] = useState<MerchantOrder | null>(null);
+  const [orders, setOrders] = useState(initialData.orders);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [runtimeSource, setRuntimeSource] = useState(initialSource);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(initialHasMore);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const selectedOrder = useMemo(
+    () => orders.find((order) => order.id === selectedOrderId) ?? null,
+    [orders, selectedOrderId],
+  );
 
   const currentTab = TABS.find((t) => t.key === activeTab) ?? TABS[0];
   const filteredOrders = orders.filter((o) =>
@@ -46,16 +61,52 @@ export function MerchantOrdersScreen({ storeId }: MerchantOrdersScreenProps) {
   const inPrepCount = orders.filter((order) => ["confirmed", "preparing"].includes(order.status)).length;
   const pendingCount = orders.filter((order) => order.status === "pending").length;
 
-  function handleOrderStatusUpdate(nextStatus: "preparing" | "cancelled" | "ready" | "in_transit") {
+  function handleOrderStatusUpdate(
+    nextStatus: "preparing" | "cancelled" | "ready" | "in_transit",
+  ) {
     if (!selectedOrder) {
       return;
     }
+    setActionError(null);
 
-    const updatedOrder = merchantQueryServices.updateOrderStatus(storeId, selectedOrder.id, nextStatus);
-    setOrders((currentOrders) =>
-      currentOrders.map((order) => (order.id === updatedOrder.id ? updatedOrder : order))
-    );
-    setSelectedOrder(updatedOrder);
+    startTransition(async () => {
+      const result = await updateMerchantOrderStatusAction({
+        storeId,
+        orderId: selectedOrder.id,
+        status: nextStatus,
+      });
+
+      if (!result.ok) {
+        setActionError(result.error);
+        return;
+      }
+
+      setRuntimeSource(result.source);
+      setOrders((currentOrders) =>
+        currentOrders.map((order) =>
+          order.id === result.order.id ? result.order : order,
+        ),
+      );
+      setSelectedOrderId(result.order.id);
+    });
+  }
+
+  function handleLoadMore() {
+    if (!hasMore || isLoadingMore || orders.length === 0) return;
+    setIsLoadingMore(true);
+    const lastOrder = orders[orders.length - 1];
+    startTransition(async () => {
+      const result = await loadMoreMerchantOrdersAction({
+        storeId,
+        cursorCreatedAt: lastOrder.createdAt,
+        cursorId: lastOrder.id,
+      });
+      if (result.ok) {
+        setOrders((prev) => [...prev, ...result.orders]);
+        setHasMore(result.hasMore);
+      }
+      setIsLoadingMore(false);
+    });
   }
 
   return (
@@ -70,11 +121,13 @@ export function MerchantOrdersScreen({ storeId }: MerchantOrdersScreenProps) {
           <div className="merchant-context-row">
             <span className="merchant-context-pill">
               <ClipboardList size={14} />
-              {data.store.name}
+              {initialData.store.name}
             </span>
             <span className="merchant-context-pill merchant-context-pill-muted">
               <Sparkles size={14} />
-              Status writes stay in-memory for this session
+              {runtimeSource === "persisted"
+                ? "Status writes sync to persisted backend orders"
+                : "Status writes use the demo-safe local fallback"}
             </span>
           </div>
         </div>
@@ -109,7 +162,9 @@ export function MerchantOrdersScreen({ storeId }: MerchantOrdersScreenProps) {
         <div className="merchant-cluster-card-header">
           <div>
             <div className="card-title">Order queue</div>
-            <div className="card-subtitle">Store-scoped order list with in-session status updates</div>
+            <div className="card-subtitle">
+              Store-scoped order list with canonical progression and safe fallback
+            </div>
           </div>
           <div className="merchant-inline-note">
             Open an order to update the visible queue state
@@ -189,7 +244,7 @@ export function MerchantOrdersScreen({ storeId }: MerchantOrdersScreenProps) {
                     <td>
                       <button
                         className="btn btn-secondary btn-sm"
-                        onClick={() => setSelectedOrder(order)}
+                        onClick={() => setSelectedOrderId(order.id)}
                       >
                         View
                       </button>
@@ -200,13 +255,24 @@ export function MerchantOrdersScreen({ storeId }: MerchantOrdersScreenProps) {
             </tbody>
           </table>
         </div>
+        {hasMore && (
+          <div style={{ padding: "16px", textAlign: "center" }}>
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={handleLoadMore}
+              disabled={isLoadingMore}
+            >
+              {isLoadingMore ? "Loading…" : "Load more orders"}
+            </button>
+          </div>
+        )}
       </div>
 
       {selectedOrder ? (
         <div
           className="order-detail-overlay"
           onClick={(e) => {
-            if (e.target === e.currentTarget) setSelectedOrder(null);
+            if (e.target === e.currentTarget) setSelectedOrderId(null);
           }}
         >
           <div className="order-detail-panel merchant-order-detail-panel">
@@ -223,7 +289,7 @@ export function MerchantOrdersScreen({ storeId }: MerchantOrdersScreenProps) {
               </div>
               <button
                 className="btn btn-ghost"
-                onClick={() => setSelectedOrder(null)}
+                onClick={() => setSelectedOrderId(null)}
               >
                 &#10005;
               </button>
@@ -331,6 +397,13 @@ export function MerchantOrdersScreen({ storeId }: MerchantOrdersScreenProps) {
             ) : selectedOrder.status === "ready" ? (
               <div className="order-detail-footer">
                 <button className="btn btn-primary" onClick={() => handleOrderStatusUpdate("in_transit")}>Mark Picked Up</button>
+              </div>
+            ) : null}
+            {actionError ? (
+              <div className="order-detail-footer" style={{ justifyContent: "flex-start" }}>
+                <span className="merchant-inline-note" style={{ color: "var(--color-danger)" }}>
+                  {actionError}
+                </span>
               </div>
             ) : null}
           </div>
