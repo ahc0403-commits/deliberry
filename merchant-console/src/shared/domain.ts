@@ -29,3 +29,51 @@ export type {
 } from "../../../shared/types/domain.types";
 
 export { formatMoney } from "../../../shared/utils/currency";
+
+// --- Product Telemetry ---
+
+export type {
+  ProductTelemetryEvent,
+  ProductTelemetryFunnel,
+  ProductTelemetryFunnelSummary,
+  ProductTelemetryConversionSummary,
+  ProductTelemetryRouteViewSummary,
+} from "../../../shared/types/telemetry.types";
+
+export {
+  buildProductTelemetryEvent,
+  mapProductTelemetryStepKey,
+} from "../../../shared/utils/telemetry";
+
+// --- Runtime Observability ---
+
+export type {
+  RuntimeObservabilityEvent,
+  RuntimeObservabilityFailureClass,
+  RuntimeObservabilityOperatorSummary,
+  RuntimeObservabilityThresholdSummary,
+} from "../../../shared/types/observability.types";
+
+export {
+  buildRuntimeObservabilityEvent,
+  classifyRuntimeFailure,
+} from "../../../shared/utils/observability";
+
+// --- Sanitization ---
+
+export { sanitizeForLogsAndTelemetry } from "../../../shared/utils/sanitize";
+
+// --- External LLM Transmission ---
+
+export type {
+  ExternalLlmTransmissionAuditRecord,
+  ExternalMaskingProfile,
+  MaskedMerchantStoreExportBundleForLLM,
+  MaskedTransmissionEnvelope,
+} from "../../../shared/types/external-llm.types";
+
+export {
+  buildGovernedExternalLlmSinkWrite,
+  buildExternalLlmTransmissionAuditRecord,
+  buildExternalLlmMaskedTransmissionEnvelope,
+} from "../../../shared/utils/external-llm";
