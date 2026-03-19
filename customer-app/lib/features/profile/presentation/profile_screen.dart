@@ -253,7 +253,7 @@ class ProfileScreen extends StatelessWidget {
                       ),
                     );
                     if (confirm == true) {
-                      CustomerSessionController.instance.signOut();
+                      await CustomerSessionController.instance.signOut();
                     }
                   },
                   icon: Icon(

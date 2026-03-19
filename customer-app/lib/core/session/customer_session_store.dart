@@ -1,3 +1,7 @@
+import 'dart:convert';
+
+import 'package:shared_preferences/shared_preferences.dart';
+
 import 'customer_session_controller.dart';
 
 class CustomerSessionSnapshot {
@@ -11,24 +15,70 @@ class CustomerSessionSnapshot {
 }
 
 abstract class CustomerSessionStore {
-  CustomerSessionSnapshot? read();
-  void write(CustomerSessionSnapshot snapshot);
-  void clear();
+  Future<CustomerSessionSnapshot?> read();
+  Future<void> write(CustomerSessionSnapshot snapshot);
+  Future<void> clear();
 }
 
-class MemoryCustomerSessionStore implements CustomerSessionStore {
-  CustomerSessionSnapshot? _snapshot;
+class SharedPreferencesCustomerSessionStore implements CustomerSessionStore {
+  static const _storageKey = 'customer_session_snapshot_v1';
 
   @override
-  CustomerSessionSnapshot? read() => _snapshot;
+  Future<CustomerSessionSnapshot?> read() async {
+    final preferences = await SharedPreferences.getInstance();
+    final raw = preferences.getString(_storageKey);
+    if (raw == null || raw.isEmpty) {
+      return null;
+    }
 
-  @override
-  void write(CustomerSessionSnapshot snapshot) {
-    _snapshot = snapshot;
+    try {
+      final payload = jsonDecode(raw);
+      if (payload is! Map<String, dynamic>) {
+        await clear();
+        return null;
+      }
+
+      final statusName = payload['status'];
+      final phoneNumber = payload['phoneNumber'];
+      if (statusName is! String) {
+        await clear();
+        return null;
+      }
+
+      final status =
+          CustomerAuthStatus.values.where((value) => value.name == statusName);
+      if (status.isEmpty) {
+        await clear();
+        return null;
+      }
+
+      return CustomerSessionSnapshot(
+        status: status.first,
+        phoneNumber: phoneNumber is String && phoneNumber.isNotEmpty
+            ? phoneNumber
+            : null,
+      );
+    } catch (_) {
+      await clear();
+      return null;
+    }
   }
 
   @override
-  void clear() {
-    _snapshot = null;
+  Future<void> write(CustomerSessionSnapshot snapshot) async {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setString(
+      _storageKey,
+      jsonEncode({
+        'status': snapshot.status.name,
+        'phoneNumber': snapshot.phoneNumber,
+      }),
+    );
+  }
+
+  @override
+  Future<void> clear() async {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.remove(_storageKey);
   }
 }

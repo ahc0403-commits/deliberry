@@ -272,8 +272,9 @@ class _BottomSection extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           FilledButton(
-            onPressed: () {
-              CustomerSessionController.instance.startPhoneEntry();
+            onPressed: () async {
+              await CustomerSessionController.instance.startPhoneEntry();
+              if (!context.mounted) return;
               Navigator.of(context).pushNamed(RouteNames.authPhone);
             },
             child: const Text('Get Started'),

@@ -42,7 +42,8 @@ class _AuthPhoneScreenState extends State<AuthPhoneScreen> {
     setState(() => _isLoading = true);
 
     final digits = _controller.text.replaceAll(RegExp(r'\D'), '');
-    CustomerSessionController.instance.requestOtp(phoneNumber: '+1$digits');
+    await CustomerSessionController.instance
+        .requestOtp(phoneNumber: '+1$digits');
 
     await Future.delayed(const Duration(milliseconds: 600));
 

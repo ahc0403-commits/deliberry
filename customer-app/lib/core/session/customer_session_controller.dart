@@ -15,7 +15,8 @@ class CustomerSessionController extends ChangeNotifier {
 
   static final CustomerSessionController instance =
       CustomerSessionController._();
-  static final CustomerSessionStore _store = MemoryCustomerSessionStore();
+  static final CustomerSessionStore _store =
+      SharedPreferencesCustomerSessionStore();
 
   CustomerAuthStatus _status = CustomerAuthStatus.signedOut;
   String? _phoneNumber;
@@ -31,8 +32,8 @@ class CustomerSessionController extends ChangeNotifier {
   bool get requiresOnboarding =>
       _status == CustomerAuthStatus.onboardingRequired;
 
-  void restore() {
-    final snapshot = _store.read();
+  Future<void> restore() async {
+    final snapshot = await _store.read();
     if (snapshot != null) {
       _status = snapshot.status;
       _phoneNumber = snapshot.phoneNumber;
@@ -41,13 +42,13 @@ class CustomerSessionController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _persist() {
+  Future<void> _persist() async {
     if (_status == CustomerAuthStatus.signedOut) {
-      _store.clear();
+      await _store.clear();
       return;
     }
 
-    _store.write(
+    await _store.write(
       CustomerSessionSnapshot(
         status: _status,
         phoneNumber: _phoneNumber,
@@ -55,43 +56,43 @@ class CustomerSessionController extends ChangeNotifier {
     );
   }
 
-  void startPhoneEntry() {
+  Future<void> startPhoneEntry() async {
     _status = CustomerAuthStatus.signedOut;
-    _persist();
+    await _persist();
     notifyListeners();
   }
 
-  void requestOtp({
+  Future<void> requestOtp({
     String phoneNumber = '+0000000000',
-  }) {
+  }) async {
     _phoneNumber = phoneNumber;
     _status = CustomerAuthStatus.otpPending;
-    _persist();
+    await _persist();
     notifyListeners();
   }
 
-  void verifyOtp() {
+  Future<void> verifyOtp() async {
     _status = CustomerAuthStatus.onboardingRequired;
-    _persist();
+    await _persist();
     notifyListeners();
   }
 
-  void completeOnboarding() {
+  Future<void> completeOnboarding() async {
     _status = CustomerAuthStatus.authenticated;
-    _persist();
+    await _persist();
     notifyListeners();
   }
 
-  void continueAsGuest() {
+  Future<void> continueAsGuest() async {
     _status = CustomerAuthStatus.guest;
-    _persist();
+    await _persist();
     notifyListeners();
   }
 
-  void signOut() {
+  Future<void> signOut() async {
     _phoneNumber = null;
     _status = CustomerAuthStatus.signedOut;
-    _persist();
+    await _persist();
     notifyListeners();
   }
 }

@@ -88,7 +88,7 @@ class _AuthOtpScreenState extends State<AuthOtpScreen> {
 
     await Future.delayed(const Duration(milliseconds: 800));
 
-    CustomerSessionController.instance.verifyOtp();
+    await CustomerSessionController.instance.verifyOtp();
 
     if (mounted) {
       Navigator.of(context).pushReplacementNamed(RouteNames.onboarding);

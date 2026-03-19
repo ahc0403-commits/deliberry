@@ -126,8 +126,9 @@ class GuestEntryScreen extends StatelessWidget {
             const Spacer(),
 
             FilledButton(
-              onPressed: () {
-                CustomerSessionController.instance.continueAsGuest();
+              onPressed: () async {
+                await CustomerSessionController.instance.continueAsGuest();
+                if (!context.mounted) return;
                 Navigator.of(context).pushReplacementNamed(RouteNames.home);
               },
               child: const Text('Browse as Guest'),

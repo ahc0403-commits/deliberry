@@ -60,8 +60,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     }
   }
 
-  void _finish() {
-    CustomerSessionController.instance.completeOnboarding();
+  Future<void> _finish() async {
+    await CustomerSessionController.instance.completeOnboarding();
+    if (!mounted) return;
     Navigator.of(context).pushReplacementNamed(RouteNames.home);
   }
 

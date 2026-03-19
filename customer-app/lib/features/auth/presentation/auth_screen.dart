@@ -75,8 +75,9 @@ class AuthScreen extends StatelessWidget {
 
                 // Phone login primary CTA
                 FilledButton.icon(
-                  onPressed: () {
-                    CustomerSessionController.instance.startPhoneEntry();
+                  onPressed: () async {
+                    await CustomerSessionController.instance.startPhoneEntry();
+                    if (!context.mounted) return;
                     Navigator.of(context).pushNamed(RouteNames.authPhone);
                   },
                   icon: const Icon(Icons.phone_iphone_rounded, size: 20),
