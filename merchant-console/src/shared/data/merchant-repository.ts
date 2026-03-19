@@ -70,6 +70,16 @@ export type AnalyticsData = {
 
 export type SettingsData = {
   store: MerchantStoreInfo;
+  toggles: {
+    autoAcceptOrders: boolean;
+    orderNotifications: boolean;
+    rushHourMode: boolean;
+    allowSpecialInstructions: boolean;
+    emailReports: boolean;
+    reviewAlerts: boolean;
+    settlementNotifications: boolean;
+    lowStockAlerts: boolean;
+  };
 };
 
 export class InMemoryMerchantRepository {
@@ -215,6 +225,52 @@ export class InMemoryMerchantRepository {
     const store = this.getScopedStore(storeId);
     return {
       store,
+      toggles: {
+        autoAcceptOrders: false,
+        orderNotifications: true,
+        rushHourMode: false,
+        allowSpecialInstructions: true,
+        emailReports: true,
+        reviewAlerts: true,
+        settlementNotifications: true,
+        lowStockAlerts: false,
+      },
+    };
+  }
+
+  updateSettingsData(storeId: string, toggles: SettingsData["toggles"]): SettingsData {
+    const store = this.getScopedStore(storeId);
+    return {
+      store,
+      toggles,
+    };
+  }
+
+  updateStoreManagementData(storeId: string, storeUpdate: StoreManagementData["store"]): StoreManagementData {
+    this.getScopedStore(storeId);
+    return {
+      store: storeUpdate,
+    };
+  }
+
+  exportMaskedStoreSnapshotForExternalLlm(input: {
+    storeId: string;
+    actorId: string;
+    profile?: "external_llm_retrieval" | "external_llm_prompt";
+  }): Record<string, unknown> {
+    const store = this.getScopedStore(input.storeId);
+    const menu = this.getMenuData(input.storeId);
+
+    return {
+      storeId: store.id,
+      storeName: store.name,
+      city: store.address,
+      isOpen: store.status === "open",
+      menuItemCount: menu.items.length,
+      activePromotionCount: 0,
+      recentOrderCount: this.orders.length,
+      averageRating: store.rating,
+      categories: menu.categories.map((c) => c.name),
     };
   }
 }
