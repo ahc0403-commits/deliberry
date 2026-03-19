@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import '../../../app/router/route_names.dart';
 import '../../../core/session/customer_session_controller.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../common/presentation/widgets.dart';
 
 class AuthOtpScreen extends StatefulWidget {
   const AuthOtpScreen({super.key});
@@ -121,128 +122,125 @@ class _AuthOtpScreenState extends State<AuthOtpScreen> {
           onPressed: () => Navigator.of(context).maybePop(),
         ),
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Verify your\nphone number',
+      body: ScrollableSafeContent(
+        padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Verify your\nphone number',
+              style: TextStyle(
+                fontSize: 30,
+                fontWeight: FontWeight.w800,
+                color: Theme.of(context).colorScheme.onSurface,
+                letterSpacing: -0.8,
+                height: 1.15,
+              ),
+            ),
+            const SizedBox(height: 10),
+            RichText(
+              text: TextSpan(
+                text: 'Enter the 6-digit code sent to ',
                 style: TextStyle(
-                  fontSize: 30,
-                  fontWeight: FontWeight.w800,
-                  color: Theme.of(context).colorScheme.onSurface,
-                  letterSpacing: -0.8,
-                  height: 1.15,
+                  fontSize: 15,
+                  color: AppTheme.textSecondary,
+                  height: 1.4,
                 ),
-              ),
-              const SizedBox(height: 10),
-              RichText(
-                text: TextSpan(
-                  text: 'Enter the 6-digit code sent to ',
-                  style: TextStyle(
-                    fontSize: 15,
-                    color: AppTheme.textSecondary,
-                    height: 1.4,
-                  ),
-                  children: [
-                    TextSpan(
-                      text: _maskedPhone(),
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
+                children: [
+                  TextSpan(
+                    text: _maskedPhone(),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 40),
+            ),
+            const SizedBox(height: 40),
 
-              // OTP digit boxes
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: List.generate(
-                    _codeLength,
-                    (i) => _OtpBox(
-                          controller: _controllers[i],
-                          focusNode: _focusNodes[i],
-                          onChanged: (v) => _onDigitEntered(i, v),
-                          isFilled: _controllers[i].text.isNotEmpty,
-                        )),
-              ),
-              const SizedBox(height: 24),
+            // OTP digit boxes
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: List.generate(
+                  _codeLength,
+                  (i) => _OtpBox(
+                        controller: _controllers[i],
+                        focusNode: _focusNodes[i],
+                        onChanged: (v) => _onDigitEntered(i, v),
+                        isFilled: _controllers[i].text.isNotEmpty,
+                      )),
+            ),
+            const SizedBox(height: 24),
 
-              // Resend
-              Center(
-                child: _resendSeconds > 0
-                    ? Text(
-                        'Resend code in ${_resendSeconds}s',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: AppTheme.textSecondary,
-                        ),
-                      )
-                    : GestureDetector(
-                        onTap: _onResend,
-                        child: const Text(
-                          'Resend code',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: AppTheme.primaryColor,
-                          ),
-                        ),
-                      ),
-              ),
-              const Spacer(),
-
-              FilledButton(
-                onPressed: _isComplete && !_isLoading ? _onVerify : null,
-                style: FilledButton.styleFrom(
-                  backgroundColor: _isComplete
-                      ? AppTheme.primaryColor
-                      : AppTheme.borderColor,
-                  foregroundColor: Colors.white,
-                ),
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 22,
-                        width: 22,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.5,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Text('Verify'),
-              ),
-              const SizedBox(height: 16),
-              Center(
-                child: GestureDetector(
-                  onTap: () => Navigator.of(context)
-                      .pushReplacementNamed(RouteNames.authPhone),
-                  child: RichText(
-                    text: TextSpan(
-                      text: 'Wrong number? ',
+            // Resend
+            Center(
+              child: _resendSeconds > 0
+                  ? Text(
+                      'Resend code in ${_resendSeconds}s',
                       style: TextStyle(
                         fontSize: 14,
                         color: AppTheme.textSecondary,
                       ),
-                      children: const [
-                        TextSpan(
-                          text: 'Change it',
-                          style: TextStyle(
-                            color: AppTheme.primaryColor,
-                            fontWeight: FontWeight.w700,
-                          ),
+                    )
+                  : GestureDetector(
+                      onTap: _onResend,
+                      child: const Text(
+                        'Resend code',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.primaryColor,
                         ),
-                      ],
+                      ),
                     ),
+            ),
+            const Spacer(),
+
+            FilledButton(
+              onPressed: _isComplete && !_isLoading ? _onVerify : null,
+              style: FilledButton.styleFrom(
+                backgroundColor:
+                    _isComplete ? AppTheme.primaryColor : AppTheme.borderColor,
+                foregroundColor: Colors.white,
+              ),
+              child: _isLoading
+                  ? const SizedBox(
+                      height: 22,
+                      width: 22,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Text('Verify'),
+            ),
+            const SizedBox(height: 16),
+            Center(
+              child: GestureDetector(
+                onTap: () => Navigator.of(context)
+                    .pushReplacementNamed(RouteNames.authPhone),
+                child: RichText(
+                  text: TextSpan(
+                    text: 'Wrong number? ',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppTheme.textSecondary,
+                    ),
+                    children: const [
+                      TextSpan(
+                        text: 'Change it',
+                        style: TextStyle(
+                          color: AppTheme.primaryColor,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -269,7 +267,9 @@ class _OtpBox extends StatelessWidget {
       width: 48,
       height: 56,
       decoration: BoxDecoration(
-        color: isFilled ? Theme.of(context).colorScheme.primaryContainer : AppTheme.backgroundGrey,
+        color: isFilled
+            ? Theme.of(context).colorScheme.primaryContainer
+            : AppTheme.backgroundGrey,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isFilled

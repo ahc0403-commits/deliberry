@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../app/router/route_names.dart';
 import '../../../core/session/customer_session_controller.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../common/presentation/widgets.dart';
 
 class GuestEntryScreen extends StatelessWidget {
   const GuestEntryScreen({super.key});
@@ -19,129 +20,126 @@ class GuestEntryScreen extends StatelessWidget {
           onPressed: () => Navigator.of(context).maybePop(),
         ),
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Illustration area
-              Container(
-                height: 180,
-                margin: const EdgeInsets.only(bottom: 32),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFF0EE),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Positioned(
-                      right: 24,
-                      top: 20,
-                      child: Container(
-                        width: 60,
-                        height: 60,
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryColor.withValues(alpha: 0.15),
-                          shape: BoxShape.circle,
-                        ),
+      body: ScrollableSafeContent(
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Illustration area
+            Container(
+              height: 180,
+              margin: const EdgeInsets.only(bottom: 32),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF0EE),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Positioned(
+                    right: 24,
+                    top: 20,
+                    child: Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
                       ),
                     ),
-                    Positioned(
-                      left: 20,
-                      bottom: 20,
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color:
-                              AppTheme.secondaryColor.withValues(alpha: 0.25),
-                          shape: BoxShape.circle,
-                        ),
+                  ),
+                  Positioned(
+                    left: 20,
+                    bottom: 20,
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AppTheme.secondaryColor.withValues(alpha: 0.25),
+                        shape: BoxShape.circle,
                       ),
                     ),
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          width: 72,
-                          height: 72,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppTheme.primaryColor
-                                    .withValues(alpha: 0.15),
-                                blurRadius: 20,
-                                offset: const Offset(0, 6),
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.person_outline_rounded,
-                            size: 36,
-                            color: AppTheme.primaryColor,
-                          ),
+                  ),
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 72,
+                        height: 72,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color:
+                                  AppTheme.primaryColor.withValues(alpha: 0.15),
+                              blurRadius: 20,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 12),
-                        const Text(
-                          'Guest Mode',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: AppTheme.primaryColor,
-                          ),
+                        child: const Icon(
+                          Icons.person_outline_rounded,
+                          size: 36,
+                          color: AppTheme.primaryColor,
                         ),
-                      ],
-                    ),
-                  ],
-                ),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Guest Mode',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.primaryColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
+            ),
 
-              const Text(
-                'Browse without\nan account',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF1A1A2E),
-                  letterSpacing: -0.8,
-                  height: 1.15,
-                ),
+            const Text(
+              'Browse without\nan account',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF1A1A2E),
+                letterSpacing: -0.8,
+                height: 1.15,
               ),
-              const SizedBox(height: 10),
-              Text(
-                'Explore stores and menus right away. Create an account when you\'re ready to order.',
-                style: TextStyle(
-                  fontSize: 15,
-                  color: AppTheme.textSecondary,
-                  height: 1.4,
-                ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Explore stores and menus right away. Create an account when you\'re ready to order.',
+              style: TextStyle(
+                fontSize: 15,
+                color: AppTheme.textSecondary,
+                height: 1.4,
               ),
-              const SizedBox(height: 28),
+            ),
+            const SizedBox(height: 28),
 
-              // Comparison
-              _ComparisonSection(),
+            // Comparison
+            _ComparisonSection(),
 
-              const Spacer(),
+            const Spacer(),
 
-              FilledButton(
-                onPressed: () {
-                  CustomerSessionController.instance.continueAsGuest();
-                  Navigator.of(context).pushReplacementNamed(RouteNames.home);
-                },
-                child: const Text('Browse as Guest'),
-              ),
-              const SizedBox(height: 12),
-              OutlinedButton(
-                onPressed: () {
-                  Navigator.of(context).pushNamed(RouteNames.authPhone);
-                },
-                child: const Text('Create Account'),
-              ),
-            ],
-          ),
+            FilledButton(
+              onPressed: () {
+                CustomerSessionController.instance.continueAsGuest();
+                Navigator.of(context).pushReplacementNamed(RouteNames.home);
+              },
+              child: const Text('Browse as Guest'),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton(
+              onPressed: () {
+                Navigator.of(context).pushNamed(RouteNames.authPhone);
+              },
+              child: const Text('Create Account'),
+            ),
+          ],
         ),
       ),
     );

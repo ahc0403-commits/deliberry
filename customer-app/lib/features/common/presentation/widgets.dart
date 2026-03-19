@@ -1,7 +1,51 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../../../core/data/mock_data.dart';
 import '../../../core/theme/app_theme.dart';
+
+class ScrollableSafeContent extends StatelessWidget {
+  const ScrollableSafeContent({
+    required this.child,
+    this.padding = EdgeInsets.zero,
+    super.key,
+  });
+
+  final Widget child;
+  final EdgeInsets padding;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final mediaQuery = MediaQuery.of(context);
+          final bottomInset = math.max(
+            mediaQuery.padding.bottom,
+            mediaQuery.viewInsets.bottom,
+          );
+          final resolvedPadding = padding.add(
+            EdgeInsets.only(bottom: bottomInset),
+          );
+          final minHeight = math.max(
+            0.0,
+            constraints.maxHeight - resolvedPadding.vertical,
+          );
+
+          return SingleChildScrollView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            padding: resolvedPadding,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: minHeight),
+              child: IntrinsicHeight(child: child),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
 
 // ── Section Header ──────────────────────────────────────────────────────
 

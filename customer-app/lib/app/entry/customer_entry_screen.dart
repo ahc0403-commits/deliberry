@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/session/customer_session_controller.dart';
 import '../../core/theme/app_theme.dart';
+import '../../features/common/presentation/widgets.dart';
 import '../router/route_names.dart';
 
 class CustomerEntryScreen extends StatelessWidget {
@@ -60,7 +61,7 @@ class _EntryLandingScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SafeArea(
+      body: ScrollableSafeContent(
         child: Column(
           children: [
             Expanded(
