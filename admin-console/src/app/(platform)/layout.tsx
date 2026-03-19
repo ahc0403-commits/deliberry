@@ -14,13 +14,16 @@ export default async function PlatformLayout({
 }) {
   const requestHeaders = await headers();
   const pathname = requestHeaders.get(ADMIN_PATHNAME_HEADER) ?? "/dashboard";
-  const isAccessBoundary = pathname === "/access-boundary";
+  const access = await ensureAdminPlatformAccess(pathname);
 
-  if (isAccessBoundary) {
+  if (pathname === "/access-boundary") {
     return <main className="platform-content">{children}</main>;
   }
 
-  const access = await ensureAdminPlatformAccess(pathname);
+  if (!access.role) {
+    return <main className="platform-content">{children}</main>;
+  }
+
   const navGroups = getAdminNavGroups(access.role);
   const usersCount = adminQueryServices.getUsersData().users.length;
   const ordersCount = adminQueryServices.getOrdersData().orders.length;

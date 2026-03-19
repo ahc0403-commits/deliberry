@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import type { PermissionRole } from "../../../shared/domain";
 
 import {
   isAdminRole,
@@ -9,7 +10,12 @@ import {
 } from "../../../shared/auth/admin-access";
 import { readAdminRole, readAdminSession } from "../../../shared/auth/admin-session";
 
-export async function ensureAdminPlatformAccess(pathname: string) {
+type AdminPlatformAccess = {
+  role: PermissionRole | null;
+  session: NonNullable<Awaited<ReturnType<typeof readAdminSession>>>;
+};
+
+export async function ensureAdminPlatformAccess(pathname: string): Promise<AdminPlatformAccess> {
   const session = await readAdminSession();
 
   if (!session) {
@@ -17,6 +23,17 @@ export async function ensureAdminPlatformAccess(pathname: string) {
   }
 
   const role = await readAdminRole();
+
+  if (pathname === "/access-boundary") {
+    if (!isAdminRole(role)) {
+      return {
+        role: null,
+        session,
+      };
+    }
+
+    redirect(resolveAdminHomePath(role));
+  }
 
   if (!isAdminRole(role)) {
     redirect("/access-boundary");

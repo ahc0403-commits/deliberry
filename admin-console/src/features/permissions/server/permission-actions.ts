@@ -8,13 +8,20 @@ import {
   resolveAdminHomePath,
 } from "../../../shared/auth/admin-access";
 import {
-  ADMIN_ROLE_COOKIE,
   ADMIN_SESSION_COOKIE,
+  ADMIN_ROLE_COOKIE,
+  readAdminSession,
 } from "../../../shared/auth/admin-session";
 
 export async function setAdminRoleAction(formData: FormData) {
   const store = await cookies();
   const role = String(formData.get("role") ?? "");
+  const session = await readAdminSession();
+
+  if (!session) {
+    store.delete(ADMIN_ROLE_COOKIE);
+    redirect("/login");
+  }
 
   if (!isAdminRole(role)) {
     store.delete(ADMIN_ROLE_COOKIE);
@@ -22,29 +29,15 @@ export async function setAdminRoleAction(formData: FormData) {
   }
 
   store.set(ADMIN_ROLE_COOKIE, role);
-  const currentSession = store.get(ADMIN_SESSION_COOKIE)?.value;
-
-  if (currentSession) {
-    try {
-      const parsed = JSON.parse(currentSession) as {
-        adminId?: string;
-        adminName?: string;
-      };
-      if (parsed.adminId && parsed.adminName) {
-        store.set(
-          ADMIN_SESSION_COOKIE,
-          JSON.stringify({
-            adminId: parsed.adminId,
-            adminName: parsed.adminName,
-            actorType: "admin",
-            role,
-          }),
-        );
-      }
-    } catch {
-      // Leave the session untouched if an older cookie shape cannot be parsed.
-    }
-  }
+  store.set(
+    ADMIN_SESSION_COOKIE,
+    JSON.stringify({
+      adminId: session.adminId,
+      adminName: session.adminName,
+      actorType: "admin",
+      role,
+    }),
+  );
 
   redirect(resolveAdminHomePath(role));
 }
