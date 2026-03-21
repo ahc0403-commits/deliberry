@@ -1,42 +1,55 @@
 "use server";
-
-import { cookies } from "next/headers";
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import {
-  MERCHANT_ONBOARDING_COOKIE,
-  MERCHANT_SESSION_COOKIE,
-  MERCHANT_STORE_COOKIE,
+  completeMerchantOnboardingSession,
+  resolveMerchantAccessPath,
+  signInMerchantSession,
+  signOutMerchantSession,
 } from "../../../shared/auth/merchant-session";
 
-export async function signInMerchantAction() {
-  const store = await cookies();
-  store.set(
-    MERCHANT_SESSION_COOKIE,
-    JSON.stringify({
-      merchantId: "merchant-demo",
-      merchantName: "Demo Merchant",
-      actorType: "merchant_owner",
+export async function signInMerchantAction(formData: FormData) {
+  const access = await signInMerchantSession({
+    email: String(formData.get("email") ?? "").trim(),
+    password: String(formData.get("password") ?? ""),
+  });
+  revalidatePath("/", "layout");
+
+  redirect(
+    resolveMerchantAccessPath({
+      hasSession: Boolean(access.session),
+      onboardingComplete: access.onboardingComplete,
+      selectedStoreId: access.selectedStoreId,
+      membershipCount: access.membershipCount,
     }),
   );
-  store.set(MERCHANT_ONBOARDING_COOKIE, "false");
-  store.delete(MERCHANT_STORE_COOKIE);
-
-  redirect("/onboarding");
 }
 
 export async function completeMerchantOnboardingAction() {
-  const store = await cookies();
-  store.set(MERCHANT_ONBOARDING_COOKIE, "true");
+  const access = await completeMerchantOnboardingSession();
+  revalidatePath("/", "layout");
 
-  redirect("/select-store");
+  redirect(
+    resolveMerchantAccessPath({
+      hasSession: Boolean(access.session),
+      onboardingComplete: access.onboardingComplete,
+      selectedStoreId: access.selectedStoreId,
+      membershipCount: access.membershipCount,
+    }),
+  );
 }
 
 export async function signOutMerchantAction() {
-  const store = await cookies();
-  store.delete(MERCHANT_SESSION_COOKIE);
-  store.delete(MERCHANT_ONBOARDING_COOKIE);
-  store.delete(MERCHANT_STORE_COOKIE);
+  await signOutMerchantSession();
+  revalidatePath("/", "layout");
 
-  redirect("/login");
+  redirect(
+    resolveMerchantAccessPath({
+      hasSession: false,
+      onboardingComplete: false,
+      selectedStoreId: null,
+      membershipCount: 0,
+    }),
+  );
 }

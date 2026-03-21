@@ -35,6 +35,7 @@ export function MerchantLoginScreen() {
           </label>
           <input
             id="email"
+            name="email"
             className="auth-input"
             type="email"
             placeholder="merchant@example.com"
@@ -48,6 +49,7 @@ export function MerchantLoginScreen() {
           </label>
           <input
             id="password"
+            name="password"
             className="auth-input"
             type="password"
             placeholder="Enter your password"
@@ -64,7 +66,9 @@ export function MerchantLoginScreen() {
 
       <div className="auth-footer">
         New to Deliberry?{" "}
-        <Link href="/merchant">Apply as a merchant</Link>
+        <Link href="https://your-main-site.com/merchant" target="_blank" rel="noreferrer">
+          Apply as a merchant
+        </Link>
       </div>
     </div>
   );

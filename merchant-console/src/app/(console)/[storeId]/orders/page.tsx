@@ -35,7 +35,6 @@ export default async function MerchantOrdersPage({
     <MerchantOrdersScreen
       storeId={storeId}
       initialData={result.data}
-      initialSource={result.source}
       initialHasMore={initialHasMore}
     />
   );

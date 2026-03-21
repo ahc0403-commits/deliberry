@@ -4,9 +4,20 @@ export type MerchantSupabaseConfig = {
   serviceRoleKey: string | null;
 };
 
+export type MerchantAuthAuthority = "supabase" | "demo-cookie";
+
 function readEnv(name: string): string | null {
   const value = process.env[name]?.trim();
   return value ? value : null;
+}
+
+function readMerchantAuthAuthorityOverride(): MerchantAuthAuthority | null {
+  const value = readEnv("MERCHANT_AUTH_AUTHORITY");
+  if (value === "supabase" || value === "demo-cookie") {
+    return value;
+  }
+
+  return null;
 }
 
 export function readMerchantSupabaseConfig(): MerchantSupabaseConfig {
@@ -20,6 +31,12 @@ export function readMerchantSupabaseConfig(): MerchantSupabaseConfig {
 export function isMerchantSupabaseConfigured(): boolean {
   const config = readMerchantSupabaseConfig();
   return Boolean(config.url && config.anonKey);
+}
+
+export function readMerchantAuthAuthority(): MerchantAuthAuthority {
+  return readMerchantAuthAuthorityOverride() ?? (
+    isMerchantSupabaseConfigured() ? "supabase" : "demo-cookie"
+  );
 }
 
 export function assertMerchantSupabaseConfig(): {

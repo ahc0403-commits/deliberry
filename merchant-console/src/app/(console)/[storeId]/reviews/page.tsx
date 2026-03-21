@@ -9,8 +9,14 @@ export default async function MerchantReviewsPage({
   params,
 }: MerchantReviewsPageProps) {
   const { storeId } = await params;
-  const { data, source } = await getMerchantReviewsRuntimeData(storeId);
+  const { data } = await getMerchantReviewsRuntimeData(storeId);
   const initialHasMore = data.reviews.length >= 25;
 
-  return <MerchantReviewsScreen data={data} source={source} storeId={storeId} initialHasMore={initialHasMore} />;
+  return (
+    <MerchantReviewsScreen
+      data={data}
+      storeId={storeId}
+      initialHasMore={initialHasMore}
+    />
+  );
 }

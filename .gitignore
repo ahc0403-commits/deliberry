@@ -12,8 +12,14 @@ build/
 node_modules/
 .next/
 out/
+.env.local
+.env.*.local
 
 # Editors / local tooling
 .idea/
 .vscode/
 .omx/
+.omc/
+
+# Supabase local temp state
+supabase/.temp/

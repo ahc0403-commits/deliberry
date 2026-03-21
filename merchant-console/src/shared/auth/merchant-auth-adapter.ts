@@ -20,6 +20,7 @@ export type MerchantSessionSnapshot = {
 export interface MerchantAuthAdapter {
   readSession(): Promise<MerchantSessionSnapshot | null>;
   signInWithPassword(input: { email: string; password: string }): Promise<MerchantSessionSnapshot>;
+  completeOnboarding(): Promise<MerchantSessionSnapshot>;
   signOut(): Promise<void>;
-  selectStore(storeId: string): Promise<void>;
+  selectStore(storeId: string): Promise<MerchantSessionSnapshot>;
 }
