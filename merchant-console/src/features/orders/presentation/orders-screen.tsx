@@ -9,7 +9,6 @@ import { updateMerchantOrderStatusAction, loadMoreMerchantOrdersAction } from ".
 type MerchantOrdersScreenProps = {
   storeId: string;
   initialData: OrdersData;
-  initialSource: "persisted" | "fallback";
   initialHasMore: boolean;
 };
 
@@ -38,16 +37,19 @@ const TABS = [
 export function MerchantOrdersScreen({
   storeId,
   initialData,
-  initialSource,
   initialHasMore,
 }: MerchantOrdersScreenProps) {
   const [activeTab, setActiveTab] = useState("active");
   const [orders, setOrders] = useState(initialData.orders);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
-  const [runtimeSource, setRuntimeSource] = useState(initialSource);
+  const [runtimeSource, setRuntimeSource] = useState<"persisted" | "fallback">(
+    "persisted",
+  );
   const [actionError, setActionError] = useState<string | null>(null);
+  const [actionPending, setActionPending] = useState(false);
   const [hasMore, setHasMore] = useState(initialHasMore);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
   const selectedOrder = useMemo(
     () => orders.find((order) => order.id === selectedOrderId) ?? null,
     [orders, selectedOrderId],
@@ -68,6 +70,7 @@ export function MerchantOrdersScreen({
       return;
     }
     setActionError(null);
+    setActionPending(true);
 
     startTransition(async () => {
       const result = await updateMerchantOrderStatusAction({
@@ -78,6 +81,7 @@ export function MerchantOrdersScreen({
 
       if (!result.ok) {
         setActionError(result.error);
+        setActionPending(false);
         return;
       }
 
@@ -88,11 +92,13 @@ export function MerchantOrdersScreen({
         ),
       );
       setSelectedOrderId(result.order.id);
+      setActionPending(false);
     });
   }
 
   function handleLoadMore() {
     if (!hasMore || isLoadingMore || orders.length === 0) return;
+    setLoadMoreError(null);
     setIsLoadingMore(true);
     const lastOrder = orders[orders.length - 1];
     startTransition(async () => {
@@ -104,6 +110,8 @@ export function MerchantOrdersScreen({
       if (result.ok) {
         setOrders((prev) => [...prev, ...result.orders]);
         setHasMore(result.hasMore);
+      } else {
+        setLoadMoreError(result.error);
       }
       setIsLoadingMore(false);
     });
@@ -116,7 +124,8 @@ export function MerchantOrdersScreen({
           <span className="merchant-eyebrow">Order operations</span>
           <h1 className="merchant-hero-title">Orders</h1>
           <p className="merchant-hero-subtitle">
-            Work the live demo queue for the current store and keep every order stage visible from intake to pickup.
+            Work the live queue for the current store and keep every order stage
+            visible from intake to pickup.
           </p>
           <div className="merchant-context-row">
             <span className="merchant-context-pill">
@@ -266,6 +275,12 @@ export function MerchantOrdersScreen({
             </button>
           </div>
         )}
+        {loadMoreError ? (
+          <div className="merchant-settings-intro">
+            <strong>Unable to load more orders</strong>
+            <p>{loadMoreError}</p>
+          </div>
+        ) : null}
       </div>
 
       {selectedOrder ? (
@@ -387,16 +402,16 @@ export function MerchantOrdersScreen({
 
             {selectedOrder.status === "pending" ? (
               <div className="order-detail-footer">
-                <button className="btn btn-success" onClick={() => handleOrderStatusUpdate("preparing")}>Accept Order</button>
-                <button className="btn btn-danger" onClick={() => handleOrderStatusUpdate("cancelled")}>Reject</button>
+                <button className="btn btn-success" onClick={() => handleOrderStatusUpdate("preparing")} disabled={actionPending}>Accept Order</button>
+                <button className="btn btn-danger" onClick={() => handleOrderStatusUpdate("cancelled")} disabled={actionPending}>Reject</button>
               </div>
             ) : selectedOrder.status === "preparing" ? (
               <div className="order-detail-footer">
-                <button className="btn btn-primary" onClick={() => handleOrderStatusUpdate("ready")}>Mark Ready</button>
+                <button className="btn btn-primary" onClick={() => handleOrderStatusUpdate("ready")} disabled={actionPending}>Mark Ready</button>
               </div>
             ) : selectedOrder.status === "ready" ? (
               <div className="order-detail-footer">
-                <button className="btn btn-primary" onClick={() => handleOrderStatusUpdate("in_transit")}>Mark Picked Up</button>
+                <button className="btn btn-primary" onClick={() => handleOrderStatusUpdate("in_transit")} disabled={actionPending}>Mark Picked Up</button>
               </div>
             ) : null}
             {actionError ? (
@@ -404,6 +419,11 @@ export function MerchantOrdersScreen({
                 <span className="merchant-inline-note" style={{ color: "var(--color-danger)" }}>
                   {actionError}
                 </span>
+              </div>
+            ) : null}
+            {actionPending ? (
+              <div className="order-detail-footer" style={{ justifyContent: "flex-start" }}>
+                <span className="merchant-inline-note">Updating persisted order status...</span>
               </div>
             ) : null}
           </div>

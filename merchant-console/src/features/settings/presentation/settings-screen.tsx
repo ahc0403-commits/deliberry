@@ -1,28 +1,71 @@
+"use client";
+
 import Link from "next/link";
-import { Settings2, Sparkles, Store } from "lucide-react";
-import { merchantQueryServices } from "../../../shared/data/merchant-query-services";
+import { useActionState, useEffect, useState } from "react";
+import { Save, Settings2, Store } from "lucide-react";
+import type { SettingsData } from "../../../shared/data/merchant-repository";
+import {
+  updateMerchantSettingsAction,
+  type MerchantSettingsActionState,
+} from "../server/settings-actions";
 
 type MerchantSettingsScreenProps = {
   storeId: string;
+  initialData: SettingsData;
 };
+
+const INITIAL_ACTION_STATE: MerchantSettingsActionState = {
+  status: "idle",
+  message: null,
+  data: null,
+};
+
+type ToggleKey = keyof SettingsData["toggles"];
+
+function countEnabledToggles(toggles: SettingsData["toggles"], keys: ToggleKey[]) {
+  return keys.filter((key) => toggles[key]).length;
+}
 
 export function MerchantSettingsScreen({
   storeId,
+  initialData,
 }: MerchantSettingsScreenProps) {
-  const data = merchantQueryServices.getSettingsData(storeId);
-  const disabledToggleProps = {
-    disabled: true,
-    "aria-disabled": true,
-  } as const;
+  const [data, setData] = useState(initialData);
+  const [draftToggles, setDraftToggles] = useState(initialData.toggles);
+  const [actionState, formAction, isPending] = useActionState(
+    updateMerchantSettingsAction.bind(null, storeId),
+    INITIAL_ACTION_STATE,
+  );
+
+  useEffect(() => {
+    if (actionState.status === "success" && actionState.data) {
+      setData(actionState.data);
+      setDraftToggles(actionState.data.toggles);
+    }
+  }, [actionState]);
+
+  const operationsEnabled = countEnabledToggles(draftToggles, [
+    "autoAcceptOrders",
+    "orderNotifications",
+    "rushHourMode",
+    "allowSpecialInstructions",
+  ]);
+  const notificationsEnabled = countEnabledToggles(draftToggles, [
+    "emailReports",
+    "reviewAlerts",
+    "settlementNotifications",
+    "lowStockAlerts",
+  ]);
 
   return (
     <div className="merchant-surface">
       <section className="merchant-hero merchant-hero-insights">
         <div className="merchant-hero-copy">
-          <span className="merchant-eyebrow">Configuration preview</span>
+          <span className="merchant-eyebrow">Store configuration</span>
           <h1 className="merchant-hero-title">Settings</h1>
           <p className="merchant-hero-subtitle">
-            Review the operating preferences and notification defaults attached to the current store without implying live account-setting writes.
+            Update persisted operating preferences and notification defaults for the
+            active store.
           </p>
           <div className="merchant-context-row">
             <span className="merchant-context-pill">
@@ -30,16 +73,17 @@ export function MerchantSettingsScreen({
               {data.store.name}
             </span>
             <span className="merchant-context-pill merchant-context-pill-muted">
-              <Sparkles size={14} />
-              Local preview only, no persisted settings backend
+              <Settings2 size={14} />
+              Persisted store-scoped settings
             </span>
           </div>
         </div>
         <div className="merchant-hero-panel">
           <div className="merchant-hero-panel-label">Current route truth</div>
-          <div className="merchant-hero-panel-value">Preview-only</div>
+          <div className="merchant-hero-panel-value">Persisted</div>
           <div className="merchant-hero-panel-text">
-            The store scope is real, but preference changes still need manual or future-backed implementation before they can become live.
+            Changes on this route write back to the store settings record and are
+            reloaded after save.
           </div>
         </div>
       </section>
@@ -47,226 +91,228 @@ export function MerchantSettingsScreen({
       <div className="merchant-summary-band">
         <div className="merchant-summary-card">
           <div className="merchant-summary-label">Operations controls</div>
-          <div className="merchant-summary-value">4 preview toggles</div>
-          <div className="merchant-summary-meta">Auto-accept, alerts, rush mode, and note handling remain illustrative</div>
+          <div className="merchant-summary-value">{operationsEnabled} enabled</div>
+          <div className="merchant-summary-meta">
+            Auto-accept, alerts, rush mode, and special instructions
+          </div>
         </div>
         <div className="merchant-summary-card">
           <div className="merchant-summary-label">Notification defaults</div>
-          <div className="merchant-summary-value">4 preview toggles</div>
-          <div className="merchant-summary-meta">Email, reviews, settlements, and stock alerts are visible but not writable here</div>
+          <div className="merchant-summary-value">{notificationsEnabled} enabled</div>
+          <div className="merchant-summary-meta">
+            Email, reviews, settlements, and stock alerts
+          </div>
         </div>
         <div className="merchant-summary-card">
-          <div className="merchant-summary-label">Manual actions</div>
-          <div className="merchant-summary-value">Partner-team owned</div>
-          <div className="merchant-summary-meta">Closures and operational overrides still route through manual support</div>
+          <div className="merchant-summary-label">Save status</div>
+          <div className="merchant-summary-value">
+            {actionState.status === "success" ? "Saved" : "Ready"}
+          </div>
+          <div className="merchant-summary-meta">
+            {actionState.message ?? "No unsignaled fallback writes are allowed on this route."}
+          </div>
         </div>
       </div>
 
-      <div className="merchant-cluster-card">
+      <form action={formAction} className="merchant-cluster-card">
         <div className="merchant-cluster-card-header">
           <div>
-            <div className="card-title">Settings preview</div>
-            <div className="card-subtitle">Read the current control model for this store before operational write paths exist</div>
-          </div>
-          <div className="merchant-inline-note">
-            <Settings2 size={14} />
-            Read-only and demo-safe
-          </div>
-        </div>
-
-        <div className="merchant-settings-intro">
-          <strong>Settings preview</strong>
-          <p>
-            These controls show the kinds of merchant settings Deliberry supports, but live operational changes are not writable from this console yet.
-          </p>
-        </div>
-
-      <div className="grid-2 merchant-grid merchant-settings-grid">
-        <div className="card merchant-card">
-          <div className="card-header">
-            <div>
-              <div className="card-title">Operations</div>
-              <div className="card-subtitle">Store-behavior defaults for order handling</div>
+            <div className="card-title">Store settings</div>
+            <div className="card-subtitle">
+              Persisted operational controls for the active store
             </div>
           </div>
-          <div className="card-body">
-            <div className="form-toggle-row">
-              <div>
-                <div className="form-toggle-label">Auto-accept orders</div>
-                <div className="form-toggle-desc">
-                  Automatically accept new orders without manual review
-                </div>
-              </div>
-              <label className="toggle">
-                <input type="checkbox" defaultChecked={false} {...disabledToggleProps} />
-                <span className="toggle-slider" />
-              </label>
-            </div>
-            <div className="form-toggle-row">
-              <div>
-                <div className="form-toggle-label">Order notifications</div>
-                <div className="form-toggle-desc">
-                  Play sound when new orders arrive
-                </div>
-              </div>
-              <label className="toggle">
-                <input type="checkbox" defaultChecked={true} {...disabledToggleProps} />
-                <span className="toggle-slider" />
-              </label>
-            </div>
-            <div className="form-toggle-row">
-              <div>
-                <div className="form-toggle-label">Rush hour mode</div>
-                <div className="form-toggle-desc">
-                  Extend estimated prep times by 10 minutes during peak hours
-                </div>
-              </div>
-              <label className="toggle">
-                <input type="checkbox" defaultChecked={false} {...disabledToggleProps} />
-                <span className="toggle-slider" />
-              </label>
-            </div>
-            <div className="form-toggle-row">
-              <div>
-                <div className="form-toggle-label">Allow special instructions</div>
-                <div className="form-toggle-desc">
-                  Let customers add notes to their orders
-                </div>
-              </div>
-              <label className="toggle">
-                <input type="checkbox" defaultChecked={true} {...disabledToggleProps} />
-                <span className="toggle-slider" />
-              </label>
-            </div>
+          <div className="page-actions merchant-page-actions">
+            <button className="btn btn-primary" type="submit" disabled={isPending}>
+              <Save size={14} />
+              {isPending ? "Saving..." : "Save settings"}
+            </button>
           </div>
         </div>
 
-        <div className="card merchant-card">
-          <div className="card-header">
-            <div>
-              <div className="card-title">Notifications</div>
-              <div className="card-subtitle">Merchant-facing alerts that would apply once settings writes exist</div>
+        {actionState.message ? (
+          <div className="merchant-settings-intro">
+            <strong>{actionState.status === "success" ? "Settings updated" : "Save failed"}</strong>
+            <p>{actionState.message}</p>
+          </div>
+        ) : null}
+
+        <div className="grid-2 merchant-grid merchant-settings-grid">
+          <div className="card merchant-card">
+            <div className="card-header">
+              <div>
+                <div className="card-title">Operations</div>
+                <div className="card-subtitle">Order-handling defaults for this store</div>
+              </div>
+            </div>
+            <div className="card-body">
+              <SettingsToggle
+                name="autoAcceptOrders"
+                label="Auto-accept orders"
+                description="Automatically accept new orders without manual review"
+                checked={draftToggles.autoAcceptOrders}
+                onChange={(checked) =>
+                  setDraftToggles((current) => ({
+                    ...current,
+                    autoAcceptOrders: checked,
+                  }))
+                }
+              />
+              <SettingsToggle
+                name="orderNotifications"
+                label="Order notifications"
+                description="Play a notification when new orders arrive"
+                checked={draftToggles.orderNotifications}
+                onChange={(checked) =>
+                  setDraftToggles((current) => ({
+                    ...current,
+                    orderNotifications: checked,
+                  }))
+                }
+              />
+              <SettingsToggle
+                name="rushHourMode"
+                label="Rush hour mode"
+                description="Extend estimated prep times during peak periods"
+                checked={draftToggles.rushHourMode}
+                onChange={(checked) =>
+                  setDraftToggles((current) => ({
+                    ...current,
+                    rushHourMode: checked,
+                  }))
+                }
+              />
+              <SettingsToggle
+                name="allowSpecialInstructions"
+                label="Allow special instructions"
+                description="Let customers add notes to their orders"
+                checked={draftToggles.allowSpecialInstructions}
+                onChange={(checked) =>
+                  setDraftToggles((current) => ({
+                    ...current,
+                    allowSpecialInstructions: checked,
+                  }))
+                }
+              />
             </div>
           </div>
-          <div className="card-body">
-            <div className="form-toggle-row">
+
+          <div className="card merchant-card">
+            <div className="card-header">
               <div>
-                <div className="form-toggle-label">Email reports</div>
-                <div className="form-toggle-desc">
-                  Receive daily summary emails
-                </div>
+                <div className="card-title">Notifications</div>
+                <div className="card-subtitle">Merchant-facing alerts and summary delivery</div>
               </div>
-              <label className="toggle">
-                <input type="checkbox" defaultChecked={true} {...disabledToggleProps} />
-                <span className="toggle-slider" />
-              </label>
             </div>
-            <div className="form-toggle-row">
-              <div>
-                <div className="form-toggle-label">Review alerts</div>
-                <div className="form-toggle-desc">
-                  Get notified for new customer reviews
-                </div>
-              </div>
-              <label className="toggle">
-                <input type="checkbox" defaultChecked={true} {...disabledToggleProps} />
-                <span className="toggle-slider" />
-              </label>
-            </div>
-            <div className="form-toggle-row">
-              <div>
-                <div className="form-toggle-label">Settlement notifications</div>
-                <div className="form-toggle-desc">
-                  Get notified when payouts are processed
-                </div>
-              </div>
-              <label className="toggle">
-                <input type="checkbox" defaultChecked={true} {...disabledToggleProps} />
-                <span className="toggle-slider" />
-              </label>
-            </div>
-            <div className="form-toggle-row">
-              <div>
-                <div className="form-toggle-label">Low stock alerts</div>
-                <div className="form-toggle-desc">
-                  Alert when menu items are frequently unavailable
-                </div>
-              </div>
-              <label className="toggle">
-                <input type="checkbox" defaultChecked={false} {...disabledToggleProps} />
-                <span className="toggle-slider" />
-              </label>
+            <div className="card-body">
+              <SettingsToggle
+                name="emailReports"
+                label="Email reports"
+                description="Receive daily summary emails"
+                checked={draftToggles.emailReports}
+                onChange={(checked) =>
+                  setDraftToggles((current) => ({
+                    ...current,
+                    emailReports: checked,
+                  }))
+                }
+              />
+              <SettingsToggle
+                name="reviewAlerts"
+                label="Review alerts"
+                description="Get notified for new customer reviews"
+                checked={draftToggles.reviewAlerts}
+                onChange={(checked) =>
+                  setDraftToggles((current) => ({
+                    ...current,
+                    reviewAlerts: checked,
+                  }))
+                }
+              />
+              <SettingsToggle
+                name="settlementNotifications"
+                label="Settlement notifications"
+                description="Get notified when payout summaries are updated"
+                checked={draftToggles.settlementNotifications}
+                onChange={(checked) =>
+                  setDraftToggles((current) => ({
+                    ...current,
+                    settlementNotifications: checked,
+                  }))
+                }
+              />
+              <SettingsToggle
+                name="lowStockAlerts"
+                label="Low stock alerts"
+                description="Alert when frequently unavailable items need review"
+                checked={draftToggles.lowStockAlerts}
+                onChange={(checked) =>
+                  setDraftToggles((current) => ({
+                    ...current,
+                    lowStockAlerts: checked,
+                  }))
+                }
+              />
             </div>
           </div>
         </div>
-      </div>
-      </div>
+      </form>
 
       <div className="card merchant-card">
         <div className="card-header">
           <div>
             <div className="card-title">Related routes</div>
-            <div className="card-subtitle">Use the routes below to review the connected store surfaces</div>
+            <div className="card-subtitle">
+              Continue into other store-scoped operational screens
+            </div>
           </div>
         </div>
         <div className="card-body">
           <div className="merchant-link-grid">
-            <Link
-              href={`/${storeId}/store`}
-              className="btn btn-secondary"
-              style={{ justifyContent: "center" }}
-            >
+            <Link href={`/${storeId}/store`} className="btn btn-secondary" style={{ justifyContent: "center" }}>
               Edit Store Profile
             </Link>
-            <Link
-              href={`/${storeId}/menu`}
-              className="btn btn-secondary"
-              style={{ justifyContent: "center" }}
-            >
-              Manage Menu
+            <Link href={`/${storeId}/orders`} className="btn btn-secondary" style={{ justifyContent: "center" }}>
+              View Orders
             </Link>
-            <Link
-              href={`/${storeId}/promotions`}
-              className="btn btn-secondary"
-              style={{ justifyContent: "center" }}
-            >
-              Manage Promotions
-            </Link>
-            <Link
-              href={`/${storeId}/settlement`}
-              className="btn btn-secondary"
-              style={{ justifyContent: "center" }}
-            >
-              View Settlements
+            <Link href={`/${storeId}/reviews`} className="btn btn-secondary" style={{ justifyContent: "center" }}>
+              Review Feedback
             </Link>
           </div>
         </div>
       </div>
+    </div>
+  );
+}
 
-      <div className="card merchant-card merchant-warning-card">
-        <div className="card-header">
-          <div>
-            <div className="card-title merchant-warning-title">Manual operations only</div>
-            <div className="card-subtitle">High-impact store controls remain outside the self-serve console</div>
-          </div>
-        </div>
-        <div className="card-body">
-          <div className="merchant-warning-row">
-            <div>
-              <div className="merchant-warning-item-title">Temporarily close store</div>
-              <div className="merchant-warning-item-copy">
-                Stop accepting all orders until manually reopened
-              </div>
-            </div>
-            <button className="btn btn-danger btn-sm" disabled aria-disabled="true">
-              Manual closure only
-            </button>
-          </div>
-          <p className="merchant-warning-footnote">
-            Temporary closures are currently handled through the partner team, not from this settings page.
-          </p>
-        </div>
+function SettingsToggle({
+  name,
+  label,
+  description,
+  checked,
+  onChange,
+}: {
+  name: string;
+  label: string;
+  description: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <div className="form-toggle-row">
+      <div>
+        <div className="form-toggle-label">{label}</div>
+        <div className="form-toggle-desc">{description}</div>
       </div>
+      <label className="toggle">
+        <input
+          type="checkbox"
+          name={name}
+          checked={checked}
+          onChange={(event) => onChange(event.target.checked)}
+        />
+        <span className="toggle-slider" />
+      </label>
     </div>
   );
 }

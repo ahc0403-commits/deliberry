@@ -8,14 +8,26 @@ import {
   recordMerchantProductTelemetryEvent,
 } from "../../../shared/data/product-telemetry-service";
 import { updateMerchantSettingsRuntimeData } from "../../../shared/data/merchant-settings-runtime-service";
+import type { SettingsData } from "../../../shared/data/merchant-repository";
+
+export type MerchantSettingsActionState = {
+  status: "idle" | "success" | "error";
+  message: string | null;
+  data: SettingsData | null;
+};
 
 export async function updateMerchantSettingsAction(
   storeId: string,
+  _previousState: MerchantSettingsActionState,
   formData: FormData,
-): Promise<void> {
+): Promise<MerchantSettingsActionState> {
   const access = await ensureMerchantStoreScope(storeId);
   if (!access.session) {
-    throw new Error("Merchant session is required before updating settings.");
+    return {
+      status: "error",
+      message: "Merchant session is required before updating settings.",
+      data: null,
+    };
   }
 
   try {
@@ -65,6 +77,11 @@ export async function updateMerchantSettingsAction(
     } catch {}
 
     revalidatePath(`/${storeId}/settings`);
+    return {
+      status: "success",
+      message: "Store settings saved.",
+      data: result.data,
+    };
   } catch (error) {
     try {
       await recordMerchantProductTelemetryEvent(
@@ -82,6 +99,13 @@ export async function updateMerchantSettingsAction(
         }),
       );
     } catch {}
-    throw error;
+    return {
+      status: "error",
+      message:
+        error instanceof Error
+          ? error.message
+          : "Unable to update merchant settings.",
+      data: null,
+    };
   }
 }

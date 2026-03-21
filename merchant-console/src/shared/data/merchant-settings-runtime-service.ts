@@ -3,7 +3,6 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 
 import type { SettingsData } from "./merchant-repository";
-import { merchantRepository } from "./merchant-repository";
 import { supabaseMerchantRuntimeRepository } from "./supabase-merchant-runtime-repository";
 import {
   buildMerchantRuntimeEvent,
@@ -13,7 +12,7 @@ import {
 
 export type MerchantSettingsRuntimeResult = {
   data: SettingsData;
-  source: "persisted" | "fallback";
+  source: "persisted";
 };
 
 export async function getMerchantSettingsRuntimeData(
@@ -93,27 +92,9 @@ export async function getMerchantSettingsRuntimeData(
           }),
         );
       }
-      await recordMerchantRuntimeObservabilityEvent(
-        buildMerchantRuntimeEvent({
-          surface: "merchant-console",
-          layer: "service",
-          operation: "runtime.fallback_activated",
-          outcome: "fallback_activated",
-          traceId,
-          attemptSource: "fallback",
-          failureClass,
-          storeId,
-          durationMs: Date.now() - startedAt,
-          metadata: {
-            triggeringOperation: "merchant.settings.read",
-          },
-        }),
-      );
     } catch {}
-    return {
-      data: merchantRepository.getSettingsData(storeId),
-      source: "fallback",
-    };
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`merchant.settings.read failed (${failureClass}): ${message}`);
   }
 }
 
@@ -161,28 +142,24 @@ export async function updateMerchantSettingsRuntimeData(input: {
       source: "persisted",
     };
   } catch (error) {
+    const failureClass = buildMerchantRuntimeFailureClass(error);
     try {
       await recordMerchantRuntimeObservabilityEvent(
         buildMerchantRuntimeEvent({
           surface: "merchant-console",
           layer: "service",
-          operation: "runtime.fallback_activated",
-          outcome: "fallback_activated",
+          operation: "merchant.settings.write",
+          outcome: "failed",
           traceId,
-          attemptSource: "fallback",
-          failureClass: buildMerchantRuntimeFailureClass(error),
+          attemptSource: "persisted",
+          failureClass,
           actorType: input.actorType,
           storeId: input.storeId,
           durationMs: Date.now() - startedAt,
-          metadata: {
-            triggeringOperation: "merchant.settings.write",
-          },
         }),
       );
     } catch {}
-    return {
-      data: merchantRepository.updateSettingsData(input.storeId, input.toggles),
-      source: "fallback",
-    };
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`merchant.settings.write failed (${failureClass}): ${message}`);
   }
 }

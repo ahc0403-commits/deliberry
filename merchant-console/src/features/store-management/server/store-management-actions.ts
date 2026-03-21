@@ -8,16 +8,26 @@ import {
   recordMerchantProductTelemetryEvent,
 } from "../../../shared/data/product-telemetry-service";
 import { updateMerchantStoreManagementRuntimeData } from "../../../shared/data/merchant-store-runtime-service";
+import type { StoreManagementData } from "../../../shared/data/merchant-repository";
+
+export type MerchantStoreManagementActionState = {
+  status: "idle" | "success" | "error";
+  message: string | null;
+  data: StoreManagementData | null;
+};
 
 export async function updateMerchantStoreManagementAction(
   storeId: string,
+  _previousState: MerchantStoreManagementActionState,
   formData: FormData,
-): Promise<void> {
+): Promise<MerchantStoreManagementActionState> {
   const access = await ensureMerchantStoreScope(storeId);
   if (!access.session) {
-    throw new Error(
-      "Merchant session is required before updating store profile.",
-    );
+    return {
+      status: "error",
+      message: "Merchant session is required before updating store profile.",
+      data: null,
+    };
   }
   try {
     await recordMerchantProductTelemetryEvent(
@@ -81,6 +91,11 @@ export async function updateMerchantStoreManagementAction(
 
     revalidatePath(`/${storeId}/store`);
     revalidatePath(`/${storeId}`, "layout");
+    return {
+      status: "success",
+      message: "Store profile saved.",
+      data: result.data,
+    };
   } catch (error) {
     try {
       await recordMerchantProductTelemetryEvent(
@@ -98,6 +113,13 @@ export async function updateMerchantStoreManagementAction(
         }),
       );
     } catch {}
-    throw error;
+    return {
+      status: "error",
+      message:
+        error instanceof Error
+          ? error.message
+          : "Unable to update store profile.",
+      data: null,
+    };
   }
 }

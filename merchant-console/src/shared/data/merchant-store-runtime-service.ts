@@ -3,7 +3,6 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 
 import type { StoreManagementData } from "./merchant-repository";
-import { merchantRepository } from "./merchant-repository";
 import { supabaseMerchantRuntimeRepository } from "./supabase-merchant-runtime-repository";
 import {
   buildMerchantRuntimeEvent,
@@ -13,7 +12,7 @@ import {
 
 export type MerchantStoreRuntimeResult = {
   data: StoreManagementData;
-  source: "persisted" | "fallback";
+  source: "persisted";
 };
 
 export async function getMerchantStoreManagementRuntimeData(
@@ -95,27 +94,9 @@ export async function getMerchantStoreManagementRuntimeData(
           }),
         );
       }
-      await recordMerchantRuntimeObservabilityEvent(
-        buildMerchantRuntimeEvent({
-          surface: "merchant-console",
-          layer: "service",
-          operation: "runtime.fallback_activated",
-          outcome: "fallback_activated",
-          traceId,
-          attemptSource: "fallback",
-          failureClass,
-          storeId,
-          durationMs: Date.now() - startedAt,
-          metadata: {
-            triggeringOperation: "merchant.store_profile.read",
-          },
-        }),
-      );
     } catch {}
-    return {
-      data: merchantRepository.getStoreManagementData(storeId),
-      source: "fallback",
-    };
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`merchant.store_profile.read failed (${failureClass}): ${message}`);
   }
 }
 
@@ -164,31 +145,24 @@ export async function updateMerchantStoreManagementRuntimeData(input: {
       source: "persisted",
     };
   } catch (error) {
+    const failureClass = buildMerchantRuntimeFailureClass(error);
     try {
       await recordMerchantRuntimeObservabilityEvent(
         buildMerchantRuntimeEvent({
           surface: "merchant-console",
           layer: "service",
-          operation: "runtime.fallback_activated",
-          outcome: "fallback_activated",
+          operation: "merchant.store_profile.write",
+          outcome: "failed",
           traceId,
-          attemptSource: "fallback",
-          failureClass: buildMerchantRuntimeFailureClass(error),
+          attemptSource: "persisted",
+          failureClass,
           actorType: input.actorType,
           storeId: input.storeId,
           durationMs: Date.now() - startedAt,
-          metadata: {
-            triggeringOperation: "merchant.store_profile.write",
-          },
         }),
       );
     } catch {}
-    return {
-      data: merchantRepository.updateStoreManagementData(
-        input.storeId,
-        input.store,
-      ),
-      source: "fallback",
-    };
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`merchant.store_profile.write failed (${failureClass}): ${message}`);
   }
 }

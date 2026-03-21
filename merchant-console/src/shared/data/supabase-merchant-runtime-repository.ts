@@ -1,4 +1,8 @@
-import { createMerchantServerSupabaseClient } from "../supabase/client";
+import {
+  createMerchantServerSupabaseClient,
+  createMerchantServiceSupabaseClient,
+} from "../supabase/client";
+import { readMerchantAuthAuthority } from "../supabase/config";
 import {
   buildMerchantRuntimeEvent,
   buildMerchantRuntimeFailureClass,
@@ -89,6 +93,8 @@ type PersistedReviewRow = {
   order_id: string;
   rating: number;
   review_text: string;
+  response_text: string | null;
+  response_created_at: string | null;
   created_at: string;
   orders:
     | {
@@ -159,13 +165,57 @@ function mapPersistedReview(row: PersistedReviewRow): MerchantReview {
     text: row.review_text,
     date: row.created_at,
     orderId: order?.order_number?.trim() || row.order_id,
-    responded: false,
+    responded: Boolean(row.response_text),
+    response: row.response_text ?? undefined,
+    responseDate: row.response_created_at ?? undefined,
   };
 }
 
 export class SupabaseMerchantRuntimeRepository implements MerchantRuntimeRepository {
+  private async createRuntimeSupabaseClient() {
+    if (readMerchantAuthAuthority() === "demo-cookie") {
+      return createMerchantServiceSupabaseClient();
+    }
+
+    return createMerchantServerSupabaseClient();
+  }
+
+  private async readPersistedStore(storeId: string) {
+    const supabase = await this.createRuntimeSupabaseClient();
+    const { data, error } = await supabase
+      .from("stores")
+      .select(`
+        id,
+        name,
+        address,
+        phone,
+        email,
+        rating,
+        review_count,
+        status,
+        cuisine_type,
+        hours_json,
+        delivery_radius,
+        avg_prep_time,
+        accepting_orders,
+        settings_json
+      `)
+      .eq("id", storeId)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    if (!data) {
+      throw new Error(`Persisted store ${storeId} was not found.`);
+    }
+
+    return data as PersistedStoreRow;
+  }
+
   async getDashboardKpiSnapshot(storeId: string): Promise<MerchantDashboardKpiSnapshot> {
-    const supabase = await createMerchantServerSupabaseClient();
+    const supabase = await this.createRuntimeSupabaseClient();
     const { data, error } = await supabase.rpc(
       "get_merchant_dashboard_kpi_snapshot",
       { p_store_id: storeId },
@@ -274,7 +324,7 @@ export class SupabaseMerchantRuntimeRepository implements MerchantRuntimeReposit
   }
 
   async getOrdersData(query: MerchantOrdersQuery): Promise<OrdersData> {
-    const supabase = await createMerchantServerSupabaseClient();
+    const supabase = await this.createRuntimeSupabaseClient();
     let request = supabase
       .from("orders")
       .select(`
@@ -306,7 +356,10 @@ export class SupabaseMerchantRuntimeRepository implements MerchantRuntimeReposit
       request = request.or(this.buildDescendingCursorFilter(query.cursor));
     }
 
-    const { data, error } = await request.limit(query.limit);
+    const [{ data, error }, store] = await Promise.all([
+      request.limit(query.limit),
+      this.readPersistedStore(query.storeId),
+    ]);
 
     if (error) {
       throw new Error(error.message);
@@ -314,10 +367,7 @@ export class SupabaseMerchantRuntimeRepository implements MerchantRuntimeReposit
 
     return {
       orders: (data ?? []).map((row) => mapPersistedOrder(row as PersistedOrderRow)),
-      store: {
-        ...mockStore,
-        id: query.storeId,
-      },
+      store: mapPersistedStore(store),
     };
   }
 
@@ -331,7 +381,7 @@ export class SupabaseMerchantRuntimeRepository implements MerchantRuntimeReposit
   }): Promise<MerchantOrder> {
     const nextStatus = input.status as MerchantOrder["status"];
     const startedAt = Date.now();
-    const supabase = await createMerchantServerSupabaseClient();
+    const supabase = await this.createRuntimeSupabaseClient();
     const { data: refreshedOrder, error } = await supabase.rpc(
       "update_order_status_with_audit",
       {
@@ -441,104 +491,102 @@ export class SupabaseMerchantRuntimeRepository implements MerchantRuntimeReposit
     throw new Error("Menu persistence cutover is not part of Phase 3.");
   }
   async getStoreManagementData(storeId: string) {
-    const supabase = await createMerchantServerSupabaseClient();
-    const { data, error } = await supabase
-      .from("stores")
-      .select(`
-        id,
-        name,
-        address,
-        phone,
-        email,
-        rating,
-        review_count,
-        status,
-        cuisine_type,
-        hours_json,
-        delivery_radius,
-        avg_prep_time,
-        accepting_orders
-      `)
-      .eq("id", storeId)
-      .maybeSingle();
-
-    if (error) {
-      throw new Error(error.message);
-    }
-
-    if (!data) {
-      throw new Error(`Persisted store ${storeId} was not found.`);
-    }
-
     return {
-      store: mapPersistedStore(data as PersistedStoreRow),
+      store: mapPersistedStore(await this.readPersistedStore(storeId)),
     };
   }
   async getReviewsData(query: MerchantReviewsQuery) {
-    const supabase = await createMerchantServerSupabaseClient();
-    const [{ data: reviewRows, error: reviewError }, { data: storeRow, error: storeError }] =
-      await Promise.all([
-        (() => {
-          let request = supabase
-          .from("customer_reviews")
-          .select(`
-            id,
-            order_id,
-            rating,
-            review_text,
-            created_at,
-            orders!inner (
-              customer_name,
-              order_number
-            )
-          `)
-          .eq("store_id", query.storeId)
-          .order("created_at", { ascending: false })
-          .order("id", { ascending: false });
-          if (query.cursor) {
-            request = request.or(this.buildDescendingCursorFilter(query.cursor));
-          }
-          return request.limit(query.limit);
-        })(),
-        supabase
-          .from("stores")
-          .select(`
-            id,
-            name,
-            address,
-            phone,
-            email,
-            rating,
-            review_count,
-            status,
-            cuisine_type,
-            hours_json,
-            delivery_radius,
-            avg_prep_time,
-            accepting_orders
-          `)
-          .eq("id", query.storeId)
-          .maybeSingle(),
-      ]);
+    const supabase = await this.createRuntimeSupabaseClient();
+    const [reviewResult, storeRow] = await Promise.all([
+      (() => {
+        let request = supabase
+        .from("customer_reviews")
+        .select(`
+          id,
+          order_id,
+          rating,
+          review_text,
+          response_text,
+          response_created_at,
+          created_at,
+          orders!inner (
+            customer_name,
+            order_number
+          )
+        `)
+        .eq("store_id", query.storeId)
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: false });
+        if (query.cursor) {
+          request = request.or(this.buildDescendingCursorFilter(query.cursor));
+        }
+        return request.limit(query.limit);
+      })(),
+      this.readPersistedStore(query.storeId),
+    ]);
+    const { data: reviewRows, error: reviewError } = reviewResult;
 
     if (reviewError) {
       throw new Error(reviewError.message);
-    }
-
-    if (storeError) {
-      throw new Error(storeError.message);
-    }
-
-    if (!storeRow) {
-      throw new Error(`Persisted store ${query.storeId} was not found.`);
     }
 
     return {
       reviews: (reviewRows ?? []).map((row) =>
         mapPersistedReview(row as PersistedReviewRow),
       ),
-      store: mapPersistedStore(storeRow as PersistedStoreRow),
+      store: mapPersistedStore(storeRow),
     };
+  }
+
+  async replyToReview(input: {
+    storeId: string;
+    reviewId: string;
+    actorId: string;
+    actorType: "merchant_owner" | "merchant_staff";
+    responseText: string;
+  }): Promise<MerchantReview> {
+    const supabase = await this.createRuntimeSupabaseClient();
+    const normalizedResponse = input.responseText.trim();
+
+    if (normalizedResponse.length === 0) {
+      throw new Error("Review response cannot be empty.");
+    }
+
+    const { data: updatedRow, error } = await supabase
+      .from("customer_reviews")
+      .update({
+        response_text: normalizedResponse,
+        response_created_at: new Date().toISOString(),
+        response_actor_id: input.actorId,
+      })
+      .eq("id", input.reviewId)
+      .eq("store_id", input.storeId)
+      .select(`
+        id,
+        order_id,
+        rating,
+        review_text,
+        response_text,
+        response_created_at,
+        created_at,
+        orders!inner (
+          customer_name,
+          order_number
+        )
+      `)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    if (!updatedRow) {
+      throw new Error(
+        `Persisted review ${input.reviewId} could not be updated for store ${input.storeId}.`,
+      );
+    }
+
+    return mapPersistedReview(updatedRow as PersistedReviewRow);
   }
 
   private buildDescendingCursorFilter(cursor: MerchantReadCursor): string {
@@ -561,39 +609,9 @@ export class SupabaseMerchantRuntimeRepository implements MerchantRuntimeReposit
     throw new Error("Analytics persistence cutover is not part of Phase 3.");
   }
   async getSettingsData(storeId: string): Promise<SettingsData> {
-    const supabase = await createMerchantServerSupabaseClient();
-    const { data, error } = await supabase
-      .from("stores")
-      .select(`
-        id,
-        name,
-        address,
-        phone,
-        email,
-        rating,
-        review_count,
-        status,
-        cuisine_type,
-        hours_json,
-        delivery_radius,
-        avg_prep_time,
-        accepting_orders,
-        settings_json
-      `)
-      .eq("id", storeId)
-      .maybeSingle();
-
-    if (error) {
-      throw new Error(error.message);
-    }
-
-    if (!data) {
-      throw new Error(`Persisted store ${storeId} was not found.`);
-    }
-
-    const store = mapPersistedStore(data as PersistedStoreRow);
-    const settings =
-      (data as PersistedStoreRow).settings_json ?? {};
+    const data = await this.readPersistedStore(storeId);
+    const store = mapPersistedStore(data);
+    const settings = data.settings_json ?? {};
 
     return {
       store,
@@ -618,7 +636,7 @@ export class SupabaseMerchantRuntimeRepository implements MerchantRuntimeReposit
   }): Promise<SettingsData> {
     const traceId = `trace_${Date.now()}`;
     const startedAt = Date.now();
-    const supabase = await createMerchantServerSupabaseClient();
+    const supabase = await this.createRuntimeSupabaseClient();
     const { data, error } = await supabase.rpc(
       "update_store_settings_with_audit",
       {
@@ -747,7 +765,7 @@ export class SupabaseMerchantRuntimeRepository implements MerchantRuntimeReposit
   }): Promise<StoreManagementData> {
     const traceId = `trace_${Date.now()}`;
     const startedAt = Date.now();
-    const supabase = await createMerchantServerSupabaseClient();
+    const supabase = await this.createRuntimeSupabaseClient();
     const { data, error } = await supabase.rpc(
       "update_store_profile_with_audit",
       {

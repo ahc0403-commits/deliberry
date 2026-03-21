@@ -52,6 +52,13 @@ export interface MerchantRuntimeRepository {
   getMenuData(storeId: string): Promise<MenuData | never>;
   getStoreManagementData(storeId: string): Promise<StoreManagementData>;
   getReviewsData(query: MerchantReviewsQuery): Promise<ReviewsData>;
+  replyToReview(input: {
+    storeId: string;
+    reviewId: string;
+    actorId: string;
+    actorType: "merchant_owner" | "merchant_staff";
+    responseText: string;
+  }): Promise<import("./merchant-mock-data").MerchantReview>;
   getPromotionsData(storeId: string): Promise<PromotionsData>;
   getSettlementData(storeId: string): Promise<SettlementData>;
   getAnalyticsData(storeId: string): Promise<AnalyticsData>;

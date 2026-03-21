@@ -54,6 +54,7 @@ export async function updateMerchantOrderStatusAction(input: {
       actorId: access.session.merchantId,
       actorType: access.session.actorType,
     });
+
     try {
       await recordMerchantProductTelemetryEvent(
         buildMerchantProductTelemetryEvent({

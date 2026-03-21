@@ -19,7 +19,7 @@ export type MerchantDashboardRuntimeResult = {
 
 export type MerchantOrdersRuntimeResult = {
   data: OrdersData;
-  source: "persisted" | "fallback";
+  source: "persisted";
 };
 
 export async function getMerchantDashboardRuntimeData(
@@ -216,27 +216,9 @@ export async function getMerchantOrdersRuntimeData(
           }),
         );
       }
-      await recordMerchantRuntimeObservabilityEvent(
-        buildMerchantRuntimeEvent({
-          surface: "merchant-console",
-          layer: "service",
-          operation: "runtime.fallback_activated",
-          outcome: "fallback_activated",
-          traceId,
-          attemptSource: "fallback",
-          failureClass,
-          storeId,
-          durationMs: Date.now() - startedAt,
-          metadata: {
-            triggeringOperation: "merchant.orders.read",
-          },
-        }),
-      );
     } catch {}
-    return {
-      data: merchantRepository.getOrdersData(storeId),
-      source: "fallback",
-    };
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`merchant.orders.read failed (${failureClass}): ${message}`);
   }
 }
 
@@ -246,7 +228,7 @@ export async function updateMerchantOrderRuntimeStatus(input: {
   status: MerchantOrder["status"];
   actorId: string;
   actorType: "merchant_owner" | "merchant_staff";
-}): Promise<{ order: MerchantOrder; source: "persisted" | "fallback" }> {
+}): Promise<{ order: MerchantOrder; source: "persisted" }> {
   const traceId = randomUUID();
   const startedAt = Date.now();
   try {
@@ -299,75 +281,20 @@ export async function updateMerchantOrderRuntimeStatus(input: {
         buildMerchantRuntimeEvent({
           surface: "merchant-console",
           layer: "service",
-          operation: "runtime.fallback_activated",
-          outcome: "fallback_activated",
+          operation: "merchant.order.status_update",
+          outcome: "failed",
           traceId,
-          attemptSource: "fallback",
+          attemptSource: "persisted",
           failureClass,
           actorType: input.actorType,
           storeId: input.storeId,
           orderId: input.orderId,
           toStatus: input.status,
           durationMs: Date.now() - startedAt,
-          metadata: {
-            triggeringOperation: "merchant.order.status_update",
-          },
         }),
       );
     } catch {}
-
-    try {
-      const fallbackOrder = merchantRepository.updateOrderStatus(
-        input.storeId,
-        input.orderId,
-        input.status,
-      );
-      try {
-        await recordMerchantRuntimeObservabilityEvent(
-          buildMerchantRuntimeEvent({
-            surface: "merchant-console",
-            layer: "service",
-            operation: "merchant.order.status_update",
-            outcome: "succeeded",
-            traceId,
-            attemptSource: "fallback",
-            failureClass: "fallback_triggered",
-            actorType: input.actorType,
-            storeId: input.storeId,
-            orderId: input.orderId,
-            toStatus: input.status,
-            durationMs: Date.now() - startedAt,
-          }),
-        );
-      } catch {}
-      return {
-        order: fallbackOrder,
-        source: "fallback",
-      };
-    } catch (fallbackError) {
-      try {
-        await recordMerchantRuntimeObservabilityEvent(
-          buildMerchantRuntimeEvent({
-            surface: "merchant-console",
-            layer: "service",
-            operation: "merchant.order.status_update",
-            outcome:
-              buildMerchantRuntimeFailureClass(fallbackError) ===
-                  "transition_rejected"
-              ? "transition_rejected"
-              : "failed",
-            traceId,
-            attemptSource: "fallback",
-            failureClass: buildMerchantRuntimeFailureClass(fallbackError),
-            actorType: input.actorType,
-            storeId: input.storeId,
-            orderId: input.orderId,
-            toStatus: input.status,
-            durationMs: Date.now() - startedAt,
-          }),
-        );
-      } catch {}
-      throw fallbackError;
-    }
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`merchant.order.status_update failed (${failureClass}): ${message}`);
   }
 }

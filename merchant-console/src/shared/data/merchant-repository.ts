@@ -83,6 +83,8 @@ export type SettingsData = {
 };
 
 export class InMemoryMerchantRepository {
+  private storeOverrides = new Map<string, MerchantStoreInfo>();
+  private settingsTogglesByStoreId = new Map<string, SettingsData["toggles"]>();
   private orders = mockOrders.map((order) => ({
     ...order,
     items: order.items.map((item) => ({
@@ -96,7 +98,7 @@ export class InMemoryMerchantRepository {
       throw new Error(`Unsupported merchant store scope: ${storeId}`);
     }
 
-    return mockStore;
+    return this.storeOverrides.get(storeId) ?? mockStore;
   }
 
   getDashboardData(storeId: string): DashboardData {
@@ -223,9 +225,9 @@ export class InMemoryMerchantRepository {
 
   getSettingsData(storeId: string): SettingsData {
     const store = this.getScopedStore(storeId);
-    return {
-      store,
-      toggles: {
+    const existing = this.settingsTogglesByStoreId.get(storeId);
+    if (!existing) {
+      this.settingsTogglesByStoreId.set(storeId, {
         autoAcceptOrders: false,
         orderNotifications: true,
         rushHourMode: false,
@@ -234,22 +236,26 @@ export class InMemoryMerchantRepository {
         reviewAlerts: true,
         settlementNotifications: true,
         lowStockAlerts: false,
-      },
+      });
+    }
+
+    return {
+      store,
+      toggles: this.settingsTogglesByStoreId.get(storeId)!,
     };
   }
 
   updateSettingsData(storeId: string, toggles: SettingsData["toggles"]): SettingsData {
-    const store = this.getScopedStore(storeId);
-    return {
-      store,
-      toggles,
-    };
+    this.getScopedStore(storeId);
+    this.settingsTogglesByStoreId.set(storeId, toggles);
+    return this.getSettingsData(storeId);
   }
 
   updateStoreManagementData(storeId: string, storeUpdate: StoreManagementData["store"]): StoreManagementData {
     this.getScopedStore(storeId);
+    this.storeOverrides.set(storeId, storeUpdate);
     return {
-      store: storeUpdate,
+      store: this.getScopedStore(storeId),
     };
   }
 
