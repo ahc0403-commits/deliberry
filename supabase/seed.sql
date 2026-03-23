@@ -22,7 +22,7 @@ values
     'authenticated',
     'authenticated',
     'demo@saborcriollo.com',
-    crypt('demo1234', gen_salt('bf')),
+    extensions.crypt('demo1234', extensions.gen_salt('bf')),
     timezone('utc', now()),
     '{"provider":"email","providers":["email"]}'::jsonb,
     '{"surface":"merchant-console","mode":"demo-cookie"}'::jsonb,
