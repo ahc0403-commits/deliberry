@@ -56,8 +56,8 @@ Deno.serve(async (request) => {
     });
   }
 
-  const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+  const supabaseUrl = Deno.env.get("PROJECT_URL") ?? "";
+  const serviceRoleKey = Deno.env.get("SERVICE_ROLE_KEY") ?? "";
   const zaloAppId = Deno.env.get("ZALO_APP_ID") ?? "";
   const zaloAppSecret = Deno.env.get("ZALO_APP_SECRET") ?? "";
   const zaloRedirectUri = Deno.env.get("ZALO_REDIRECT_URI") ?? "";
@@ -66,7 +66,7 @@ Deno.serve(async (request) => {
     return jsonResponse(503, {
       error_code: "supabase_admin_unconfigured",
       message:
-        "SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required for customer Zalo auth exchange.",
+        "PROJECT_URL and SERVICE_ROLE_KEY are required for customer Zalo auth exchange.",
     });
   }
 
