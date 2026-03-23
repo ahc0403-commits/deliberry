@@ -23,3 +23,6 @@ out/
 
 # Supabase local temp state
 supabase/.temp/
+
+merchant-console/.omc/
+*.tsbuildinfo
