@@ -34,9 +34,24 @@ export function isMerchantSupabaseConfigured(): boolean {
 }
 
 export function readMerchantAuthAuthority(): MerchantAuthAuthority {
-  return readMerchantAuthAuthorityOverride() ?? (
-    isMerchantSupabaseConfigured() ? "supabase" : "demo-cookie"
-  );
+  const override = readMerchantAuthAuthorityOverride();
+  if (override) {
+    return override;
+  }
+
+  if (isMerchantSupabaseConfigured()) {
+    return "supabase";
+  }
+
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "Merchant Supabase env vars are missing in production. " +
+      "Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY. " +
+      "Demo-cookie auth is not allowed in production.",
+    );
+  }
+
+  return "demo-cookie";
 }
 
 export function assertMerchantSupabaseConfig(): {
