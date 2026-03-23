@@ -1,31 +1,45 @@
-import 'customer_session_controller.dart';
-
 class CustomerAuthIdentity {
   const CustomerAuthIdentity({
     required this.actorId,
     required this.actorType,
+    required this.provider,
+    this.displayName,
     this.phoneNumber,
+    this.needsOnboarding = false,
   });
 
   final String actorId;
   final String actorType;
+  final CustomerAuthProvider provider;
+  final String? displayName;
   final String? phoneNumber;
+  final bool needsOnboarding;
 }
 
-class CustomerSessionSnapshot {
-  const CustomerSessionSnapshot({
-    required this.status,
-    required this.identity,
+enum CustomerAuthProvider {
+  zalo,
+  phone,
+}
+
+class CustomerAuthStartResult {
+  const CustomerAuthStartResult({
+    required this.provider,
+    this.authorizationUri,
+    this.blockerCode,
+    this.message,
   });
 
-  final CustomerAuthStatus status;
-  final CustomerAuthIdentity identity;
+  final CustomerAuthProvider provider;
+  final Uri? authorizationUri;
+  final String? blockerCode;
+  final String? message;
+
+  bool get isReady => blockerCode == null;
 }
 
 abstract class CustomerAuthAdapter {
-  Future<CustomerSessionSnapshot?> restoreSession();
-  Future<CustomerSessionSnapshot> requestOtp({required String phoneNumber});
-  Future<CustomerSessionSnapshot> verifyOtp({required String otpCode});
-  Future<CustomerSessionSnapshot> continueAsGuest();
+  Future<CustomerAuthIdentity?> restoreAuthenticatedIdentity();
+  Future<CustomerAuthStartResult> beginPrimarySignIn();
+  Future<CustomerAuthIdentity> completeAuthCallback(Uri callbackUri);
   Future<void> signOut();
 }

@@ -11,7 +11,7 @@ class AuthScreen extends StatelessWidget {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          '$provider sign-in is not available yet. Use phone sign-in instead.',
+          '$provider sign-in is not available yet.',
         ),
       ),
     );
@@ -73,15 +73,36 @@ class AuthScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 40),
 
-                // Phone login primary CTA
+                FilledButton.icon(
+                  onPressed: () async {
+                    final result = await CustomerSessionController.instance
+                        .beginPrimarySignIn();
+                    if (!context.mounted) return;
+                    final message = result.message ??
+                        'Zalo login is not fully configured yet.';
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(message)),
+                    );
+                  },
+                  icon: const Icon(Icons.chat_bubble_rounded, size: 20),
+                  label: const Text('Continue with Zalo'),
+                ),
+                const SizedBox(height: 12),
+
+                // Phone login fallback CTA
                 FilledButton.icon(
                   onPressed: () async {
                     await CustomerSessionController.instance.startPhoneEntry();
                     if (!context.mounted) return;
                     Navigator.of(context).pushNamed(RouteNames.authPhone);
                   },
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: AppTheme.primaryColor,
+                    side: BorderSide(color: AppTheme.borderColor),
+                  ),
                   icon: const Icon(Icons.phone_iphone_rounded, size: 20),
-                  label: const Text('Continue with Phone'),
+                  label: const Text('Use Phone Instead'),
                 ),
                 const SizedBox(height: 16),
 
@@ -156,6 +177,17 @@ class AuthScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 24),
+                Center(
+                  child: Text(
+                    'Zalo is the primary sign-in path. Phone verification remains available as fallback.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppTheme.textSecondary,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                const SizedBox(height: 12),
                 Center(
                   child: Text(
                     'By continuing you agree to our Terms & Privacy Policy',

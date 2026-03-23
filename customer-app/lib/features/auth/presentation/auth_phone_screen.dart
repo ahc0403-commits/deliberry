@@ -81,7 +81,7 @@ class _AuthPhoneScreenState extends State<AuthPhoneScreen> {
             ),
             const SizedBox(height: 10),
             Text(
-              'We\'ll send a verification code to confirm it\'s you.',
+              'Use phone verification if Zalo sign-in is unavailable for this account.',
               style: TextStyle(
                 fontSize: 15,
                 color: AppTheme.textSecondary,

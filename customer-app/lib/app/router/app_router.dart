@@ -35,11 +35,11 @@ class AppRouter {
     switch (settings.name) {
       case RouteNames.root:
       case RouteNames.entry:
-        if (session.isSignedIn || session.isGuest) {
-          return _redirectRoute(RouteNames.home, settings);
-        }
         if (session.requiresOnboarding) {
           return _redirectRoute(RouteNames.onboarding, settings);
+        }
+        if (session.hasAuthenticatedSession || session.isGuest) {
+          return _redirectRoute(RouteNames.home, settings);
         }
         if (session.isOtpPending) {
           return _redirectRoute(RouteNames.authOtp, settings);
@@ -91,44 +91,44 @@ class AppRouter {
         );
       case RouteNames.auth:
       case RouteNames.authLogin:
-        if (session.isSignedIn || session.isGuest) {
-          return _redirectRoute(RouteNames.home, settings);
-        }
         if (session.requiresOnboarding) {
           return _redirectRoute(RouteNames.onboarding, settings);
+        }
+        if (session.hasAuthenticatedSession || session.isGuest) {
+          return _redirectRoute(RouteNames.home, settings);
         }
         if (session.isOtpPending) {
           return _redirectRoute(RouteNames.authOtp, settings);
         }
         return _route(const AuthScreen(), settings);
       case RouteNames.authPhone:
-        if (session.isSignedIn || session.isGuest) {
-          return _redirectRoute(RouteNames.home, settings);
-        }
         if (session.requiresOnboarding) {
           return _redirectRoute(RouteNames.onboarding, settings);
+        }
+        if (session.hasAuthenticatedSession || session.isGuest) {
+          return _redirectRoute(RouteNames.home, settings);
         }
         if (session.isOtpPending) {
           return _redirectRoute(RouteNames.authOtp, settings);
         }
         return _route(const AuthPhoneScreen(), settings);
       case RouteNames.authOtp:
-        if (session.isSignedIn || session.isGuest) {
-          return _redirectRoute(RouteNames.home, settings);
-        }
         if (session.requiresOnboarding) {
           return _redirectRoute(RouteNames.onboarding, settings);
+        }
+        if (session.hasAuthenticatedSession || session.isGuest) {
+          return _redirectRoute(RouteNames.home, settings);
         }
         if (!session.isOtpPending) {
           return _redirectRoute(RouteNames.authPhone, settings);
         }
         return _route(const AuthOtpScreen(), settings);
       case RouteNames.guest:
-        if (session.isGuest || session.isSignedIn) {
-          return _redirectRoute(RouteNames.home, settings);
-        }
         if (session.requiresOnboarding) {
           return _redirectRoute(RouteNames.onboarding, settings);
+        }
+        if (session.isGuest || session.hasAuthenticatedSession) {
+          return _redirectRoute(RouteNames.home, settings);
         }
         if (session.isOtpPending) {
           return _redirectRoute(RouteNames.authOtp, settings);

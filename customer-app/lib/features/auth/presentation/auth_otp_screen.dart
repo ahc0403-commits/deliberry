@@ -140,7 +140,7 @@ class _AuthOtpScreenState extends State<AuthOtpScreen> {
             const SizedBox(height: 10),
             RichText(
               text: TextSpan(
-                text: 'Enter the 6-digit code sent to ',
+                text: 'Enter the 6-digit fallback code sent to ',
                 style: TextStyle(
                   fontSize: 15,
                   color: AppTheme.textSecondary,
