@@ -26,3 +26,8 @@ supabase/.temp/
 
 merchant-console/.omc/
 *.tsbuildinfo
+
+.omc/
+supabase/.temp/
+merchant-console/.omc/
+*.tsbuildinfo
