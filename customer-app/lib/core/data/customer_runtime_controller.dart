@@ -21,6 +21,9 @@ class CustomerOrderRecord {
     required this.etaLabel,
     required this.milestones,
     required this.isActive,
+    this.subtotalCentavos = 0,
+    this.deliveryFeeCentavos = 0,
+    this.serviceFeeCentavos = 0,
   });
 
   final MockOrder order;
@@ -33,6 +36,9 @@ class CustomerOrderRecord {
   final String etaLabel;
   final List<OrderMilestone> milestones;
   final bool isActive;
+  final int subtotalCentavos;
+  final int deliveryFeeCentavos;
+  final int serviceFeeCentavos;
 
   CustomerOrderRecord copyWith({
     MockOrder? order,
@@ -45,6 +51,9 @@ class CustomerOrderRecord {
     String? etaLabel,
     List<OrderMilestone>? milestones,
     bool? isActive,
+    int? subtotalCentavos,
+    int? deliveryFeeCentavos,
+    int? serviceFeeCentavos,
   }) {
     return CustomerOrderRecord(
       order: order ?? this.order,
@@ -57,6 +66,9 @@ class CustomerOrderRecord {
       etaLabel: etaLabel ?? this.etaLabel,
       milestones: milestones ?? this.milestones,
       isActive: isActive ?? this.isActive,
+      subtotalCentavos: subtotalCentavos ?? this.subtotalCentavos,
+      deliveryFeeCentavos: deliveryFeeCentavos ?? this.deliveryFeeCentavos,
+      serviceFeeCentavos: serviceFeeCentavos ?? this.serviceFeeCentavos,
     );
   }
 }
