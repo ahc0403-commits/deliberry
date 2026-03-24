@@ -1,21 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/router/route_names.dart';
+import '../../../core/session/customer_auth_adapter.dart';
 import '../../../core/session/customer_session_controller.dart';
 import '../../../core/theme/app_theme.dart';
 
 class AuthScreen extends StatelessWidget {
   const AuthScreen({super.key});
-
-  void _showUnavailable(BuildContext context, String provider) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          '$provider sign-in is not available yet.',
-        ),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -76,7 +67,7 @@ class AuthScreen extends StatelessWidget {
                 FilledButton.icon(
                   onPressed: () async {
                     final result = await CustomerSessionController.instance
-                        .beginPrimarySignIn();
+                        .beginSignIn(CustomerAuthProvider.zalo);
                     if (!context.mounted) return;
                     final message = result.message ??
                         'Zalo login is not fully configured yet.';
@@ -134,14 +125,40 @@ class AuthScreen extends StatelessWidget {
                 _SocialLoginButton(
                   icon: _GoogleIcon(),
                   label: 'Continue with Google',
-                  onTap: () => _showUnavailable(context, 'Google'),
+                  onTap: () async {
+                    final result = await CustomerSessionController.instance
+                        .beginSignIn(CustomerAuthProvider.google);
+                    if (!context.mounted) return;
+                    if (!result.isReady) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            result.message ?? 'Google sign-in is unavailable.',
+                          ),
+                        ),
+                      );
+                    }
+                  },
                 ),
                 const SizedBox(height: 12),
                 _SocialLoginButton(
                   icon: Icon(Icons.apple,
                       size: 22, color: Theme.of(context).colorScheme.onSurface),
                   label: 'Continue with Apple',
-                  onTap: () => _showUnavailable(context, 'Apple'),
+                  onTap: () async {
+                    final result = await CustomerSessionController.instance
+                        .beginSignIn(CustomerAuthProvider.apple);
+                    if (!context.mounted) return;
+                    if (!result.isReady) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            result.message ?? 'Apple sign-in is unavailable.',
+                          ),
+                        ),
+                      );
+                    }
+                  },
                 ),
                 const SizedBox(height: 32),
 

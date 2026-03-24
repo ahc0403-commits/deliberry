@@ -17,6 +17,8 @@ class CustomerAuthIdentity {
 }
 
 enum CustomerAuthProvider {
+  google,
+  apple,
   zalo,
   phone,
 }
@@ -39,7 +41,46 @@ class CustomerAuthStartResult {
 
 abstract class CustomerAuthAdapter {
   Future<CustomerAuthIdentity?> restoreAuthenticatedIdentity();
-  Future<CustomerAuthStartResult> beginPrimarySignIn();
+  Future<CustomerAuthStartResult> beginSignIn(CustomerAuthProvider provider);
   Future<CustomerAuthIdentity> completeAuthCallback(Uri callbackUri);
   Future<void> signOut();
+}
+
+class CustomerAuthRedirectConfig {
+  const CustomerAuthRedirectConfig({
+    required this.callbackScheme,
+    required this.callbackHost,
+    required this.callbackPath,
+  });
+
+  static const CustomerAuthRedirectConfig current = CustomerAuthRedirectConfig(
+    callbackScheme: String.fromEnvironment(
+      'AUTH_CALLBACK_SCHEME',
+      defaultValue: 'deliberry-customer-auth',
+    ),
+    callbackHost: String.fromEnvironment(
+      'AUTH_CALLBACK_HOST',
+      defaultValue: 'zalo-callback',
+    ),
+    callbackPath: String.fromEnvironment(
+      'AUTH_CALLBACK_PATH',
+      defaultValue: '/auth',
+    ),
+  );
+
+  final String callbackScheme;
+  final String callbackHost;
+  final String callbackPath;
+
+  Uri get callbackUri => Uri(
+        scheme: callbackScheme,
+        host: callbackHost,
+        path: callbackPath,
+      );
+
+  bool matches(Uri uri) {
+    return uri.scheme == callbackScheme &&
+        uri.host == callbackHost &&
+        uri.path == callbackPath;
+  }
 }

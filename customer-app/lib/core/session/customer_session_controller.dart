@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 
 import 'customer_auth_adapter.dart';
+import 'customer_multi_auth_adapter.dart';
 import 'customer_session_store.dart';
-import 'customer_zalo_auth_adapter.dart';
 
 enum CustomerAuthStatus {
   signedOut,
@@ -19,7 +19,7 @@ class CustomerSessionController extends ChangeNotifier {
       CustomerSessionController._();
   static final CustomerSessionStore _store =
       SharedPreferencesCustomerSessionStore();
-  static final CustomerAuthAdapter _authAdapter = CustomerZaloAuthAdapter();
+  static final CustomerAuthAdapter _authAdapter = CustomerMultiAuthAdapter();
 
   CustomerAuthStatus _status = CustomerAuthStatus.signedOut;
   String? _phoneNumber;
@@ -84,10 +84,16 @@ class CustomerSessionController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<CustomerAuthStartResult> beginPrimarySignIn() async {
+  Future<CustomerAuthStartResult> beginSignIn(
+    CustomerAuthProvider provider,
+  ) async {
     _lastAuthError = null;
     notifyListeners();
-    return _authAdapter.beginPrimarySignIn();
+    return _authAdapter.beginSignIn(provider);
+  }
+
+  Future<CustomerAuthStartResult> beginPrimarySignIn() async {
+    return beginSignIn(CustomerAuthProvider.zalo);
   }
 
   Future<void> handleAuthCallback(Uri callbackUri) async {

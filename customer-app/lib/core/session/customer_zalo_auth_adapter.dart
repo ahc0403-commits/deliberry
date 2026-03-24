@@ -10,7 +10,17 @@ class CustomerZaloAuthAdapter implements CustomerAuthAdapter {
   static const _functionName = 'customer-zalo-auth-exchange';
 
   @override
-  Future<CustomerAuthStartResult> beginPrimarySignIn() async {
+  Future<CustomerAuthStartResult> beginSignIn(
+    CustomerAuthProvider provider,
+  ) async {
+    if (provider != CustomerAuthProvider.zalo) {
+      return CustomerAuthStartResult(
+        provider: provider,
+        blockerCode: 'provider_not_supported',
+        message: 'Unsupported auth provider: $provider',
+      );
+    }
+
     if (!RuntimeBackendConfig.current.isConfigured) {
       return const CustomerAuthStartResult(
         provider: CustomerAuthProvider.zalo,
@@ -31,7 +41,7 @@ class CustomerZaloAuthAdapter implements CustomerAuthAdapter {
 
     return CustomerAuthStartResult(
       provider: CustomerAuthProvider.zalo,
-      authorizationUri: CustomerZaloAuthConfig.current.callbackUri,
+      authorizationUri: CustomerAuthRedirectConfig.current.callbackUri,
       blockerCode: 'zalo_launch_pending',
       message:
           'Zalo callback wiring is ready, but provider launch still requires app credentials and native SDK/browser handoff.',
@@ -40,7 +50,7 @@ class CustomerZaloAuthAdapter implements CustomerAuthAdapter {
 
   @override
   Future<CustomerAuthIdentity> completeAuthCallback(Uri callbackUri) async {
-    if (!CustomerZaloAuthConfig.current.matchesCallback(callbackUri)) {
+    if (!CustomerAuthRedirectConfig.current.matches(callbackUri)) {
       throw StateError(
         'Customer Zalo auth callback did not match the configured callback URI.',
       );
@@ -65,7 +75,7 @@ class CustomerZaloAuthAdapter implements CustomerAuthAdapter {
       _functionName,
       body: {
         'authorization_code': code,
-        'redirect_uri': CustomerZaloAuthConfig.current.callbackUri.toString(),
+        'redirect_uri': CustomerAuthRedirectConfig.current.callbackUri.toString(),
       },
     );
 
@@ -161,15 +171,15 @@ class CustomerZaloAuthConfig {
   static const CustomerZaloAuthConfig current = CustomerZaloAuthConfig(
     appId: String.fromEnvironment('ZALO_APP_ID', defaultValue: ''),
     callbackScheme: String.fromEnvironment(
-      'ZALO_CALLBACK_SCHEME',
+      'AUTH_CALLBACK_SCHEME',
       defaultValue: 'deliberry-customer-auth',
     ),
     callbackHost: String.fromEnvironment(
-      'ZALO_CALLBACK_HOST',
+      'AUTH_CALLBACK_HOST',
       defaultValue: 'zalo-callback',
     ),
     callbackPath: String.fromEnvironment(
-      'ZALO_CALLBACK_PATH',
+      'AUTH_CALLBACK_PATH',
       defaultValue: '/auth',
     ),
   );
