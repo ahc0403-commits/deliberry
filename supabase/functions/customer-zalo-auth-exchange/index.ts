@@ -14,6 +14,25 @@ type ExchangeRequest = {
   device_context?: Record<string, unknown>;
 };
 
+type ZaloTokenResponse = {
+  access_token?: string;
+  refresh_token?: string;
+  expires_in?: number;
+  error?: number | string;
+  error_name?: string;
+  error_message?: string;
+  message?: string;
+};
+
+type ZaloProfileResponse = {
+  id?: string;
+  name?: string;
+  phone?: string;
+  picture?: { data?: { url?: string } } | string;
+  error?: number | string;
+  message?: string;
+};
+
 function jsonResponse(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), {
     status,
@@ -22,6 +41,96 @@ function jsonResponse(status: number, body: Record<string, unknown>) {
       "Content-Type": "application/json",
     },
   });
+}
+
+function syntheticEmailFor(zaloUserId: string) {
+  const safeId = zaloUserId.replaceAll(/[^a-zA-Z0-9_-]/g, "");
+  return `zalo-${safeId}@customer.zalo.deliberry.local`;
+}
+
+async function deterministicPasswordFor(zaloUserId: string, secret: string) {
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(`${secret}:${zaloUserId}`),
+  );
+  const bytes = new Uint8Array(digest);
+  const base64 = btoa(String.fromCharCode(...bytes))
+    .replaceAll("+", "-")
+    .replaceAll("/", "_")
+    .replaceAll("=", "");
+  return `Za_${base64}_lo!`;
+}
+
+function resolveDisplayName(profile: ZaloProfileResponse, userId: string) {
+  const trimmed = profile.name?.trim();
+  if (trimmed && trimmed.length > 0) {
+    return trimmed;
+  }
+  return `Zalo User ${userId.slice(-6)}`;
+}
+
+async function exchangeAuthorizationCode(
+  payload: ExchangeRequest,
+  env: {
+    zaloAppId: string;
+    zaloAppSecret: string;
+  },
+) {
+  const form = new URLSearchParams({
+    app_id: env.zaloAppId,
+    app_secret: env.zaloAppSecret,
+    code: payload.authorization_code ?? "",
+    grant_type: "authorization_code",
+    redirect_uri: payload.redirect_uri ?? "",
+  });
+  if (payload.code_verifier?.trim()) {
+    form.set("code_verifier", payload.code_verifier.trim());
+  }
+
+  const response = await fetch("https://oauth.zaloapp.com/v4/access_token", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      secret_key: env.zaloAppSecret,
+    },
+    body: form.toString(),
+  });
+  const text = await response.text();
+  let json: ZaloTokenResponse;
+  try {
+    json = JSON.parse(text) as ZaloTokenResponse;
+  } catch {
+    throw new Error(`zalo_exchange_invalid_json:${text}`);
+  }
+
+  if (!response.ok || json.error != null || !json.access_token) {
+    throw new Error(
+      `zalo_exchange_failed:${json.error_name ?? json.error_message ?? json.message ?? response.status}`,
+    );
+  }
+
+  return json;
+}
+
+async function fetchZaloProfile(accessToken: string) {
+  const profileUrl = new URL("https://graph.zalo.me/v2.0/me");
+  profileUrl.searchParams.set("access_token", accessToken);
+  profileUrl.searchParams.set("fields", "id,name,picture,phone");
+
+  const response = await fetch(profileUrl);
+  const text = await response.text();
+  let json: ZaloProfileResponse;
+  try {
+    json = JSON.parse(text) as ZaloProfileResponse;
+  } catch {
+    throw new Error(`zalo_profile_invalid_json:${text}`);
+  }
+
+  if (!response.ok || json.error != null || !json.id) {
+    throw new Error(`zalo_profile_failed:${json.message ?? response.status}`);
+  }
+
+  return json;
 }
 
 Deno.serve(async (request) => {
@@ -85,34 +194,137 @@ Deno.serve(async (request) => {
     });
   }
 
-  const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
+  try {
+    const tokenResponse = await exchangeAuthorizationCode(payload, {
+      zaloAppId,
+      zaloAppSecret,
+    });
+    const profile = await fetchZaloProfile(tokenResponse.access_token!);
 
-  void supabaseAdmin;
-  void authorizationCode;
-  void payload.code_verifier;
-  void payload.device_context;
+    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
 
-  return jsonResponse(501, {
-    error_code: "provider_exchange_not_implemented",
-    message:
-      "Customer Zalo auth exchange contract is installed, but provider token exchange and session issuance are not implemented yet.",
-    request_contract: {
-      authorization_code: "string",
-      redirect_uri: "string",
-      code_verifier: "string | optional",
-      device_context: "object | optional",
-    },
-    response_contract: {
-      access_token: "string",
-      refresh_token: "string",
-      expires_in: "number",
-      actor_id: "string",
+    const zaloUserId = profile.id!;
+    const email = syntheticEmailFor(zaloUserId);
+    const password = await deterministicPasswordFor(zaloUserId, serviceRoleKey);
+    const displayName = resolveDisplayName(profile, zaloUserId);
+    const phoneNumber = profile.phone?.trim() || null;
+    const needsOnboarding = phoneNumber == null;
+
+    const { data: existingAuthUser, error: existingAuthUserError } =
+      await supabaseAdmin
+        .schema("auth")
+        .from("users")
+        .select("id")
+        .eq("email", email)
+        .maybeSingle();
+
+    if (existingAuthUserError) {
+      throw new Error(
+        `supabase_user_lookup_failed:${existingAuthUserError.message}`,
+      );
+    }
+
+    const userMetadata = {
+      display_name: displayName,
+      phone_number: phoneNumber,
+      provider: "zalo",
+      zalo_user_id: zaloUserId,
+      needs_onboarding: needsOnboarding,
+    };
+    const appMetadata = {
+      provider: "zalo",
+      providers: ["zalo"],
       actor_type: "customer",
-      is_new_customer: "boolean",
-      needs_onboarding: "boolean",
-      display_name: "string | null",
-    },
-  });
+      zalo_user_id: zaloUserId,
+    };
+
+    let authUserId = existingAuthUser?.id as string | undefined;
+    const isNewCustomer = authUserId == null;
+
+    if (authUserId == null) {
+      const { data, error } = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: userMetadata,
+        app_metadata: appMetadata,
+      });
+      if (error || data.user == null) {
+        throw new Error(
+          `supabase_user_create_failed:${error?.message ?? "unknown"}`,
+        );
+      }
+      authUserId = data.user.id;
+    } else {
+      const { error } = await supabaseAdmin.auth.admin.updateUserById(
+        authUserId,
+        {
+          email,
+          password,
+          user_metadata: userMetadata,
+          app_metadata: appMetadata,
+        },
+      );
+      if (error) {
+        throw new Error(`supabase_user_update_failed:${error.message}`);
+      }
+    }
+
+    const { error: actorProfileError } = await supabaseAdmin
+      .from("actor_profiles")
+      .upsert({
+        id: authUserId,
+        actor_type: "customer",
+        display_name: displayName,
+        email,
+        phone_number: phoneNumber,
+      });
+    if (actorProfileError) {
+      throw new Error(`profile_bootstrap_failed:${actorProfileError.message}`);
+    }
+
+    const sessionResponse = await fetch(
+      `${supabaseUrl}/auth/v1/token?grant_type=password`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: serviceRoleKey,
+          Authorization: `Bearer ${serviceRoleKey}`,
+        },
+        body: JSON.stringify({ email, password }),
+      },
+    );
+    const sessionText = await sessionResponse.text();
+    let sessionJson: Record<string, unknown>;
+    try {
+      sessionJson = JSON.parse(sessionText) as Record<string, unknown>;
+    } catch {
+      throw new Error(`supabase_session_invalid_json:${sessionText}`);
+    }
+
+    if (!sessionResponse.ok) {
+      throw new Error(
+        `supabase_session_create_failed:${String(sessionJson["msg"] ?? sessionResponse.status)}`,
+      );
+    }
+
+    return jsonResponse(200, {
+      access_token: sessionJson["access_token"],
+      refresh_token: sessionJson["refresh_token"],
+      expires_in: sessionJson["expires_in"],
+      actor_id: authUserId,
+      actor_type: "customer",
+      is_new_customer: isNewCustomer,
+      needs_onboarding: needsOnboarding,
+      display_name: displayName,
+    });
+  } catch (error) {
+    return jsonResponse(502, {
+      error_code: "provider_exchange_failed",
+      message: error instanceof Error ? error.message : "Unknown exchange failure",
+    });
+  }
 });

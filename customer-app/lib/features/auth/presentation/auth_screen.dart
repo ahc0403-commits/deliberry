@@ -69,11 +69,13 @@ class AuthScreen extends StatelessWidget {
                     final result = await CustomerSessionController.instance
                         .beginSignIn(CustomerAuthProvider.zalo);
                     if (!context.mounted) return;
-                    final message = result.message ??
-                        'Zalo login is not fully configured yet.';
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(message)),
-                    );
+                    if (!result.isReady) {
+                      final message = result.message ??
+                          'Zalo login is not available right now.';
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(message)),
+                      );
+                    }
                   },
                   icon: const Icon(Icons.chat_bubble_rounded, size: 20),
                   label: const Text('Continue with Zalo'),
