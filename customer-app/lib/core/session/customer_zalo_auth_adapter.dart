@@ -72,6 +72,7 @@ class CustomerZaloAuthAdapter implements CustomerAuthAdapter {
     final launched = await launchUrl(
       authorizationUri,
       mode: kIsWeb ? LaunchMode.platformDefault : LaunchMode.externalApplication,
+      webOnlyWindowName: kIsWeb ? '_self' : null,
     );
     if (!launched) {
       return CustomerAuthStartResult(
