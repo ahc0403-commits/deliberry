@@ -62,6 +62,31 @@ function buildAppRedirect(query: URLSearchParams) {
   return url;
 }
 
+function decodeWebReturnTo(state: string | null) {
+  if (!state) {
+    return null;
+  }
+
+  try {
+    const normalized = state.replaceAll("-", "+").replaceAll("_", "/");
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+    const decoded = JSON.parse(
+      Buffer.from(padded, "base64").toString("utf8"),
+    ) as { return_to?: string };
+    const returnTo = decoded.return_to?.trim();
+    if (!returnTo) {
+      return null;
+    }
+    const url = new URL(returnTo);
+    if (url.protocol !== "http:" && url.protocol !== "https:") {
+      return null;
+    }
+    return url;
+  } catch {
+    return null;
+  }
+}
+
 function htmlRedirect(target: URL, title: string) {
   const escapedTarget = target.toString().replaceAll("&", "&amp;");
   return new NextResponse(
@@ -411,6 +436,20 @@ export async function GET(request: NextRequest) {
     );
   }
   redirectQuery.set("provider", "zalo");
+
+  const webReturnTo = decodeWebReturnTo(query.get("state"));
+  if (webReturnTo != null) {
+    redirectQuery.forEach((value, key) => {
+      if (value.trim().length > 0) {
+        webReturnTo.searchParams.set(key, value);
+      }
+    });
+    return NextResponse.redirect(webReturnTo, {
+      headers: {
+        ...corsHeaders,
+      },
+    });
+  }
 
   return htmlRedirect(buildAppRedirect(redirectQuery), "Deliberry Zalo Sign-In");
 }

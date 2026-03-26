@@ -45,7 +45,12 @@ class CustomerZaloAuthAdapter implements CustomerAuthAdapter {
       );
     }
 
-    final state = _randomToken();
+    final state = kIsWeb
+        ? _webStateFor(
+            nonce: _randomToken(),
+            returnTo: Uri.base.toString(),
+          )
+        : _randomToken();
     final codeVerifier = _randomToken(length: 64);
     final codeChallenge = _codeChallengeFor(codeVerifier);
 
@@ -92,7 +97,7 @@ class CustomerZaloAuthAdapter implements CustomerAuthAdapter {
 
   @override
   Future<CustomerAuthIdentity> completeAuthCallback(Uri callbackUri) async {
-    if (!CustomerAuthRedirectConfig.current.matches(callbackUri)) {
+    if (!_matchesSupportedCallback(callbackUri)) {
       throw StateError(
         'Customer Zalo auth callback did not match the configured callback URI.',
       );
@@ -294,4 +299,32 @@ String _randomToken({int length = 43}) {
 String _codeChallengeFor(String verifier) {
   final digest = sha256.convert(utf8.encode(verifier));
   return base64Url.encode(digest.bytes).replaceAll('=', '');
+}
+
+String _webStateFor({
+  required String nonce,
+  required String returnTo,
+}) {
+  final payload = jsonEncode({
+    'nonce': nonce,
+    'return_to': returnTo,
+  });
+  return base64Url.encode(utf8.encode(payload)).replaceAll('=', '');
+}
+
+extension on CustomerZaloAuthAdapter {
+  bool _matchesSupportedCallback(Uri callbackUri) {
+    if (CustomerAuthRedirectConfig.current.matches(callbackUri)) {
+      return true;
+    }
+
+    if (!kIsWeb) {
+      return false;
+    }
+
+    final provider = callbackUri.queryParameters['provider']?.trim().toLowerCase();
+    return (callbackUri.scheme == 'http' || callbackUri.scheme == 'https') &&
+        provider == 'zalo' &&
+        callbackUri.queryParameters.containsKey('code');
+  }
 }
