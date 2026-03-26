@@ -5,7 +5,7 @@ export const metadata = {
   title: "Deliberry",
   description: "Public Website",
   other: {
-    "zalo-platform-site-verification": "PzwL3RVB91jirhL5xSPYRHv5q7VximKfCpav",
+    "zalo-platform-site-verification": "PzwL3RVB91jirhL5xSPYRHV5q7VximKfCpav",
   },
 };
 
