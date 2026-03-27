@@ -1,8 +1,7 @@
 import { ArrowRight, Headset, MessageSquareWarning, ShieldCheck, UserRoundSearch } from "lucide-react";
-import { adminQueryServices } from "../../../shared/data/admin-query-services";
+import type { SupportTicket } from "../../../shared/data/admin-mock-data";
 
-export function AdminCustomerServiceScreen() {
-  const { tickets } = adminQueryServices.getCustomerServiceData();
+export function AdminCustomerServiceScreen({ tickets }: { tickets: SupportTicket[] }) {
   const openTickets = tickets.filter((t) => t.status === "open").length;
   const inProgressTickets = tickets.filter((t) => t.status === "in_progress").length;
   const unassignedTickets = tickets.filter((t) => t.assignee === "Unassigned").length;
@@ -26,7 +25,7 @@ export function AdminCustomerServiceScreen() {
             <div className="oversight-note-label">Support mode</div>
             <div className="oversight-note-value">Workload visibility only</div>
             <p className="oversight-note-text">
-              Tickets are fixture-backed and agent actions remain non-operational in this phase. Use this view to inspect queue pressure and manual follow-up needs.
+              Tickets are persisted and agent actions remain non-operational in this phase. Use this view to inspect queue pressure and manual follow-up needs.
             </p>
           </div>
         </div>

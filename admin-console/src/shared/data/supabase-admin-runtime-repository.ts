@@ -1,13 +1,17 @@
 import "server-only";
 
 import type {
+  CustomerServiceData,
+  DisputesData,
   OrdersData,
   StoresData,
   UsersData,
 } from "./admin-repository";
 import type {
+  PlatformDispute,
   PlatformOrder,
   PlatformStore,
+  SupportTicket,
   PlatformUser,
 } from "./admin-mock-data";
 import type { MoneyAmount } from "../domain";
@@ -71,6 +75,62 @@ type OrderRow = {
               merchant_name: string | null;
             }[]
           | null;
+      }[]
+    | null;
+};
+
+type DisputeRow = {
+  id: string;
+  case_number: string;
+  category: PlatformDispute["category"];
+  priority: PlatformDispute["priority"];
+  status: PlatformDispute["status"];
+  description: string;
+  amount_centavos: number;
+  created_at: string;
+  orders:
+    | {
+        order_number: string | null;
+        customer_name: string | null;
+        stores:
+          | {
+              name: string | null;
+            }
+          | {
+              name: string | null;
+            }[]
+          | null;
+      }
+    | {
+        order_number: string | null;
+        customer_name: string | null;
+        stores:
+          | {
+              name: string | null;
+            }
+          | {
+              name: string | null;
+            }[]
+          | null;
+      }[]
+    | null;
+};
+
+type SupportTicketRow = {
+  id: string;
+  ticket_number: string;
+  subject: string;
+  category: SupportTicket["category"];
+  priority: SupportTicket["priority"];
+  status: SupportTicket["status"];
+  assignee_name: string;
+  created_at: string;
+  actor_profiles:
+    | {
+        display_name: string | null;
+      }
+    | {
+        display_name: string | null;
       }[]
     | null;
 };
@@ -264,6 +324,103 @@ export class SupabaseAdminRuntimeRepository {
     });
 
     return { orders };
+  }
+
+  async getDisputesData(): Promise<DisputesData> {
+    const supabase = createAdminServiceSupabaseClient();
+    const { data, error } = await supabase
+      .from("disputes")
+      .select(`
+        id,
+        case_number,
+        category,
+        priority,
+        status,
+        description,
+        amount_centavos,
+        created_at,
+        orders!disputes_order_id_fkey (
+          order_number,
+          customer_name,
+          stores!orders_store_id_fkey (
+            name
+          )
+        )
+      `)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    const disputes: PlatformDispute[] = ((data ?? []) as DisputeRow[]).map(
+      (row) => {
+        const order = Array.isArray(row.orders) ? row.orders[0] : row.orders;
+        const store = Array.isArray(order?.stores) ? order.stores[0] : order?.stores;
+
+        return {
+          id: row.id,
+          caseNumber: row.case_number,
+          customerName: order?.customer_name?.trim() || "Customer",
+          storeName: store?.name?.trim() || "Store",
+          orderId: order?.order_number?.trim() || row.id,
+          category: row.category,
+          priority: row.priority,
+          status: row.status,
+          createdAt: row.created_at,
+          description: row.description,
+          amount: row.amount_centavos as MoneyAmount,
+        };
+      },
+    );
+
+    return { disputes };
+  }
+
+  async getCustomerServiceData(): Promise<CustomerServiceData> {
+    const supabase = createAdminServiceSupabaseClient();
+    const { data, error } = await supabase
+      .from("support_tickets")
+      .select(`
+        id,
+        ticket_number,
+        subject,
+        category,
+        priority,
+        status,
+        assignee_name,
+        created_at,
+        actor_profiles!support_tickets_actor_id_fkey (
+          display_name
+        )
+      `)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    const tickets: SupportTicket[] = ((data ?? []) as SupportTicketRow[]).map(
+      (row) => {
+        const actor = Array.isArray(row.actor_profiles)
+          ? row.actor_profiles[0]
+          : row.actor_profiles;
+
+        return {
+          id: row.id,
+          ticketNumber: row.ticket_number,
+          customerName: actor?.display_name?.trim() || "Customer",
+          subject: row.subject,
+          category: row.category,
+          priority: row.priority,
+          status: row.status,
+          createdAt: row.created_at,
+          assignee: row.assignee_name,
+        };
+      },
+    );
+
+    return { tickets };
   }
 }
 

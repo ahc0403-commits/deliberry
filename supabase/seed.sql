@@ -624,3 +624,137 @@ set
   response_actor_id = excluded.response_actor_id,
   created_at = excluded.created_at,
   updated_at = timezone('utc', now());
+
+insert into public.disputes (
+  id,
+  case_number,
+  order_id,
+  store_id,
+  customer_actor_id,
+  category,
+  priority,
+  status,
+  description,
+  amount_centavos,
+  created_at
+)
+values
+  (
+    'disp-demo-001',
+    'DSP-401',
+    'ord-demo-001',
+    'demo-store',
+    '22222222-2222-4222-8222-222222222222',
+    'quality',
+    'high',
+    'open',
+    'Received the wrong main dish for the order.',
+    560000,
+    timezone('utc', now()) - interval '30 minutes'
+  ),
+  (
+    'disp-demo-002',
+    'DSP-400',
+    'ord-demo-002',
+    'demo-store',
+    '33333333-3333-4333-8333-333333333333',
+    'missing_items',
+    'medium',
+    'investigating',
+    'One side item was missing from the bag.',
+    90000,
+    timezone('utc', now()) - interval '1 day'
+  ),
+  (
+    'disp-demo-003',
+    'DSP-399',
+    'ord-demo-003',
+    'demo-store',
+    '22222222-2222-4222-8222-222222222222',
+    'delivery',
+    'low',
+    'resolved',
+    'Delivery ETA slipped significantly during peak hour.',
+    710000,
+    timezone('utc', now()) - interval '2 days'
+  )
+on conflict (id) do update
+set
+  case_number = excluded.case_number,
+  order_id = excluded.order_id,
+  store_id = excluded.store_id,
+  customer_actor_id = excluded.customer_actor_id,
+  category = excluded.category,
+  priority = excluded.priority,
+  status = excluded.status,
+  description = excluded.description,
+  amount_centavos = excluded.amount_centavos,
+  created_at = excluded.created_at,
+  updated_at = timezone('utc', now());
+
+insert into public.support_tickets (
+  id,
+  ticket_number,
+  actor_id,
+  order_id,
+  store_id,
+  subject,
+  category,
+  priority,
+  status,
+  assignee_name,
+  created_at
+)
+values
+  (
+    'ticket-demo-001',
+    'TKT-1892',
+    '22222222-2222-4222-8222-222222222222',
+    'ord-demo-001',
+    'demo-store',
+    'Need help with the order contents',
+    'order_issue',
+    'high',
+    'open',
+    'Unassigned',
+    timezone('utc', now()) - interval '20 minutes'
+  ),
+  (
+    'ticket-demo-002',
+    'TKT-1891',
+    '11111111-1111-4111-8111-111111111111',
+    null,
+    'demo-store',
+    'Store hours need updating',
+    'merchant_complaint',
+    'medium',
+    'in_progress',
+    'Agent Rosa',
+    timezone('utc', now()) - interval '5 hours'
+  ),
+  (
+    'ticket-demo-003',
+    'TKT-1890',
+    '33333333-3333-4333-8333-333333333333',
+    'ord-demo-002',
+    'demo-store',
+    'Account phone number needs correction',
+    'account',
+    'low',
+    'awaiting_reply',
+    'Agent Marco',
+    timezone('utc', now()) - interval '1 day'
+  )
+on conflict (id) do update
+set
+  ticket_number = excluded.ticket_number,
+  actor_id = excluded.actor_id,
+  order_id = excluded.order_id,
+  store_id = excluded.store_id,
+  subject = excluded.subject,
+  category = excluded.category,
+  priority = excluded.priority,
+  status = excluded.status,
+  assignee_name = excluded.assignee_name,
+  created_at = excluded.created_at,
+  updated_at = timezone('utc', now());

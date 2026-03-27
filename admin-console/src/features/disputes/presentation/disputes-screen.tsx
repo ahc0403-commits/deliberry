@@ -1,9 +1,8 @@
 import { AlertTriangle, ArrowRight, FileWarning, ShieldAlert, Wallet } from "lucide-react";
-import { adminQueryServices } from "../../../shared/data/admin-query-services";
 import { formatMoney } from "../../../shared/domain";
+import type { PlatformDispute } from "../../../shared/data/admin-mock-data";
 
-export function AdminDisputesScreen() {
-  const { disputes } = adminQueryServices.getDisputesData();
+export function AdminDisputesScreen({ disputes }: { disputes: PlatformDispute[] }) {
   const openCases = disputes.filter((d) => d.status === "open").length;
   const escalatedCases = disputes.filter((d) => d.status === "escalated").length;
   const highPriorityCases = disputes.filter((d) => d.priority === "high").length;
@@ -26,7 +25,7 @@ export function AdminDisputesScreen() {
             <div className="oversight-note-label">Case handling mode</div>
             <div className="oversight-note-value">Manual resolution outside console</div>
             <p className="oversight-note-text">
-              The queue is fixture-backed. Action controls stay in preview-only mode so operators can review current pressure without fake completion.
+              The queue is persisted. Action controls stay in preview-only mode so operators can review current pressure without fake completion.
             </p>
           </div>
         </div>
