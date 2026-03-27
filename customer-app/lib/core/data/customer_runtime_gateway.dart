@@ -65,6 +65,7 @@ class CustomerOrderCreateInput {
     required this.storeId,
     required this.storeName,
     required this.customerPhone,
+    required this.paymentStatus,
     required this.paymentMethod,
     required this.totalCentavos,
     required this.itemCount,
@@ -80,6 +81,7 @@ class CustomerOrderCreateInput {
   final String storeId;
   final String storeName;
   final String customerPhone;
+  final String paymentStatus;
   final String paymentMethod;
   final int totalCentavos;
   final int itemCount;
@@ -100,6 +102,7 @@ class PersistedCustomerOrder {
     required this.itemCount,
     required this.createdAtUtc,
     required this.storeName,
+    required this.paymentStatus,
     required this.paymentMethod,
     required this.estimatedDeliveryAtUtc,
   });
@@ -111,6 +114,7 @@ class PersistedCustomerOrder {
   final int itemCount;
   final String createdAtUtc;
   final String storeName;
+  final String paymentStatus;
   final String paymentMethod;
   final String estimatedDeliveryAtUtc;
 }

@@ -23,6 +23,7 @@ class CustomerOrderRecord {
     required this.address,
     required this.instructions,
     required this.paymentLabel,
+    required this.paymentStatusLabel,
     required this.statusHeadline,
     required this.etaLabel,
     required this.milestones,
@@ -38,6 +39,7 @@ class CustomerOrderRecord {
   final MockAddress address;
   final String instructions;
   final String paymentLabel;
+  final String paymentStatusLabel;
   final String statusHeadline;
   final String etaLabel;
   final List<OrderMilestone> milestones;
@@ -53,6 +55,7 @@ class CustomerOrderRecord {
     MockAddress? address,
     String? instructions,
     String? paymentLabel,
+    String? paymentStatusLabel,
     String? statusHeadline,
     String? etaLabel,
     List<OrderMilestone>? milestones,
@@ -68,6 +71,7 @@ class CustomerOrderRecord {
       address: address ?? this.address,
       instructions: instructions ?? this.instructions,
       paymentLabel: paymentLabel ?? this.paymentLabel,
+      paymentStatusLabel: paymentStatusLabel ?? this.paymentStatusLabel,
       statusHeadline: statusHeadline ?? this.statusHeadline,
       etaLabel: etaLabel ?? this.etaLabel,
       milestones: milestones ?? this.milestones,
@@ -405,6 +409,7 @@ class CustomerRuntimeController extends ChangeNotifier {
         customerPhone: CustomerSessionController.instance.phoneNumber ??
             CustomerSessionController.instance.identity?.phoneNumber ??
             '',
+        paymentStatus: 'pending',
         paymentMethod: paymentMethod,
         totalCentavos: cartTotal,
         itemCount: cartItemCount,

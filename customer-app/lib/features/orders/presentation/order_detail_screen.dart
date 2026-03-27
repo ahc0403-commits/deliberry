@@ -287,6 +287,12 @@ class OrderDetailScreen extends StatelessWidget {
                   label: 'Payment method',
                   value: record.paymentLabel,
                 ),
+                const SizedBox(height: 12),
+                _InfoRow(
+                  icon: Icons.receipt_long_outlined,
+                  label: 'Payment status',
+                  value: record.paymentStatusLabel,
+                ),
                 if (record.instructions.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   _InfoRow(

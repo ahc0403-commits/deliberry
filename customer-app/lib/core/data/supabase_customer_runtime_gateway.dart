@@ -335,6 +335,7 @@ class SupabaseCustomerRuntimeGateway implements CustomerRuntimeGateway {
           customer_name,
           customer_phone,
           status,
+          payment_status,
           payment_method,
           total_centavos,
           created_at,
@@ -426,6 +427,8 @@ class SupabaseCustomerRuntimeGateway implements CustomerRuntimeGateway {
       address: address,
       instructions: (row['notes'] as String?) ?? '',
       paymentLabel: _paymentLabel((row['payment_method'] as String?) ?? 'cash'),
+      paymentStatusLabel:
+          _paymentStatusLabel((row['payment_status'] as String?) ?? 'pending'),
       statusHeadline: _statusHeadline(status),
       etaLabel: _etaLabel(status, estimatedDeliveryAt),
       milestones: _buildMilestones(
@@ -561,6 +564,25 @@ class SupabaseCustomerRuntimeGateway implements CustomerRuntimeGateway {
         return 'Digital wallet';
       default:
         return paymentMethod;
+    }
+  }
+
+  String _paymentStatusLabel(String paymentStatus) {
+    switch (paymentStatus) {
+      case 'pending':
+        return 'Pending payment';
+      case 'captured':
+        return 'Payment captured';
+      case 'settled':
+        return 'Paid';
+      case 'failed':
+        return 'Payment failed';
+      case 'refunded':
+        return 'Refunded';
+      case 'partially_refunded':
+        return 'Partially refunded';
+      default:
+        return paymentStatus;
     }
   }
 
@@ -904,6 +926,7 @@ class SupabaseCustomerRuntimeGateway implements CustomerRuntimeGateway {
             'customer_name': customerName,
             'customer_phone': input.customerPhone,
             'status': 'pending',
+            'payment_status': input.paymentStatus,
             'payment_method': input.paymentMethod,
             'total_centavos': input.totalCentavos,
             'currency': 'USD',
@@ -925,7 +948,7 @@ class SupabaseCustomerRuntimeGateway implements CustomerRuntimeGateway {
             'created_at': now.toIso8601String(),
           })
           .select(
-            'id, order_number, status, total_centavos, created_at, payment_method, estimated_delivery_at',
+            'id, order_number, status, payment_status, total_centavos, created_at, payment_method, estimated_delivery_at',
           )
           .single());
 
@@ -955,6 +978,8 @@ class SupabaseCustomerRuntimeGateway implements CustomerRuntimeGateway {
         createdAtUtc:
             (orderRow['created_at'] as String?) ?? now.toIso8601String(),
         storeName: (orderRow['store_name'] as String?) ?? input.storeName,
+        paymentStatus:
+            (orderRow['payment_status'] as String?) ?? input.paymentStatus,
         paymentMethod:
             (orderRow['payment_method'] as String?) ?? input.paymentMethod,
         estimatedDeliveryAtUtc:
