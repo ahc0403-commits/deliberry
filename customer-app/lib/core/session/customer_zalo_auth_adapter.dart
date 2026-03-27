@@ -45,13 +45,15 @@ class CustomerZaloAuthAdapter implements CustomerAuthAdapter {
       );
     }
 
+    final nonce = _randomToken();
+    final codeVerifier = _randomToken(length: 64);
     final state = kIsWeb
         ? _webStateFor(
-            nonce: _randomToken(),
+            nonce: nonce,
             returnTo: Uri.base.toString(),
+            codeVerifier: codeVerifier,
           )
-        : _randomToken();
-    final codeVerifier = _randomToken(length: 64);
+        : nonce;
     final codeChallenge = _codeChallengeFor(codeVerifier);
 
     await CustomerAuthAttemptStore.write(
@@ -111,15 +113,16 @@ class CustomerZaloAuthAdapter implements CustomerAuthAdapter {
     }
 
     final state = callbackUri.queryParameters['state']?.trim();
+    final stateRecovery = kIsWeb ? _decodeWebState(state) : null;
     final attempt = await CustomerAuthAttemptStore.read();
-    if (attempt == null || attempt.provider != CustomerAuthProvider.zalo) {
+    final recoveredAttempt = _resolveAttempt(
+      storedAttempt: attempt,
+      callbackState: state,
+      stateRecovery: stateRecovery,
+    );
+    if (recoveredAttempt == null) {
       throw StateError(
         'Customer Zalo auth callback is missing the matching auth attempt.',
-      );
-    }
-    if (state == null || state.isEmpty || state != attempt.state) {
-      throw StateError(
-        'Customer Zalo auth callback state did not match the pending auth attempt.',
       );
     }
     await CustomerAuthAttemptStore.clear();
@@ -142,7 +145,7 @@ class CustomerZaloAuthAdapter implements CustomerAuthAdapter {
       body: jsonEncode({
         'authorization_code': code,
         'redirect_uri': CustomerZaloAuthConfig.current.redirectUri,
-        'code_verifier': attempt.codeVerifier,
+        'code_verifier': recoveredAttempt.codeVerifier,
         'device_context': {
           'platform': defaultTargetPlatform.name,
           'runtime': kIsWeb ? 'web' : 'native',
@@ -304,12 +307,88 @@ String _codeChallengeFor(String verifier) {
 String _webStateFor({
   required String nonce,
   required String returnTo,
+  required String codeVerifier,
 }) {
   final payload = jsonEncode({
     'nonce': nonce,
     'return_to': returnTo,
+    'code_verifier': codeVerifier,
   });
   return base64Url.encode(utf8.encode(payload)).replaceAll('=', '');
+}
+
+_WebStateRecovery? _decodeWebState(String? state) {
+  if (state == null || state.isEmpty) {
+    return null;
+  }
+
+  try {
+    final normalized = state.replaceAll('-', '+').replaceAll('_', '/');
+    final padded = normalized.padRight(
+      normalized.length + ((4 - normalized.length % 4) % 4),
+      '=',
+    );
+    final payload = jsonDecode(
+      utf8.decode(base64.decode(padded)),
+    );
+    if (payload is! Map<String, dynamic>) {
+      return null;
+    }
+
+    final nonce = payload['nonce'];
+    final codeVerifier = payload['code_verifier'];
+    if (nonce is! String ||
+        nonce.isEmpty ||
+        codeVerifier is! String ||
+        codeVerifier.isEmpty) {
+      return null;
+    }
+
+    return _WebStateRecovery(
+      nonce: nonce,
+      codeVerifier: codeVerifier,
+    );
+  } catch (_) {
+    return null;
+  }
+}
+
+CustomerAuthAttempt? _resolveAttempt({
+  required CustomerAuthAttempt? storedAttempt,
+  required String? callbackState,
+  required _WebStateRecovery? stateRecovery,
+}) {
+  if (storedAttempt != null &&
+      storedAttempt.provider == CustomerAuthProvider.zalo &&
+      callbackState != null &&
+      callbackState.isNotEmpty &&
+      callbackState == storedAttempt.state) {
+    return storedAttempt;
+  }
+
+  if (!kIsWeb || callbackState == null || callbackState.isEmpty) {
+    return null;
+  }
+
+  if (stateRecovery == null) {
+    return null;
+  }
+
+  return CustomerAuthAttempt(
+    provider: CustomerAuthProvider.zalo,
+    state: callbackState,
+    codeVerifier: stateRecovery.codeVerifier,
+  );
+}
+
+class _WebStateRecovery {
+  const _WebStateRecovery({
+    required this.nonce,
+    required this.codeVerifier,
+  });
+
+  final String nonce;
+  final String codeVerifier;
 }
 
 extension on CustomerZaloAuthAdapter {
