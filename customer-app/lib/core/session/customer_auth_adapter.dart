@@ -19,6 +19,7 @@ class CustomerAuthIdentity {
 enum CustomerAuthProvider {
   google,
   apple,
+  kakao,
   zalo,
   phone,
 }

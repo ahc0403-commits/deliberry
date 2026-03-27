@@ -9,7 +9,8 @@ class CustomerSupabaseOAuthAdapter {
 
   bool supports(CustomerAuthProvider provider) {
     return provider == CustomerAuthProvider.google ||
-        provider == CustomerAuthProvider.apple;
+        provider == CustomerAuthProvider.apple ||
+        provider == CustomerAuthProvider.kakao;
   }
 
   Future<CustomerAuthStartResult> beginSignIn(
@@ -42,10 +43,15 @@ class CustomerSupabaseOAuthAdapter {
       );
     }
 
+    final oauthProvider = switch (provider) {
+      CustomerAuthProvider.google => OAuthProvider.google,
+      CustomerAuthProvider.apple => OAuthProvider.apple,
+      CustomerAuthProvider.kakao => OAuthProvider.kakao,
+      _ => OAuthProvider.google,
+    };
+
     await client.auth.signInWithOAuth(
-      provider == CustomerAuthProvider.google
-          ? OAuthProvider.google
-          : OAuthProvider.apple,
+      oauthProvider,
       redirectTo: CustomerAuthRedirectConfig.current.callbackUri.toString(),
     );
 
@@ -113,6 +119,7 @@ class CustomerSupabaseOAuthAdapter {
     final provider = switch (providerName) {
       'google' => CustomerAuthProvider.google,
       'apple' => CustomerAuthProvider.apple,
+      'kakao' => CustomerAuthProvider.kakao,
       _ => CustomerAuthProvider.google,
     };
 

@@ -162,6 +162,25 @@ class AuthScreen extends StatelessWidget {
                     }
                   },
                 ),
+                const SizedBox(height: 12),
+                _SocialLoginButton(
+                  icon: const _KakaoIcon(),
+                  label: 'Continue with Kakao',
+                  onTap: () async {
+                    final result = await CustomerSessionController.instance
+                        .beginSignIn(CustomerAuthProvider.kakao);
+                    if (!context.mounted) return;
+                    if (!result.isReady) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            result.message ?? 'Kakao sign-in is unavailable.',
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                ),
                 const SizedBox(height: 32),
 
                 // Guest option
@@ -342,4 +361,23 @@ class _GoogleIconPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _KakaoIcon extends StatelessWidget {
+  const _KakaoIcon();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 22,
+      height: 22,
+      decoration: const BoxDecoration(
+        color: Color(0xFFFEE500),
+        shape: BoxShape.circle,
+      ),
+      child: const Center(
+        child: Icon(Icons.chat_bubble, size: 13, color: Color(0xFF3C1E1E)),
+      ),
+    );
+  }
 }
