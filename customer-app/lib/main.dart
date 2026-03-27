@@ -10,9 +10,24 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await CustomerSupabaseClient.ensureInitialized();
   await CustomerSessionController.instance.restore();
-  if (kIsWeb && Uri.base.queryParameters['provider'] == 'zalo') {
-    await CustomerSessionController.instance.handleAuthCallback(Uri.base);
+  final startupWebCallback =
+      kIsWeb && Uri.base.queryParameters['provider'] == 'zalo'
+          ? Uri.base
+          : null;
+
+  runApp(const DeliberryApp());
+
+  if (startupWebCallback != null) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      CustomerSessionController.instance.handleAuthCallback(startupWebCallback);
+    });
+    return;
   }
+
+  if (kIsWeb) {
+    return;
+  }
+
   final appLinks = AppLinks();
   final initialLink = await appLinks.getInitialLink();
   if (initialLink != null) {
@@ -21,5 +36,4 @@ Future<void> main() async {
   appLinks.uriLinkStream.listen((uri) {
     CustomerSessionController.instance.handleAuthCallback(uri);
   });
-  runApp(const DeliberryApp());
 }
