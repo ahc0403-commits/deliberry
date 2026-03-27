@@ -125,45 +125,6 @@ class AuthScreen extends StatelessWidget {
 
                 // Social login options
                 _SocialLoginButton(
-                  icon: _GoogleIcon(),
-                  label: 'Continue with Google',
-                  onTap: () async {
-                    final result = await CustomerSessionController.instance
-                        .beginSignIn(CustomerAuthProvider.google);
-                    if (!context.mounted) return;
-                    if (!result.isReady) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            result.message ?? 'Google sign-in is unavailable.',
-                          ),
-                        ),
-                      );
-                    }
-                  },
-                ),
-                const SizedBox(height: 12),
-                _SocialLoginButton(
-                  icon: Icon(Icons.apple,
-                      size: 22, color: Theme.of(context).colorScheme.onSurface),
-                  label: 'Continue with Apple',
-                  onTap: () async {
-                    final result = await CustomerSessionController.instance
-                        .beginSignIn(CustomerAuthProvider.apple);
-                    if (!context.mounted) return;
-                    if (!result.isReady) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            result.message ?? 'Apple sign-in is unavailable.',
-                          ),
-                        ),
-                      );
-                    }
-                  },
-                ),
-                const SizedBox(height: 12),
-                _SocialLoginButton(
                   icon: const _KakaoIcon(),
                   label: 'Continue with Kakao',
                   onTap: () async {
@@ -282,85 +243,6 @@ class _SocialLoginButton extends StatelessWidget {
       ),
     );
   }
-}
-
-class _GoogleIcon extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 22,
-      height: 22,
-      child: CustomPaint(painter: _GoogleIconPainter()),
-    );
-  }
-}
-
-class _GoogleIconPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final cx = size.width / 2;
-    final cy = size.height / 2;
-    final r = size.width / 2;
-
-    // Simplified G shape using arcs
-    final paint = Paint()..style = PaintingStyle.fill;
-
-    // Blue segment
-    paint.color = const Color(0xFF4285F4);
-    canvas.drawArc(
-      Rect.fromCircle(center: Offset(cx, cy), radius: r),
-      -0.52,
-      1.57,
-      true,
-      paint,
-    );
-
-    // Red segment
-    paint.color = const Color(0xFFEA4335);
-    canvas.drawArc(
-      Rect.fromCircle(center: Offset(cx, cy), radius: r),
-      -2.09,
-      1.57,
-      true,
-      paint,
-    );
-
-    // Yellow segment
-    paint.color = const Color(0xFFFBBC05);
-    canvas.drawArc(
-      Rect.fromCircle(center: Offset(cx, cy), radius: r),
-      2.62,
-      1.57,
-      true,
-      paint,
-    );
-
-    // Green segment
-    paint.color = const Color(0xFF34A853);
-    canvas.drawArc(
-      Rect.fromCircle(center: Offset(cx, cy), radius: r),
-      1.05,
-      1.57,
-      true,
-      paint,
-    );
-
-    // White center circle
-    paint.color = Colors.white;
-    canvas.drawCircle(Offset(cx, cy), r * 0.6, paint);
-
-    // White G bar
-    final barPaint = Paint()
-      ..color = const Color(0xFF4285F4)
-      ..style = PaintingStyle.fill;
-    canvas.drawRect(
-      Rect.fromLTWH(cx, cy - r * 0.15, r * 0.9, r * 0.3),
-      barPaint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class _KakaoIcon extends StatelessWidget {

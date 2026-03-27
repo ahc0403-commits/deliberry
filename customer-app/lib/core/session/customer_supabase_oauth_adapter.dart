@@ -9,9 +9,7 @@ class CustomerSupabaseOAuthAdapter {
   const CustomerSupabaseOAuthAdapter();
 
   bool supports(CustomerAuthProvider provider) {
-    return provider == CustomerAuthProvider.google ||
-        provider == CustomerAuthProvider.apple ||
-        provider == CustomerAuthProvider.kakao;
+    return provider == CustomerAuthProvider.kakao;
   }
 
   Future<CustomerAuthStartResult> beginSignIn(
@@ -45,10 +43,8 @@ class CustomerSupabaseOAuthAdapter {
     }
 
     final oauthProvider = switch (provider) {
-      CustomerAuthProvider.google => OAuthProvider.google,
-      CustomerAuthProvider.apple => OAuthProvider.apple,
       CustomerAuthProvider.kakao => OAuthProvider.kakao,
-      _ => OAuthProvider.google,
+      _ => OAuthProvider.kakao,
     };
 
     final redirectTo = kIsWeb
@@ -122,10 +118,8 @@ class CustomerSupabaseOAuthAdapter {
     final displayName = (userMetadata?['display_name'] as String?)?.trim();
     final providerName = (appMetadata['provider'] as String?)?.toLowerCase();
     final provider = switch (providerName) {
-      'google' => CustomerAuthProvider.google,
-      'apple' => CustomerAuthProvider.apple,
       'kakao' => CustomerAuthProvider.kakao,
-      _ => CustomerAuthProvider.google,
+      _ => CustomerAuthProvider.kakao,
     };
 
     return CustomerAuthIdentity(
