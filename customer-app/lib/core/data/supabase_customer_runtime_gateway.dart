@@ -896,39 +896,42 @@ class SupabaseCustomerRuntimeGateway implements CustomerRuntimeGateway {
         'updated_at': now.toIso8601String(),
       });
 
-      final orderRow = (await client.rpc(
-        'create_order_with_audit',
-        params: {
-          'p_order_id': orderId,
-          'p_order_number': orderNumber,
-          'p_customer_actor_id': user.id,
-          'p_actor_type': actorType,
-          'p_store_id': input.storeId,
-          'p_store_name': input.storeName,
-          'p_customer_name': customerName,
-          'p_customer_phone': input.customerPhone,
-          'p_payment_method': input.paymentMethod,
-          'p_total_centavos': input.totalCentavos,
-          'p_currency': 'USD',
-          'p_item_count': input.itemCount,
-          'p_subtotal_centavos': input.subtotalCentavos,
-          'p_delivery_fee_centavos': input.deliveryFeeCentavos,
-          'p_delivery_address': input.deliveryAddress,
-          'p_notes': input.instructions.trim(),
-          'p_estimated_delivery_at': input.estimatedDeliveryAtUtc,
-          'p_line_items_summary': input.lineItems
-              .map(
-                (item) => {
-                  'name': item.name,
-                  'quantity': item.quantity,
-                  'unit_price_centavos': item.unitPriceCentavos,
-                  'modifiers': item.modifiers,
-                },
-              )
-              .toList(),
-          'p_created_at': now.toIso8601String(),
-        },
-      )) as Map<String, dynamic>;
+      final orderRow = Map<String, dynamic>.from(await client
+          .from('orders')
+          .insert({
+            'id': orderId,
+            'order_number': orderNumber,
+            'customer_actor_id': user.id,
+            'store_id': input.storeId,
+            'store_name': input.storeName,
+            'customer_name': customerName,
+            'customer_phone': input.customerPhone,
+            'status': 'pending',
+            'payment_method': input.paymentMethod,
+            'total_centavos': input.totalCentavos,
+            'currency': 'USD',
+            'item_count': input.itemCount,
+            'subtotal_centavos': input.subtotalCentavos,
+            'delivery_fee_centavos': input.deliveryFeeCentavos,
+            'delivery_address': input.deliveryAddress,
+            'notes': input.instructions.trim(),
+            'estimated_delivery_at': input.estimatedDeliveryAtUtc,
+            'line_items_summary': input.lineItems
+                .map(
+                  (item) => {
+                    'name': item.name,
+                    'quantity': item.quantity,
+                    'unit_price_centavos': item.unitPriceCentavos,
+                    'modifiers': item.modifiers,
+                  },
+                )
+                .toList(),
+            'created_at': now.toIso8601String(),
+          })
+          .select(
+            'id, order_number, status, total_centavos, item_count, created_at, store_name, payment_method, estimated_delivery_at',
+          )
+          .single());
 
       try {
         await observability.recordEvent(

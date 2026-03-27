@@ -1,8 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
+import '../backend/runtime_backend_config.dart';
 import '../session/customer_session_controller.dart';
+import '../supabase/supabase_client.dart';
 import '../theme/app_theme.dart';
+import 'customer_runtime_gateway.dart';
 import 'mock_data.dart';
+import 'supabase_customer_runtime_gateway.dart';
 
 enum CartAddOutcome {
   added,
@@ -93,9 +99,13 @@ class CustomerRuntimeController extends ChangeNotifier {
     _searchQuery = '';
     _filterSelections = Map<String, int>.from(_defaultFilterSelections);
     _cartItems = _cloneCartItems(MockData.cartItems);
-    _selectedStoreId = _cartItems.isEmpty ? null : MockData.stores.first.id;
+    _stores = List<MockStore>.from(MockData.stores);
+    _selectedStoreId = _cartItems.isEmpty ? null : _stores.first.id;
     _addresses = _cloneAddresses(MockData.addresses);
-    _seedOrders();
+    _activeOrderRecords = const <CustomerOrderRecord>[];
+    _pastOrderRecords = const <CustomerOrderRecord>[];
+    CustomerSessionController.instance.addListener(_handleSessionChanged);
+    unawaited(refreshPersistedRuntime());
   }
 
   static final CustomerRuntimeController instance =
@@ -135,9 +145,14 @@ class CustomerRuntimeController extends ChangeNotifier {
   int _promoDiscount = 0;
   late List<CustomerOrderRecord> _activeOrderRecords;
   late List<CustomerOrderRecord> _pastOrderRecords;
-  int _nextOrderNumber = 2900;
   late List<MockAddress> _addresses;
   int _nextAddressId = 100;
+  late List<MockStore> _stores;
+  final CustomerRuntimeGateway _gateway = const SupabaseCustomerRuntimeGateway();
+  bool _isHydratingPersistedRuntime = false;
+  bool _persistedRuntimeLoaded = false;
+  bool _usesPersistedStoreData = false;
+  String? _lastRuntimeBlocker;
 
   List<String> get recentSearches => List.unmodifiable(_recentSearches);
   String get searchQuery => _searchQuery;
@@ -152,6 +167,12 @@ class CustomerRuntimeController extends ChangeNotifier {
   List<MockOrder> get pastOrders =>
       _pastOrderRecords.map((record) => record.order).toList();
   List<MockAddress> get addresses => List.unmodifiable(_addresses);
+  List<MockStore> get stores => List.unmodifiable(_stores);
+  List<MockStore> get featuredStores =>
+      _stores.where((store) => store.isFeatured).toList();
+  String? get lastRuntimeBlocker => _lastRuntimeBlocker;
+  bool get usesPersistedStoreData => _usesPersistedStoreData;
+  bool get hasPersistedRuntimeLoaded => _persistedRuntimeLoaded;
 
   MockAddress? get deliveryAddress {
     if (_addresses.isEmpty) return null;
@@ -186,14 +207,14 @@ class CustomerRuntimeController extends ChangeNotifier {
   }
 
   MockStore findStoreById(String id) {
-    return MockData.stores.firstWhere(
+    return _stores.firstWhere(
       (store) => store.id == id,
-      orElse: () => MockData.stores.first,
+      orElse: () => _stores.isNotEmpty ? _stores.first : MockData.stores.first,
     );
   }
 
   MockStore resolveStore([String? storeId]) {
-    final resolvedId = storeId ?? _selectedStoreId ?? MockData.stores.first.id;
+    final resolvedId = storeId ?? _selectedStoreId ?? _stores.first.id;
     return findStoreById(resolvedId);
   }
 
@@ -320,79 +341,71 @@ class CustomerRuntimeController extends ChangeNotifier {
     notifyListeners();
   }
 
-  CustomerOrderRecord? submitOrder({
+  Future<CustomerOrderRecord?> submitOrder({
     required String instructions,
     required int paymentMethodIndex,
-  }) {
+  }) async {
     // R-024: Order placement requires authentication. Guests must not place orders.
-    if (CustomerSessionController.instance.isGuest) {
+    if (CustomerSessionController.instance.isGuest ||
+        !CustomerSessionController.instance.hasSupabaseBackedSession) {
+      _lastRuntimeBlocker = 'authenticated_customer_session_required';
+      notifyListeners();
       return null;
     }
 
     final store = selectedStore;
     final address = deliveryAddress;
     if (store == null || _cartItems.isEmpty || address == null) {
+      _lastRuntimeBlocker = 'checkout_input_missing';
       return null;
     }
 
     final now = DateTime.now().toUtc();
-    final order = MockOrder(
-      id: 'ORD-${_nextOrderNumber++}',
-      storeName: store.name,
-      status: 'preparing',
-      total: cartTotal,
-      itemCount: cartItemCount,
-      createdAt: now.toIso8601String(),
-      statusColor: AppTheme.secondaryColor,
+    final paymentMethod = paymentMethodIndex == 0 ? 'cash' : 'card';
+    final created = await _gateway.createOrder(
+      CustomerOrderCreateInput(
+        traceId: 'cust-${now.microsecondsSinceEpoch}',
+        storeId: store.id,
+        storeName: store.name,
+        customerPhone: CustomerSessionController.instance.phoneNumber ??
+            CustomerSessionController.instance.identity?.phoneNumber ??
+            '',
+        paymentMethod: paymentMethod,
+        totalCentavos: cartTotal,
+        itemCount: cartItemCount,
+        subtotalCentavos: cartSubtotal,
+        deliveryFeeCentavos: cartDeliveryFee,
+        deliveryAddress:
+            '${address.street}${address.detail.isEmpty ? '' : ', ${address.detail}'}',
+        instructions: instructions,
+        estimatedDeliveryAtUtc:
+            now.add(const Duration(minutes: 30)).toIso8601String(),
+        lineItems: _cartItems
+            .map(
+              (item) => CustomerOrderCreateLineItem(
+                name: item.menuItem.name,
+                quantity: item.quantity,
+                unitPriceCentavos: item.menuItem.price,
+                modifiers: item.modifiers,
+              ),
+            )
+            .toList(),
+      ),
     );
 
-    final paymentLabel = paymentMethodIndex == 0 ? 'Cash' : 'Card •••• 4242';
-    final record = CustomerOrderRecord(
-      order: order,
-      store: store,
-      items: _cloneCartItems(_cartItems),
-      address: address,
-      instructions: instructions.trim(),
-      paymentLabel: paymentLabel,
-      statusHeadline: 'Preparing Your Order',
-      etaLabel: '25-35 minutes',
-      milestones: [
-        OrderMilestone(
-          label: 'Order Placed',
-          time: _formatTime(now),
-          isDone: true,
-        ),
-        OrderMilestone(
-          label: 'Confirmed',
-          time: _formatTime(now.add(const Duration(minutes: 2))),
-          isDone: true,
-        ),
-        const OrderMilestone(
-          label: 'Preparing',
-          time: '--',
-          isDone: false,
-          isCurrent: true,
-        ),
-        const OrderMilestone(
-          label: 'On the Way',
-          time: '--',
-          isDone: false,
-        ),
-        const OrderMilestone(
-          label: 'Delivered',
-          time: '--',
-          isDone: false,
-        ),
-      ],
-      isActive: true,
-    );
+    if (created == null) {
+      _lastRuntimeBlocker = 'persisted_order_create_failed';
+      notifyListeners();
+      return null;
+    }
 
-    _activeOrderRecords = [record, ..._activeOrderRecords];
     _cartItems = [];
     _promoCode = null;
     _promoDiscount = 0;
+    _lastRuntimeBlocker = null;
+    await refreshPersistedRuntime();
     notifyListeners();
-    return record;
+    return findOrderRecordById(created.id);
   }
 
   bool reorder(String orderId) {
@@ -439,7 +452,7 @@ class CustomerRuntimeController extends ChangeNotifier {
     final trimmed = query.trim();
     if (trimmed.isEmpty) return [];
     return _applyStoreFilters(
-      MockData.stores.where((store) {
+      _stores.where((store) {
         final q = trimmed.toLowerCase();
         return store.name.toLowerCase().contains(q) ||
             store.cuisine.toLowerCase().contains(q);
@@ -448,7 +461,7 @@ class CustomerRuntimeController extends ChangeNotifier {
   }
 
   List<MockStore> getDiscoveryResults({String? categoryName}) {
-    var stores = List<MockStore>.from(MockData.stores);
+    var stores = List<MockStore>.from(_stores);
     if (categoryName != null &&
         categoryName.isNotEmpty &&
         categoryName != 'All') {
@@ -607,121 +620,87 @@ class CustomerRuntimeController extends ChangeNotifier {
     }
   }
 
-  void _seedOrders() {
-    final burgerStore =
-        MockData.stores.firstWhere((store) => store.id == 'store-1');
-    final sushiStore =
-        MockData.stores.firstWhere((store) => store.id == 'store-2');
-    final pizzaStore =
-        MockData.stores.firstWhere((store) => store.id == 'store-3');
-    final tacoStore =
-        MockData.stores.firstWhere((store) => store.id == 'store-5');
-    final cafeStore =
-        MockData.stores.firstWhere((store) => store.id == 'store-6');
-    final address = _addresses.firstWhere(
-      (a) => a.isDefault,
-      orElse: () => _addresses.first,
+  void _handleSessionChanged() {
+    unawaited(refreshPersistedRuntime());
+  }
+
+  Future<void> refreshPersistedRuntime() async {
+    if (_isHydratingPersistedRuntime) {
+      return;
+    }
+
+    _isHydratingPersistedRuntime = true;
+    try {
+      if (!RuntimeBackendConfig.current.isConfigured ||
+          !CustomerSessionController.instance.hasSupabaseBackedSession) {
+        _activeOrderRecords = const <CustomerOrderRecord>[];
+        _pastOrderRecords = const <CustomerOrderRecord>[];
+        _stores = List<MockStore>.from(MockData.stores);
+        _usesPersistedStoreData = false;
+        _persistedRuntimeLoaded = false;
+        _lastRuntimeBlocker = null;
+        notifyListeners();
+        return;
+      }
+
+      await CustomerSupabaseClient.ensureInitialized();
+      final client = CustomerSupabaseClient.maybeClient;
+      if (client == null) {
+        _lastRuntimeBlocker = 'supabase_runtime_unavailable';
+        notifyListeners();
+        return;
+      }
+
+      final storeRows = await client
+          .from('stores')
+          .select(
+              'id, name, cuisine_type, rating, review_count, avg_prep_time, delivery_radius, status')
+          .eq('accepting_orders', true)
+          .order('rating', ascending: false);
+
+      final persistedStores = List<Map<String, dynamic>>.from(storeRows)
+          .asMap()
+          .entries
+          .map((entry) => _mapPersistedStore(entry.value, entry.key))
+          .toList();
+
+      _stores = persistedStores.isEmpty
+          ? List<MockStore>.from(MockData.stores)
+          : persistedStores;
+      _usesPersistedStoreData = persistedStores.isNotEmpty;
+      _activeOrderRecords = await _gateway.readActiveOrders();
+      _pastOrderRecords = await _gateway.readPastOrders();
+      _persistedRuntimeLoaded = true;
+      _lastRuntimeBlocker = null;
+      if (_selectedStoreId != null &&
+          !_stores.any((store) => store.id == _selectedStoreId)) {
+        _selectedStoreId = _stores.isEmpty ? null : _stores.first.id;
+      }
+      notifyListeners();
+    } catch (error) {
+      _lastRuntimeBlocker = error.toString();
+      notifyListeners();
+    } finally {
+      _isHydratingPersistedRuntime = false;
+    }
+  }
+
+  MockStore _mapPersistedStore(Map<String, dynamic> row, int index) {
+    return MockStore(
+      id: row['id'] as String? ?? 'persisted-store-$index',
+      name: row['name'] as String? ?? 'Saved store',
+      cuisine: row['cuisine_type'] as String? ?? 'Open now',
+      rating: (row['rating'] as num?)?.toDouble() ?? 4.6,
+      reviewCount: (row['review_count'] as num?)?.toInt() ?? 0,
+      deliveryTime: row['avg_prep_time'] as String? ?? '25-35 min',
+      deliveryFee: 299,
+      imageColor: index.isEven
+          ? AppTheme.primaryColor
+          : AppTheme.secondaryColor,
+      distance: row['delivery_radius'] as String? ?? 'Nearby',
+      isFeatured: index < 3,
+      promoText: row['status'] == 'open' ? 'Open now' : null,
     );
-
-    _activeOrderRecords = [
-      CustomerOrderRecord(
-        order: MockData.activeOrders[0],
-        store: burgerStore,
-        items: _cloneCartItems(MockData.cartItems),
-        address: address,
-        instructions: 'Leave at the door',
-        paymentLabel: 'Cash',
-        statusHeadline: 'Preparing Your Order',
-        etaLabel: '25-35 minutes',
-        milestones: const [
-          OrderMilestone(label: 'Order Placed', time: '2:30 PM', isDone: true),
-          OrderMilestone(label: 'Confirmed', time: '2:32 PM', isDone: true),
-          OrderMilestone(
-            label: 'Preparing',
-            time: '--',
-            isDone: false,
-            isCurrent: true,
-          ),
-          OrderMilestone(label: 'On the Way', time: '--', isDone: false),
-          OrderMilestone(label: 'Delivered', time: '--', isDone: false),
-        ],
-        isActive: true,
-      ),
-      CustomerOrderRecord(
-        order: MockData.activeOrders[1],
-        store: sushiStore,
-        items: _cloneCartItems([
-          MockCartItem(menuItem: MockData.menuItems[1], quantity: 1),
-          MockCartItem(menuItem: MockData.menuItems[2], quantity: 1),
-        ]),
-        address: address,
-        instructions: '',
-        paymentLabel: 'Card •••• 4242',
-        statusHeadline: 'Order On the Way',
-        etaLabel: '10-15 minutes',
-        milestones: const [
-          OrderMilestone(label: 'Order Placed', time: '1:15 PM', isDone: true),
-          OrderMilestone(label: 'Confirmed', time: '1:17 PM', isDone: true),
-          OrderMilestone(label: 'Preparing', time: '1:24 PM', isDone: true),
-          OrderMilestone(
-            label: 'On the Way',
-            time: '--',
-            isDone: false,
-            isCurrent: true,
-          ),
-          OrderMilestone(label: 'Delivered', time: '--', isDone: false),
-        ],
-        isActive: true,
-      ),
-    ];
-
-    _pastOrderRecords = [
-      CustomerOrderRecord(
-        order: MockData.pastOrders[0],
-        store: pizzaStore,
-        items: _cloneCartItems([
-          MockCartItem(menuItem: MockData.menuItems[0], quantity: 1),
-          MockCartItem(menuItem: MockData.menuItems[1], quantity: 1),
-        ]),
-        address: address,
-        instructions: '',
-        paymentLabel: 'Card •••• 4242',
-        statusHeadline: 'Delivered',
-        etaLabel: 'Delivered',
-        milestones: const [],
-        isActive: false,
-      ),
-      CustomerOrderRecord(
-        order: MockData.pastOrders[1],
-        store: tacoStore,
-        items: _cloneCartItems([
-          MockCartItem(menuItem: MockData.menuItems[2], quantity: 2),
-          MockCartItem(menuItem: MockData.menuItems[7], quantity: 2),
-        ]),
-        address: address,
-        instructions: '',
-        paymentLabel: 'Cash',
-        statusHeadline: 'Delivered',
-        etaLabel: 'Delivered',
-        milestones: const [],
-        isActive: false,
-      ),
-      CustomerOrderRecord(
-        order: MockData.pastOrders[2],
-        store: cafeStore,
-        items: _cloneCartItems([
-          MockCartItem(menuItem: MockData.menuItems[4], quantity: 1),
-          MockCartItem(menuItem: MockData.menuItems[7], quantity: 1),
-        ]),
-        address: address,
-        instructions: '',
-        paymentLabel: 'Card •••• 4242',
-        statusHeadline: 'Delivered',
-        etaLabel: 'Delivered',
-        milestones: const [],
-        isActive: false,
-      ),
-    ];
   }
 
   static List<MockAddress> _cloneAddresses(List<MockAddress> addresses) {
@@ -759,13 +738,5 @@ class CustomerRuntimeController extends ChangeNotifier {
   static double _parseDistance(String value) {
     final match = RegExp(r'(\d+(\.\d+)?)').firstMatch(value);
     return double.tryParse(match?.group(1) ?? '999') ?? 999;
-  }
-
-  static String _formatTime(DateTime value) {
-    final hour =
-        value.hour > 12 ? value.hour - 12 : (value.hour == 0 ? 12 : value.hour);
-    final minute = value.minute.toString().padLeft(2, '0');
-    final suffix = value.hour >= 12 ? 'PM' : 'AM';
-    return '$hour:$minute $suffix';
   }
 }

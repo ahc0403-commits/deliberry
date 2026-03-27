@@ -11,15 +11,14 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final featuredStores = MockData.stores.where((s) => s.isFeatured).toList();
-    final nearbyStores = MockData.stores;
-
     return ListenableBuilder(
       listenable: CustomerRuntimeController.instance,
       builder: (context, _) {
-        final address = CustomerRuntimeController.instance.deliveryAddress;
-        final activeOrders =
-            CustomerRuntimeController.instance.activeOrders.length;
+        final runtime = CustomerRuntimeController.instance;
+        final featuredStores = runtime.featuredStores;
+        final nearbyStores = runtime.getDiscoveryResults();
+        final address = runtime.deliveryAddress;
+        final activeOrders = runtime.activeOrders.length;
 
         return Scaffold(
           backgroundColor: AppTheme.backgroundGrey,

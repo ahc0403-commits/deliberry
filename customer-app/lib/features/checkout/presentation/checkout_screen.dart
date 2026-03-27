@@ -54,7 +54,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     setState(() => _isSubmitting = true);
     await Future<void>.delayed(const Duration(milliseconds: 500));
 
-    final order = runtime.submitOrder(
+    final order = await runtime.submitOrder(
       instructions: _instructionsController.text,
       paymentMethodIndex: _selectedPaymentIndex,
     );
@@ -65,7 +65,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
     if (order == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Your cart is empty.')),
+        SnackBar(
+          content: Text(
+            runtime.lastRuntimeBlocker == 'authenticated_customer_session_required'
+                ? 'Sign in with Kakao or Zalo to place a real order.'
+                : 'Your cart is empty.',
+          ),
+        ),
       );
       return;
     }
