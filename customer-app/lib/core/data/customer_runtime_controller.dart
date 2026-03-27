@@ -150,7 +150,8 @@ class CustomerRuntimeController extends ChangeNotifier {
   late List<MockStore> _stores;
   Map<String, List<MockMenuItem>> _menuItemsByStore =
       <String, List<MockMenuItem>>{};
-  final CustomerRuntimeGateway _gateway = const SupabaseCustomerRuntimeGateway();
+  final CustomerRuntimeGateway _gateway =
+      const SupabaseCustomerRuntimeGateway();
   bool _isHydratingPersistedRuntime = false;
   bool _persistedRuntimeLoaded = false;
   bool _usesPersistedStoreData = false;
@@ -193,8 +194,7 @@ class CustomerRuntimeController extends ChangeNotifier {
   int get cartSubtotal =>
       _cartItems.fold<int>(0, (sum, item) => sum + item.total);
 
-  int get cartDeliveryFee =>
-      _cartItems.isEmpty ? 0 : MockData.cartDeliveryFee;
+  int get cartDeliveryFee => _cartItems.isEmpty ? 0 : MockData.cartDeliveryFee;
   int get cartServiceFee => _cartItems.isEmpty ? 0 : MockData.cartServiceFee;
   int get cartTotal =>
       cartSubtotal + cartDeliveryFee + cartServiceFee - _promoDiscount;
@@ -213,6 +213,35 @@ class CustomerRuntimeController extends ChangeNotifier {
       (store) => store.id == id,
       orElse: () => _stores.isNotEmpty ? _stores.first : MockData.stores.first,
     );
+  }
+
+  MockStore? findPersistedStoreById(String? id) {
+    if (id == null || id.isEmpty) {
+      return null;
+    }
+    for (final store in _stores) {
+      if (store.id == id) {
+        return store;
+      }
+    }
+    return null;
+  }
+
+  MockMenuItem? findPersistedMenuItemByName(String storeId, String name) {
+    final normalizedName = name.trim().toLowerCase();
+    if (normalizedName.isEmpty) {
+      return null;
+    }
+    final candidates = _menuItemsByStore[storeId];
+    if (candidates == null) {
+      return null;
+    }
+    for (final item in candidates) {
+      if (item.name.trim().toLowerCase() == normalizedName) {
+        return item;
+      }
+    }
+    return null;
   }
 
   MockStore resolveStore([String? storeId]) {
@@ -582,8 +611,8 @@ class CustomerRuntimeController extends ChangeNotifier {
   void deleteAddress(String id) {
     final target = _addresses.firstWhere(
       (a) => a.id == id,
-      orElse: () => const MockAddress(
-          id: '', label: '', street: '', detail: ''),
+      orElse: () =>
+          const MockAddress(id: '', label: '', street: '', detail: ''),
     );
     if (target.id.isEmpty) return;
     _addresses = _addresses.where((a) => a.id != id).toList();
@@ -727,9 +756,8 @@ class CustomerRuntimeController extends ChangeNotifier {
       reviewCount: (row['review_count'] as num?)?.toInt() ?? 0,
       deliveryTime: row['avg_prep_time'] as String? ?? '25-35 min',
       deliveryFee: 299,
-      imageColor: index.isEven
-          ? AppTheme.primaryColor
-          : AppTheme.secondaryColor,
+      imageColor:
+          index.isEven ? AppTheme.primaryColor : AppTheme.secondaryColor,
       distance: row['delivery_radius'] as String? ?? 'Nearby',
       isFeatured: index < 3,
       promoText: row['status'] == 'open' ? 'Open now' : null,

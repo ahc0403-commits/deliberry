@@ -46,7 +46,7 @@ class OrderDetailScreen extends StatelessWidget {
               eyebrow: 'Order details',
               title: 'Review what you ordered',
               subtitle:
-                  'This screen keeps the full order snapshot visible for the current session, including items, address, and payment label.',
+                  'This screen keeps the persisted order snapshot visible, including items, address, and payment label.',
               icon: Icons.receipt_long_rounded,
               badge: formatOrderStatus(order.status),
             ),

@@ -389,11 +389,12 @@ class SupabaseCustomerRuntimeGateway implements CustomerRuntimeGateway {
   }
 
   CustomerOrderRecord _mapPersistedOrderRecord(Map<String, dynamic> row) {
+    final storeId = row['store_id'] as String?;
     final store = _resolveStore(
-      row['store_id'] as String?,
+      storeId,
       row['store_name'] as String?,
     );
-    final items = _mapLineItems(row['line_items_summary']);
+    final items = _mapLineItems(row['line_items_summary'], store.id);
     final address = _mapAddress(row['delivery_address'] as String?);
     final status = (row['status'] as String?) ?? 'pending';
     final createdAt = (row['created_at'] as String?) ??
@@ -452,13 +453,10 @@ class SupabaseCustomerRuntimeGateway implements CustomerRuntimeGateway {
   }
 
   MockStore _resolveStore(String? storeId, String? storeName) {
-    final matched = MockData.stores.where((store) {
-      return (storeId != null && store.id == storeId) ||
-          (storeName != null && store.name == storeName);
-    });
-
-    if (matched.isNotEmpty) {
-      return matched.first;
+    final runtimeStore =
+        CustomerRuntimeController.instance.findPersistedStoreById(storeId);
+    if (runtimeStore != null) {
+      return runtimeStore;
     }
 
     return MockStore(
@@ -474,7 +472,7 @@ class SupabaseCustomerRuntimeGateway implements CustomerRuntimeGateway {
     );
   }
 
-  List<MockCartItem> _mapLineItems(dynamic rawLineItems) {
+  List<MockCartItem> _mapLineItems(dynamic rawLineItems, String storeId) {
     if (rawLineItems is! List) {
       return const [];
     }
@@ -490,17 +488,19 @@ class SupabaseCustomerRuntimeGateway implements CustomerRuntimeGateway {
               const <String>[];
 
       final matchedMenuItem =
-          MockData.menuItems.where((menuItem) => menuItem.name == name);
-      final menuItem = matchedMenuItem.isNotEmpty
-          ? matchedMenuItem.first
-          : MockMenuItem(
-              id: 'persisted-$name',
-              name: name,
-              description: 'Persisted order item',
-              price: unitPriceCentavos,
-              category: 'Saved order',
-              imageColor: AppTheme.secondaryColor,
-            );
+          CustomerRuntimeController.instance.findPersistedMenuItemByName(
+        storeId,
+        name,
+      );
+      final menuItem = matchedMenuItem ??
+          MockMenuItem(
+            id: 'persisted-$name',
+            name: name,
+            description: 'Persisted order item',
+            price: unitPriceCentavos,
+            category: 'Saved order',
+            imageColor: AppTheme.secondaryColor,
+          );
 
       return MockCartItem(
         menuItem: menuItem,

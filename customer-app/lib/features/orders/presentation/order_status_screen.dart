@@ -61,11 +61,11 @@ class OrderStatusScreen extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
             child: FeatureHeroCard(
               eyebrow: 'Order tracking',
-              title: 'Follow the session timeline',
+              title: 'Follow your live order progress',
               subtitle:
-                  'This view reflects the current order state in-session and keeps the static milestone timeline explicit.',
+                  'This view reflects the persisted order state and milestone updates for the selected order.',
               icon: Icons.route_rounded,
-              badge: 'Static timeline',
+              badge: formatOrderStatus(order.status),
             ),
           ),
           Container(
@@ -175,7 +175,7 @@ class OrderStatusScreen extends StatelessWidget {
                 ),
                 const Spacer(),
                 StatusBadge(
-                  label: 'Static timeline',
+                  label: formatOrderStatus(order.status),
                   color: AppTheme.successColor,
                 ),
               ],
