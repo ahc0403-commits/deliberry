@@ -263,7 +263,7 @@ class _BottomSection extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Create an account to track orders, save favourites, and earn rewards.',
+            'Sign in with Zalo or Kakao, continue as guest, or use phone verification as fallback.',
             style: TextStyle(
               fontSize: 14,
               color: AppTheme.textSecondary,
@@ -272,10 +272,8 @@ class _BottomSection extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           FilledButton(
-            onPressed: () async {
-              await CustomerSessionController.instance.startPhoneEntry();
-              if (!context.mounted) return;
-              Navigator.of(context).pushNamed(RouteNames.authPhone);
+            onPressed: () {
+              Navigator.of(context).pushNamed(RouteNames.auth);
             },
             child: const Text('Get Started'),
           ),

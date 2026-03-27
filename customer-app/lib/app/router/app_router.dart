@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../core/session/customer_session_controller.dart';
-import '../entry/customer_entry_screen.dart';
 import '../../features/addresses/presentation/addresses_screen.dart';
 import '../../features/auth/presentation/auth_otp_screen.dart';
 import '../../features/auth/presentation/auth_phone_screen.dart';
@@ -44,7 +43,7 @@ class AppRouter {
         if (session.isOtpPending) {
           return _redirectRoute(RouteNames.authOtp, settings);
         }
-        return _route(const CustomerEntryScreen(), settings);
+        return _route(const AuthScreen(), settings);
       case RouteNames.home:
         return _guardRoute(
           session: session,
