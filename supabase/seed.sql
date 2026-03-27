@@ -13,6 +13,7 @@ insert into auth.users (
   confirmation_token,
   recovery_token,
   email_change_token_new,
+  email_change,
   email_change_token_current,
   reauthentication_token,
   phone_change,
@@ -34,6 +35,7 @@ values
     'demo@saborcriollo.com',
     extensions.crypt('demo1234', extensions.gen_salt('bf')),
     timezone('utc', now()),
+    '',
     '',
     '',
     '',
@@ -64,6 +66,7 @@ values
     '',
     '',
     '',
+    '',
     false,
     false,
     false,
@@ -87,6 +90,7 @@ values
     '',
     '',
     '',
+    '',
     false,
     false,
     false,
@@ -103,6 +107,7 @@ set
   confirmation_token = excluded.confirmation_token,
   recovery_token = excluded.recovery_token,
   email_change_token_new = excluded.email_change_token_new,
+  email_change = excluded.email_change,
   email_change_token_current = excluded.email_change_token_current,
   reauthentication_token = excluded.reauthentication_token,
   phone_change = excluded.phone_change,
@@ -294,6 +299,128 @@ set
   avg_prep_time = excluded.avg_prep_time,
   accepting_orders = excluded.accepting_orders,
   settings_json = excluded.settings_json,
+  updated_at = timezone('utc', now());
+
+insert into public.store_menu_items (
+  id,
+  store_id,
+  name,
+  description,
+  category,
+  price_centavos,
+  image_color_hex,
+  is_popular,
+  is_available,
+  sort_order
+)
+values
+  (
+    'menu-demo-001',
+    'demo-store',
+    'Asado para 2',
+    'Traditional grilled beef platter with chimichurri and roasted vegetables.',
+    'Popular',
+    420000,
+    '#FFB74D',
+    true,
+    true,
+    1
+  ),
+  (
+    'menu-demo-002',
+    'demo-store',
+    'Milanesa Napolitana',
+    'Breaded beef topped with tomato sauce, ham, and melted mozzarella.',
+    'Popular',
+    185000,
+    '#FF8A65',
+    true,
+    true,
+    2
+  ),
+  (
+    'menu-demo-003',
+    'demo-store',
+    'Empanadas Surtidas x6',
+    'Six assorted empanadas with beef, chicken, and cheese fillings.',
+    'Popular',
+    150000,
+    '#E57373',
+    true,
+    true,
+    3
+  ),
+  (
+    'menu-demo-004',
+    'demo-store',
+    'Choripan Completo',
+    'Grilled chorizo sandwich with criolla salsa and chimichurri.',
+    'Sandwiches',
+    90000,
+    '#FFCC80',
+    false,
+    true,
+    4
+  ),
+  (
+    'menu-demo-005',
+    'demo-store',
+    'Ensalada Mixta',
+    'Tomato, lettuce, onion, and olives with house dressing.',
+    'Sides',
+    80000,
+    '#81C784',
+    false,
+    true,
+    5
+  ),
+  (
+    'menu-demo-006',
+    'demo-store',
+    'Provoleta',
+    'Grilled provolone cheese finished with oregano and olive oil.',
+    'Sides',
+    120000,
+    '#FFD54F',
+    false,
+    true,
+    6
+  ),
+  (
+    'menu-demo-007',
+    'demo-store',
+    'Flan con Dulce de Leche',
+    'Classic flan topped with dulce de leche and whipped cream.',
+    'Desserts',
+    75000,
+    '#CE93D8',
+    false,
+    true,
+    7
+  ),
+  (
+    'menu-demo-008',
+    'demo-store',
+    'Vino Malbec Copa',
+    'Glass of Mendoza Malbec served slightly chilled.',
+    'Drinks',
+    85000,
+    '#A1887F',
+    false,
+    true,
+    8
+  )
+on conflict (id) do update
+set
+  store_id = excluded.store_id,
+  name = excluded.name,
+  description = excluded.description,
+  category = excluded.category,
+  price_centavos = excluded.price_centavos,
+  image_color_hex = excluded.image_color_hex,
+  is_popular = excluded.is_popular,
+  is_available = excluded.is_available,
+  sort_order = excluded.sort_order,
   updated_at = timezone('utc', now());
 
 insert into public.merchant_memberships (

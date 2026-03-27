@@ -148,6 +148,8 @@ class CustomerRuntimeController extends ChangeNotifier {
   late List<MockAddress> _addresses;
   int _nextAddressId = 100;
   late List<MockStore> _stores;
+  Map<String, List<MockMenuItem>> _menuItemsByStore =
+      <String, List<MockMenuItem>>{};
   final CustomerRuntimeGateway _gateway = const SupabaseCustomerRuntimeGateway();
   bool _isHydratingPersistedRuntime = false;
   bool _persistedRuntimeLoaded = false;
@@ -220,6 +222,10 @@ class CustomerRuntimeController extends ChangeNotifier {
 
   List<MockMenuItem> menuItemsForStore(String storeId) {
     openStore(storeId, notify: false);
+    final persisted = _menuItemsByStore[storeId];
+    if (persisted != null && persisted.isNotEmpty) {
+      return List<MockMenuItem>.from(persisted);
+    }
     return List<MockMenuItem>.from(MockData.menuItems);
   }
 
@@ -632,10 +638,12 @@ class CustomerRuntimeController extends ChangeNotifier {
     _isHydratingPersistedRuntime = true;
     try {
       if (!RuntimeBackendConfig.current.isConfigured ||
-          !CustomerSessionController.instance.hasSupabaseBackedSession) {
+          CustomerSupabaseClient.maybeClient == null &&
+              !CustomerSessionController.instance.hasSupabaseBackedSession) {
         _activeOrderRecords = const <CustomerOrderRecord>[];
         _pastOrderRecords = const <CustomerOrderRecord>[];
         _stores = List<MockStore>.from(MockData.stores);
+        _menuItemsByStore = <String, List<MockMenuItem>>{};
         _usesPersistedStoreData = false;
         _persistedRuntimeLoaded = false;
         _lastRuntimeBlocker = null;
@@ -664,12 +672,37 @@ class CustomerRuntimeController extends ChangeNotifier {
           .map((entry) => _mapPersistedStore(entry.value, entry.key))
           .toList();
 
+      final menuRows = await client
+          .from('store_menu_items')
+          .select(
+            'id, store_id, name, description, category, price_centavos, image_color_hex, is_popular',
+          )
+          .eq('is_available', true)
+          .order('sort_order', ascending: true)
+          .order('id', ascending: true);
+
+      final groupedMenu = <String, List<MockMenuItem>>{};
+      for (final row in List<Map<String, dynamic>>.from(menuRows)) {
+        final storeId = row['store_id'] as String?;
+        if (storeId == null || storeId.isEmpty) {
+          continue;
+        }
+        groupedMenu.putIfAbsent(storeId, () => <MockMenuItem>[]);
+        groupedMenu[storeId]!.add(_mapPersistedMenuItem(row));
+      }
+
       _stores = persistedStores.isEmpty
           ? List<MockStore>.from(MockData.stores)
           : persistedStores;
+      _menuItemsByStore = groupedMenu;
       _usesPersistedStoreData = persistedStores.isNotEmpty;
-      _activeOrderRecords = await _gateway.readActiveOrders();
-      _pastOrderRecords = await _gateway.readPastOrders();
+      if (CustomerSessionController.instance.hasSupabaseBackedSession) {
+        _activeOrderRecords = await _gateway.readActiveOrders();
+        _pastOrderRecords = await _gateway.readPastOrders();
+      } else {
+        _activeOrderRecords = const <CustomerOrderRecord>[];
+        _pastOrderRecords = const <CustomerOrderRecord>[];
+      }
       _persistedRuntimeLoaded = true;
       _lastRuntimeBlocker = null;
       if (_selectedStoreId != null &&
@@ -700,6 +733,19 @@ class CustomerRuntimeController extends ChangeNotifier {
       distance: row['delivery_radius'] as String? ?? 'Nearby',
       isFeatured: index < 3,
       promoText: row['status'] == 'open' ? 'Open now' : null,
+    );
+  }
+
+  MockMenuItem _mapPersistedMenuItem(Map<String, dynamic> row) {
+    return MockMenuItem(
+      id: row['id'] as String? ?? 'persisted-menu-item',
+      name: row['name'] as String? ?? 'Menu item',
+      description: row['description'] as String? ?? '',
+      price: (row['price_centavos'] as num?)?.toInt() ?? 0,
+      category: row['category'] as String? ?? 'Menu',
+      imageColor:
+          _parseHexColor(row['image_color_hex'] as String? ?? '#FF6B6B'),
+      isPopular: row['is_popular'] as bool? ?? false,
     );
   }
 
@@ -738,5 +784,12 @@ class CustomerRuntimeController extends ChangeNotifier {
   static double _parseDistance(String value) {
     final match = RegExp(r'(\d+(\.\d+)?)').firstMatch(value);
     return double.tryParse(match?.group(1) ?? '999') ?? 999;
+  }
+
+  static Color _parseHexColor(String value) {
+    final normalized = value.replaceFirst('#', '');
+    final withAlpha =
+        normalized.length == 6 ? 'FF$normalized' : normalized.padLeft(8, 'F');
+    return Color(int.tryParse(withAlpha, radix: 16) ?? 0xFFFF6B6B);
   }
 }
