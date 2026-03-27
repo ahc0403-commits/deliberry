@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../backend/runtime_backend_config.dart';
@@ -50,14 +51,18 @@ class CustomerSupabaseOAuthAdapter {
       _ => OAuthProvider.google,
     };
 
+    final redirectTo = kIsWeb
+        ? Uri.base.origin
+        : CustomerAuthRedirectConfig.current.callbackUri.toString();
+
     await client.auth.signInWithOAuth(
       oauthProvider,
-      redirectTo: CustomerAuthRedirectConfig.current.callbackUri.toString(),
+      redirectTo: redirectTo,
     );
 
     return CustomerAuthStartResult(
       provider: provider,
-      authorizationUri: CustomerAuthRedirectConfig.current.callbackUri,
+      authorizationUri: kIsWeb ? Uri.parse(redirectTo) : CustomerAuthRedirectConfig.current.callbackUri,
     );
   }
 
