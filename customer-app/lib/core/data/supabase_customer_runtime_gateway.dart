@@ -332,13 +332,11 @@ class SupabaseCustomerRuntimeGateway implements CustomerRuntimeGateway {
           id,
           order_number,
           store_id,
-          store_name,
           customer_name,
           customer_phone,
           status,
           payment_method,
           total_centavos,
-          item_count,
           created_at,
           updated_at,
           estimated_delivery_at,
@@ -903,14 +901,12 @@ class SupabaseCustomerRuntimeGateway implements CustomerRuntimeGateway {
             'order_number': orderNumber,
             'customer_actor_id': user.id,
             'store_id': input.storeId,
-            'store_name': input.storeName,
             'customer_name': customerName,
             'customer_phone': input.customerPhone,
             'status': 'pending',
             'payment_method': input.paymentMethod,
             'total_centavos': input.totalCentavos,
             'currency': 'USD',
-            'item_count': input.itemCount,
             'subtotal_centavos': input.subtotalCentavos,
             'delivery_fee_centavos': input.deliveryFeeCentavos,
             'delivery_address': input.deliveryAddress,
@@ -929,7 +925,7 @@ class SupabaseCustomerRuntimeGateway implements CustomerRuntimeGateway {
             'created_at': now.toIso8601String(),
           })
           .select(
-            'id, order_number, status, total_centavos, item_count, created_at, store_name, payment_method, estimated_delivery_at',
+            'id, order_number, status, total_centavos, created_at, payment_method, estimated_delivery_at',
           )
           .single());
 

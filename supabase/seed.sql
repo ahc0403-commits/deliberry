@@ -10,6 +10,16 @@ insert into auth.users (
   email,
   encrypted_password,
   email_confirmed_at,
+  confirmation_token,
+  recovery_token,
+  email_change_token_new,
+  email_change_token_current,
+  reauthentication_token,
+  phone_change,
+  phone_change_token,
+  is_super_admin,
+  is_sso_user,
+  is_anonymous,
   raw_app_meta_data,
   raw_user_meta_data,
   created_at,
@@ -24,6 +34,16 @@ values
     'demo@saborcriollo.com',
     extensions.crypt('demo1234', extensions.gen_salt('bf')),
     timezone('utc', now()),
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    false,
+    false,
+    false,
     '{"provider":"email","providers":["email"]}'::jsonb,
     '{"surface":"merchant-console","mode":"demo-cookie"}'::jsonb,
     timezone('utc', now()),
@@ -35,8 +55,18 @@ values
     'authenticated',
     'authenticated',
     'customer.one@example.com',
-    null,
+    extensions.crypt('customerpass123', extensions.gen_salt('bf')),
     timezone('utc', now()),
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    false,
+    false,
+    false,
     '{"provider":"email","providers":["email"]}'::jsonb,
     '{"surface":"customer-app","mode":"seed"}'::jsonb,
     timezone('utc', now()),
@@ -48,8 +78,18 @@ values
     'authenticated',
     'authenticated',
     'customer.two@example.com',
-    null,
+    extensions.crypt('customerpass456', extensions.gen_salt('bf')),
     timezone('utc', now()),
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    false,
+    false,
+    false,
     '{"provider":"email","providers":["email"]}'::jsonb,
     '{"surface":"customer-app","mode":"seed"}'::jsonb,
     timezone('utc', now()),
@@ -60,8 +100,72 @@ set
   email = excluded.email,
   encrypted_password = coalesce(excluded.encrypted_password, auth.users.encrypted_password),
   email_confirmed_at = excluded.email_confirmed_at,
+  confirmation_token = excluded.confirmation_token,
+  recovery_token = excluded.recovery_token,
+  email_change_token_new = excluded.email_change_token_new,
+  email_change_token_current = excluded.email_change_token_current,
+  reauthentication_token = excluded.reauthentication_token,
+  phone_change = excluded.phone_change,
+  phone_change_token = excluded.phone_change_token,
+  is_super_admin = excluded.is_super_admin,
+  is_sso_user = excluded.is_sso_user,
+  is_anonymous = excluded.is_anonymous,
   raw_app_meta_data = excluded.raw_app_meta_data,
   raw_user_meta_data = excluded.raw_user_meta_data,
+  updated_at = timezone('utc', now());
+
+insert into auth.identities (
+  provider_id,
+  user_id,
+  identity_data,
+  provider,
+  last_sign_in_at,
+  created_at,
+  updated_at
+)
+values
+  (
+    'demo@saborcriollo.com',
+    '11111111-1111-4111-8111-111111111111',
+    jsonb_build_object(
+      'sub', '11111111-1111-4111-8111-111111111111',
+      'email', 'demo@saborcriollo.com',
+      'email_verified', true
+    ),
+    'email',
+    timezone('utc', now()),
+    timezone('utc', now()),
+    timezone('utc', now())
+  ),
+  (
+    'customer.one@example.com',
+    '22222222-2222-4222-8222-222222222222',
+    jsonb_build_object(
+      'sub', '22222222-2222-4222-8222-222222222222',
+      'email', 'customer.one@example.com',
+      'email_verified', true
+    ),
+    'email',
+    timezone('utc', now()),
+    timezone('utc', now()),
+    timezone('utc', now())
+  ),
+  (
+    'customer.two@example.com',
+    '33333333-3333-4333-8333-333333333333',
+    jsonb_build_object(
+      'sub', '33333333-3333-4333-8333-333333333333',
+      'email', 'customer.two@example.com',
+      'email_verified', true
+    ),
+    'email',
+    timezone('utc', now()),
+    timezone('utc', now()),
+    timezone('utc', now())
+  )
+on conflict (provider_id, provider) do update
+set
+  identity_data = excluded.identity_data,
   updated_at = timezone('utc', now());
 
 insert into public.actor_profiles (
