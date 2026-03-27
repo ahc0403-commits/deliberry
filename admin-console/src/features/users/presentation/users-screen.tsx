@@ -1,8 +1,7 @@
 import { ArrowRight, Shield, UserCheck, UserRound, UserX } from "lucide-react";
-import { adminQueryServices } from "../../../shared/data/admin-query-services";
+import type { PlatformUser } from "../../../shared/data/admin-mock-data";
 
-export function AdminUsersScreen() {
-  const { users } = adminQueryServices.getUsersData();
+export function AdminUsersScreen({ users }: { users: PlatformUser[] }) {
 
   const counts = {
     total: users.length,
@@ -29,7 +28,7 @@ export function AdminUsersScreen() {
             <div className="oversight-note-label">Management mode</div>
             <div className="oversight-note-value">Review-only account oversight</div>
             <p className="oversight-note-text">
-              Counts and user rows come from the admin read model. Detail actions remain preview-only in this console phase.
+              Counts and user rows come from the persisted admin read model. Detail actions remain preview-only in this console phase.
             </p>
           </div>
         </div>
@@ -53,7 +52,7 @@ export function AdminUsersScreen() {
         <div className="oversight-summary-card">
           <div className="oversight-summary-label"><UserRound size={14} />Total users</div>
           <div className="oversight-summary-value">{counts.total}</div>
-          <div className="oversight-summary-meta">All fixture-backed platform accounts currently visible to admin oversight.</div>
+          <div className="oversight-summary-meta">All persisted platform accounts currently visible to admin oversight.</div>
         </div>
         <div className="oversight-summary-card">
           <div className="oversight-summary-label"><UserCheck size={14} />Active</div>

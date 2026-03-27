@@ -1,8 +1,7 @@
 import { ArrowRight, MapPinned, ShieldCheck, Store, Star } from "lucide-react";
-import { adminQueryServices } from "../../../shared/data/admin-query-services";
+import type { PlatformStore } from "../../../shared/data/admin-mock-data";
 
-export function AdminStoresScreen() {
-  const { stores } = adminQueryServices.getStoresData();
+export function AdminStoresScreen({ stores }: { stores: PlatformStore[] }) {
   const openCount = stores.filter((s) => s.status === "open").length;
   const reviewCount = stores.filter((s) => s.status === "under_review").length;
   const avgRating = (stores.reduce((acc, s) => acc + s.rating, 0) / stores.length).toFixed(1);
@@ -25,7 +24,7 @@ export function AdminStoresScreen() {
             <div className="oversight-note-label">Control mode</div>
             <div className="oversight-note-value">Inspection-only storefront view</div>
             <p className="oversight-note-text">
-              Store records are fixture-backed. Inspect actions remain preview-only so this route stays truthful about non-live operational control.
+              Store records are persisted. Inspect actions remain preview-only so this route stays truthful about current read-first operational control.
             </p>
           </div>
         </div>

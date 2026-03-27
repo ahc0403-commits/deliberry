@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { ArrowRight, ClipboardList, Eye, FileSearch, ShieldAlert, ShoppingBag, Truck } from "lucide-react";
-import { adminQueryServices } from "../../../shared/data/admin-query-services";
 import { formatMoney } from "../../../shared/domain";
 import type { PlatformOrder } from "../../../shared/data/admin-mock-data";
 
@@ -14,8 +13,7 @@ const PAYMENT_LABELS: Record<string, string> = {
 
 type Tab = "all" | "active" | "delivered" | "disputed";
 
-export function AdminOrdersScreen() {
-  const { orders } = adminQueryServices.getOrdersData();
+export function AdminOrdersScreen({ orders }: { orders: PlatformOrder[] }) {
   const [activeTab, setActiveTab] = useState<Tab>("all");
   const [selectedOrder, setSelectedOrder] = useState<PlatformOrder | null>(null);
 
@@ -52,7 +50,7 @@ export function AdminOrdersScreen() {
             <div className="oversight-note-label">Queue mode</div>
             <div className="oversight-note-value">Read-only governance review</div>
             <p className="oversight-note-text">
-              Order status here mirrors the fixture-backed platform read model. Use the detail panel for oversight context and escalation signals only.
+              Order status here mirrors the persisted platform read model. Use the detail panel for oversight context and escalation signals only.
             </p>
           </div>
         </div>
