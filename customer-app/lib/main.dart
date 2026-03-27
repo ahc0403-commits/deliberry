@@ -18,7 +18,9 @@ Future<void> main() async {
   runApp(const DeliberryApp());
 
   if (startupWebCallback != null) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // Yield so widget-tree mount microtasks finish and listeners attach
+      await Future<void>.delayed(Duration.zero);
       CustomerSessionController.instance.handleAuthCallback(startupWebCallback);
     });
     return;
