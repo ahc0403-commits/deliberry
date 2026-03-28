@@ -40,3 +40,20 @@ export function assertAdminSupabaseConfig(): {
     serviceRoleKey: config.serviceRoleKey,
   };
 }
+
+export function assertAdminSupabasePublicConfig(): {
+  url: string;
+  anonKey: string;
+} {
+  const config = readAdminSupabaseConfig();
+  if (!config.url || !config.anonKey) {
+    throw new Error(
+      "Admin Supabase public config is missing. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.",
+    );
+  }
+
+  return {
+    url: config.url,
+    anonKey: config.anonKey,
+  };
+}
