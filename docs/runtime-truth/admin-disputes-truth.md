@@ -4,14 +4,14 @@ Status: Active
 Authority: Operational
 Surface: admin-console
 Domains: disputes, platform-oversight, query-read-model
-Last updated: 2026-03-16
+Last updated: 2026-03-28
 Retrieve when:
 - changing admin dispute reads, summary behavior, or action language
 - checking whether dispute actions mutate real state
 - debugging whether a dispute screen issue is data-shape or UI-only
 Related files:
 - admin-console/src/shared/data/admin-query-services.ts
-- admin-console/src/shared/data/admin-repository.ts
+- admin-console/src/shared/data/supabase-admin-runtime-repository.ts
 - admin-console/src/features/disputes/presentation/disputes-screen.tsx
 
 ## Purpose
@@ -21,7 +21,7 @@ Identify where admin dispute data actually comes from and what the current scree
 ## Real Source-of-Truth Locations
 
 - Disputes read-model entry: `admin-console/src/shared/data/admin-query-services.ts`
-- Disputes fixture owner: `admin-console/src/shared/data/admin-repository.ts`
+- Disputes runtime repository: `admin-console/src/shared/data/supabase-admin-runtime-repository.ts`
 
 ## What State Is Owned There
 
@@ -37,7 +37,7 @@ Identify where admin dispute data actually comes from and what the current scree
 
 - Authoritative:
   - read result returned by `adminQueryServices.getDisputesData()`
-  - fixture data returned by `adminRepository.getDisputesData()`
+  - persisted dispute data returned by `supabaseAdminRuntimeRepository.getDisputesData()`
 - Derived:
   - total/open/escalated counts
   - total dispute value
@@ -46,10 +46,10 @@ Identify where admin dispute data actually comes from and what the current scree
 
 ## What Is Still Shallow, Partial, Fixture-Backed, or Local-Only
 
-- Disputes are fixture-backed and in-memory only.
+- Disputes are persisted and read from Supabase.
 - There is no assignment, review, or case-mutation path.
-- Summary metrics are recalculated directly from the current fixture set on render.
-- The platform route itself is not currently session- or role-enforced.
+- Summary metrics are recalculated directly from the current persisted read set on render.
+- The platform route is session- and role-gated before the screen renders, but the dispute actions themselves are still read-only.
 
 ## Known Risks
 

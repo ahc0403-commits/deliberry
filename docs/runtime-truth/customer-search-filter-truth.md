@@ -4,8 +4,8 @@ Status: active
 Authority: operational
 Surface: customer-app
 Domains: search, filters, recent-searches, discovery-results
-Last updated: 2026-03-16
-Last verified: 2026-03-16
+Last updated: 2026-03-28
+Last verified: 2026-03-28
 Retrieve when:
 - changing query/filter persistence or result filtering behavior
 - debugging search, filter, discovery, and store-entry continuity
@@ -16,7 +16,7 @@ Related files:
 
 ## Purpose
 
-Document where durable-in-session search and filter truth lives and what remains fixture-backed.
+Document where durable-in-session search and filter truth lives and how it now operates over the real customer browse dataset.
 
 ## Real source-of-truth location(s)
 
@@ -55,15 +55,15 @@ Document where durable-in-session search and filter truth lives and what remains
   - `activeFilterCount`
   - `getSearchResults()`
   - `getDiscoveryResults()`
-- Fixture-only:
-  - store and category content from [mock_data.dart](/Users/andremacmini/Deliberry/customer-app/lib/core/data/mock_data.dart)
+- Fallback-only:
+  - store and category content from [mock_data.dart](/Users/andremacmini/Deliberry/customer-app/lib/core/data/mock_data.dart) if persisted runtime hydration is unavailable
   - filter option labels from `MockData.filterOptions`
 
 ## What is still shallow / partial / local-only
 
 - Search/filter truth survives expected in-app route transitions, but only inside the current session.
 - Search is store/discovery scoped. It is not a full menu or backend search system.
-- Filter options and search results are driven by fixtures, not a live catalog.
+- Filter options remain app-local labels, but store/discovery results now come from the hydrated persisted catalog for the real ordering path.
 
 ## Known risks
 

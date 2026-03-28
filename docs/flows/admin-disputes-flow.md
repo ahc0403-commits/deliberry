@@ -4,7 +4,7 @@ Status: Active
 Authority: Operational
 Surface: admin-console
 Domains: disputes, platform-oversight, query-read-model
-Last updated: 2026-03-16
+Last updated: 2026-03-28
 Retrieve when:
 - changing admin disputes route behavior, summary metrics, or action labels
 - debugging whether a disputes issue is in repository data or derived screen logic
@@ -16,7 +16,7 @@ Related files:
 
 ## Purpose
 
-Describe the current admin disputes journey from platform route entry into fixture-backed case oversight and derived summary state.
+Describe the current admin disputes journey from platform route entry into persisted dispute visibility and derived summary state.
 
 ## Entry Points
 
@@ -28,7 +28,7 @@ Describe the current admin disputes journey from platform route entry into fixtu
 
 - `/disputes` -> render `AdminDisputesPage`
 - page renders `AdminDisputesScreen`
-- `adminQueryServices.getDisputesData()` reads the fixture-backed disputes bundle
+- `adminQueryServices.getDisputesData()` reads the persisted disputes bundle
 - screen derives summary counts and total dispute value from the current dispute list
 - table renders action labels `Assign`, `Review`, or `View` based on dispute status
 
@@ -42,7 +42,7 @@ Describe the current admin disputes journey from platform route entry into fixtu
 
 - `admin-console/src/app/(platform)/disputes/page.tsx`
 - `admin-console/src/app/(platform)/layout.tsx`
-- `admin-console/src/shared/data/admin-mock-data.ts`
+- `admin-console/src/shared/data/supabase-admin-runtime-repository.ts`
 
 ## What Is Authoritative vs Derived In This Flow
 
@@ -56,10 +56,10 @@ Describe the current admin disputes journey from platform route entry into fixtu
 
 ## Known Shallow, Partial, Fixture-Backed, or Local-Only Limits
 
-- Disputes are fixture-backed and in-memory only.
+- Disputes are persisted and read from Supabase.
 - No assign, review, or case-update path exists.
-- Summary metrics are derived on render from the current fixture set.
-- The platform route itself is still not session- or role-enforced.
+- Summary metrics are derived on render from the current persisted dispute set.
+- The platform route is session- and role-enforced before the page renders.
 
 ## Common Edit Mistakes
 

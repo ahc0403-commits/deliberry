@@ -4,8 +4,8 @@ Status: active
 Authority: operational
 Surface: customer-app
 Domains: checkout, orders, status, reorder
-Last updated: 2026-03-16
-Last verified: 2026-03-16
+Last updated: 2026-03-28
+Last verified: 2026-03-28
 Retrieve when:
 - changing checkout submission or downstream order reading
 - debugging cart -> checkout -> order status -> orders continuity
@@ -16,7 +16,7 @@ Related files:
 
 ## Purpose
 
-Document the transactional flow from an existing cart into local order creation and later order follow-up routes.
+Document the transactional flow from an existing cart into persisted order creation and later order follow-up routes.
 
 ## Entry points
 
@@ -74,7 +74,7 @@ Document the transactional flow from an existing cart into local order creation 
 ## Known shallow / partial / local-only limits
 
 - Payment is placeholder-only.
-- Order creation is local-session only.
+- Order creation is persisted for authenticated customers.
 - Order status is not realtime.
 - Reviews are flow-connected but still mock-backed.
 

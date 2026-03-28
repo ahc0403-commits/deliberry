@@ -4,8 +4,8 @@ Status: active
 Authority: operational
 Surface: customer-app
 Domains: orders, order-records, reorder, status
-Last updated: 2026-03-16
-Last verified: 2026-03-16
+Last updated: 2026-03-28
+Last verified: 2026-03-28
 Retrieve when:
 - changing order creation, lookup, detail rendering, or reorder behavior
 - debugging order-id continuity across list, detail, status, and reviews
@@ -20,16 +20,14 @@ Document where order truth lives after checkout and how list/detail/status scree
 
 ## Real source-of-truth location(s)
 
-- Authoritative mutable owner: [customer_runtime_controller.dart](/Users/andremacmini/Deliberry/customer-app/lib/core/data/customer_runtime_controller.dart)
-  - `_activeOrderRecords`
-  - `_pastOrderRecords`
-  - `_nextOrderNumber`
+- Runtime owner: [customer_runtime_controller.dart](/Users/andremacmini/Deliberry/customer-app/lib/core/data/customer_runtime_controller.dart)
+- Persisted read/write gateway: [supabase_customer_runtime_gateway.dart](/Users/andremacmini/Deliberry/customer-app/lib/core/data/supabase_customer_runtime_gateway.dart)
 - Route threading owner: [app_router.dart](/Users/andremacmini/Deliberry/customer-app/lib/app/router/app_router.dart)
 
 ## What state is owned there
 
-- submitted local order records
-- seeded active/history order records for the current session
+- hydrated active/history order records for the signed-in customer
+- persisted order creation input and line items
 - order lookup by id
 - reorder source items and selected store restoration
 
@@ -44,8 +42,7 @@ Document where order truth lives after checkout and how list/detail/status scree
 ## What is derived vs authoritative
 
 - Authoritative:
-  - `_activeOrderRecords`
-  - `_pastOrderRecords`
+  - persisted orders coordinated by `submitOrder`, `refreshPersistedRuntime`, and the Supabase gateway
   - `submitOrder`
   - `findOrderRecordById`
   - `reorder`
@@ -58,9 +55,9 @@ Document where order truth lives after checkout and how list/detail/status scree
 
 ## What is still shallow / partial / local-only
 
-- Order truth is local-session only.
+- Order creation and order reads are persisted for authenticated customers.
 - Order status progression is not live and not event-driven.
-- Seeded order records come from fixtures and are only enriched locally with screen-facing fields.
+- Order records are still normalized into screen-facing view models inside `CustomerRuntimeController`.
 - Reviews read order identity coherently, but review save is still local preview behavior only.
 - `/reviews` now expects a valid order-linked context; without one, the screen degrades to an honest preview state and sends the user back to `/orders`.
 

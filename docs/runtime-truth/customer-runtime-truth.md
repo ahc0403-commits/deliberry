@@ -4,8 +4,8 @@ Status: active
 Authority: operational
 Surface: customer-app
 Domains: runtime-truth, cart, addresses, orders, search
-Last updated: 2026-03-16
-Last verified: 2026-03-16
+Last updated: 2026-03-28
+Last verified: 2026-03-28
 Retrieve when:
 - identifying where mutable customer-app truth actually lives
 - debugging state continuity across store, cart, checkout, orders, and search
@@ -20,7 +20,8 @@ Give one surface-level answer to the customer-app runtime question: what mutable
 
 ## Real source-of-truth location(s)
 
-- Primary mutable owner: [customer_runtime_controller.dart](/Users/andremacmini/Deliberry/customer-app/lib/core/data/customer_runtime_controller.dart)
+- Primary runtime owner: [customer_runtime_controller.dart](/Users/andremacmini/Deliberry/customer-app/lib/core/data/customer_runtime_controller.dart)
+- Persisted read/write gateway: [supabase_customer_runtime_gateway.dart](/Users/andremacmini/Deliberry/customer-app/lib/core/data/supabase_customer_runtime_gateway.dart)
 - Route and access owner: [app_router.dart](/Users/andremacmini/Deliberry/customer-app/lib/app/router/app_router.dart)
 - Session-entry owner for auth/guest/onboarding gating: [customer_session_controller.dart](/Users/andremacmini/Deliberry/customer-app/lib/core/session/customer_session_controller.dart)
 
@@ -35,6 +36,7 @@ Give one surface-level answer to the customer-app runtime question: what mutable
   - search query
   - recent searches
   - filter selections
+  - persisted-runtime hydration and fallback policy
 - `AppRouter`
   - route ownership
   - shell vs standalone flow boundary
@@ -54,22 +56,24 @@ Give one surface-level answer to the customer-app runtime question: what mutable
 
 - Authoritative today:
   - mutable fields inside `CustomerRuntimeController`
+  - persisted store, menu, address, and order reads/writes through `SupabaseCustomerRuntimeGateway` when a Supabase-backed customer session exists
   - route ownership inside `AppRouter`
   - session/access state inside `CustomerSessionController`
 - Derived:
   - `cartItemCount`, `cartSubtotal`, `cartDeliveryFee`, `cartServiceFee`, `cartTotal`, `activeFilterCount`, `deliveryAddress`, `selectedStore`, `activeOrders`, `pastOrders`
   - search and discovery results from `getSearchResults()` and `getDiscoveryResults()`
-- Fixture-only, not authoritative:
+- Fixture-only, not authoritative for the closed ordering path:
   - [mock_data.dart](/Users/andremacmini/Deliberry/customer-app/lib/core/data/mock_data.dart)
   - [in_memory_customer_repository.dart](/Users/andremacmini/Deliberry/customer-app/lib/core/data/in_memory_customer_repository.dart)
 
 ## What is still shallow / partial / local-only
 
-- All runtime truth here is local-session only. There is no backend persistence.
+- Search, cart, and route continuity remain surface-local controller state.
+- Store discovery, menu reads, address reads, order creation, orders list, and order detail/status reads are now persisted through Supabase when a real customer session exists.
 - Payment remains placeholder-only.
 - Order status UI is route-real but timeline progression is static.
-- Search/filter durability is real inside the running surface, but still operates on mock-backed stores.
-- Some screens remain mock-backed even when flow-connected, as called out in [RUNTIME_REALITY_MAP.md](/Users/andremacmini/Deliberry/docs/ui-governance/RUNTIME_REALITY_MAP.md).
+- Search/filter durability is real inside the running surface and now filters hydrated persisted store/menu data for the ordering path.
+- Reviews remain partial: order-linked lookup is coherent, but review submission is not yet a closed live product loop.
 
 ## Known risks
 
@@ -81,7 +85,7 @@ Give one surface-level answer to the customer-app runtime question: what mutable
 
 - Change mutable behavior in `CustomerRuntimeController` first.
 - Change routing behavior in `AppRouter` only when route ownership or route arguments truly need to move.
-- Treat `MockData` as fixtures only. Do not mistake fixture values for authoritative runtime state.
+- Treat `MockData` as fallback-only fixtures. Do not mistake fallback values for the main customer order-path truth.
 - Re-check [RUNTIME_REALITY_MAP.md](/Users/andremacmini/Deliberry/docs/ui-governance/RUNTIME_REALITY_MAP.md) after any change that alters what is state-real vs mock-backed.
 
 ## Related filemaps

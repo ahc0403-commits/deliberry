@@ -4,8 +4,8 @@ Status: active
 Authority: operational
 Surface: customer-app
 Domains: cart, promo, totals, selected-store
-Last updated: 2026-03-16
-Last verified: 2026-03-16
+Last updated: 2026-03-28
+Last verified: 2026-03-28
 Retrieve when:
 - changing cart mutations, promo behavior, or store-to-cart continuity
 - debugging totals or cart replacement behavior
@@ -56,19 +56,19 @@ Document where cart truth lives and what is authoritative versus derived in the 
   - `cartServiceFee`
   - `cartTotal`
   - `hasPromoApplied`
-- Fixture-only:
-  - item/menu metadata from [mock_data.dart](/Users/andremacmini/Deliberry/customer-app/lib/core/data/mock_data.dart)
+- Fallback-only:
+  - item/menu metadata from [mock_data.dart](/Users/andremacmini/Deliberry/customer-app/lib/core/data/mock_data.dart) when persisted runtime is unavailable
 
 ## What is still shallow / partial / local-only
 
 - Cart truth is local-session only. Closing the session loses it.
 - Promo support is intentionally shallow: one demo-safe code path.
-- Cart still depends on mock-backed menu items and store fixtures.
+- Cart now uses persisted store/menu records for the real ordering path and only falls back to fixtures when the persisted runtime is unavailable.
 
 ## Known risks
 
 - `addMenuItem()` implicitly clears the old cart when switching stores; that is a high-impact behavior.
-- Totals are derived from mutable cart state plus fixture fee values. Changes can ripple into checkout and reorder immediately.
+- Totals are derived from mutable cart state plus controller-level fee values. Changes can ripple into checkout and reorder immediately.
 - Duplicating cart math or promo logic in the widget layer will cause drift.
 
 ## Safe modification guidance

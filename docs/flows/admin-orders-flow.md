@@ -4,7 +4,7 @@ Status: Active
 Authority: Operational
 Surface: admin-console
 Domains: orders, platform-oversight, query-read-model
-Last updated: 2026-03-16
+Last updated: 2026-03-28
 Retrieve when:
 - changing admin orders route behavior, table filtering, or detail interactions
 - debugging whether an orders issue is caused by fixture data or local UI state
@@ -16,7 +16,7 @@ Related files:
 
 ## Purpose
 
-Describe the current admin orders journey from platform route entry into fixture-backed order oversight and local detail state.
+Describe the current admin orders journey from platform route entry into persisted order oversight and local detail state.
 
 ## Entry Points
 
@@ -28,7 +28,7 @@ Describe the current admin orders journey from platform route entry into fixture
 
 - `/orders` -> render `AdminOrdersPage`
 - page renders `AdminOrdersScreen`
-- `adminQueryServices.getOrdersData()` reads the fixture-backed orders bundle
+- `adminQueryServices.getOrdersData()` reads the persisted orders bundle
 - user switches among local tabs: `all`, `active`, `delivered`, `disputed`
 - user opens and closes the local detail panel through `selectedOrder`
 - action buttons remain display-only in the detail panel
@@ -43,7 +43,7 @@ Describe the current admin orders journey from platform route entry into fixture
 
 - `admin-console/src/app/(platform)/orders/page.tsx`
 - `admin-console/src/app/(platform)/layout.tsx`
-- `admin-console/src/shared/data/admin-mock-data.ts`
+- `admin-console/src/shared/data/supabase-admin-runtime-repository.ts`
 
 ## What Is Authoritative vs Derived In This Flow
 
@@ -58,10 +58,10 @@ Describe the current admin orders journey from platform route entry into fixture
 
 ## Known Shallow, Partial, Fixture-Backed, or Local-Only Limits
 
-- Orders are fixture-backed and in-memory only.
+- Orders are persisted and read from Supabase.
 - No platform order action writes state back anywhere.
 - `activeTab` and `selectedOrder` are local React state only.
-- The platform route itself is still not session- or role-enforced.
+- The platform route is session- and role-enforced before the page renders.
 
 ## Common Edit Mistakes
 

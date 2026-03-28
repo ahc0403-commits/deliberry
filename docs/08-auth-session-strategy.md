@@ -4,8 +4,8 @@ Status: active
 Authority: operational
 Surface: cross-surface
 Domains: auth, session, permissions
-Last updated: 2026-03-16
-Last verified: 2026-03-16
+Last updated: 2026-03-28
+Last verified: 2026-03-28
 Retrieve when:
 - changing auth or session behavior across surfaces
 - checking approved non-live auth/session direction before runtime work
@@ -18,7 +18,7 @@ Related files:
 
 ## Purpose
 
-This document defines the approved auth, session, and permission runtime direction required before Track B implementation begins.
+This document defines the current approved auth, session, and permission runtime direction after the customer, merchant, and admin runtime closures completed.
 
 It does not rewrite phases 1 through 8.
 It does not introduce data-layer work that belongs to later tracks.
@@ -28,31 +28,32 @@ It does not allow `shared` to become a runtime auth layer.
 
 The repository currently has:
 
-- customer entry and auth skeleton routes
-- merchant auth, onboarding, and store-selection skeleton routes
-- admin auth and permission-boundary skeleton routes
+- customer auth entry with Kakao, Zalo, guest, and phone fallback branches
+- customer session restoration and Supabase-backed authenticated runtime
+- merchant auth, onboarding, and store-selection routes with merchant-local cookie/session enforcement
+- admin auth and permission-boundary routes with admin-local cookie/session and route enforcement
 - public website that remains public-only
 
-The repository does **not** currently have:
+The repository still does **not** currently have:
 
-- real customer session state
-- real merchant session state
-- real admin session state
-- real admin permission enforcement
-- approved backend identity integration
+- completed live backend identity integration for merchant auth
+- completed live backend identity integration for admin auth
+- fully verified end-to-end live provider closure for all customer auth providers
 
 ## Customer App Strategy
 
 ### Approved auth mechanism
 
-- customer auth remains phone + OTP based
+- customer auth is customer-local and provider-split
+- Kakao and Zalo are the active primary provider branches
 - guest mode remains explicit
+- phone/OTP remains fallback only
 - onboarding remains a separate branch after auth decision
 
-### OTP and login handling direction
+### Login handling direction
 
-- login, phone entry, and OTP entry stay inside `customer-app`
-- OTP verification runtime stays customer-local
+- login entry, provider launch, callback handling, and guest branching stay inside `customer-app`
+- Supabase-backed session restoration remains customer-local
 - no shared runtime auth helpers may be introduced
 
 ### Local persistence and session handling direction
@@ -68,12 +69,11 @@ The repository does **not** currently have:
 - guest access must stay explicit, not hidden as an alias
 - guest restrictions remain customer-local policy
 
-### Out of scope until later tracks
+### Remaining auth blockers
 
-- backend auth provider wiring
-- server-backed account sync
-- profile hydration from live APIs
-- production-grade session refresh
+- Kakao live login still requires final browser-credential verification against the hosted project
+- Zalo live login still requires final end-to-end callback/exchange/session verification against the hosted project
+- review and payment flows remain separate scope and must not be used as auth proxies
 
 ## Merchant Console Strategy
 
@@ -101,12 +101,11 @@ The repository does **not** currently have:
 - onboarding complete but no store selected -> `/select-store`
 - valid session and selected store -> store-scoped console routes
 
-### Out of scope until later tracks
+### Remaining auth blockers
 
-- backend identity integration
-- live merchant data loading
-- payment verification
-- settlement finalization workflows
+- backend merchant identity integration is still not complete
+- merchant auth remains merchant-local and demo-safe
+- payment verification and settlement finalization remain out of scope
 
 ## Admin Console Strategy
 
@@ -138,11 +137,11 @@ The repository does **not** currently have:
 - permission runtime must not move into `shared`
 - permission contracts may live in `shared`, but not permission engines
 
-### Out of scope until later tracks
+### Remaining auth blockers
 
-- backend IAM integration
-- live policy source loading
-- finance and settlement backend orchestration
+- backend admin identity integration is still not complete
+- admin auth remains admin-local and demo-safe
+- live policy-source loading remains deferred
 
 ## Public Website Rule
 
@@ -174,29 +173,27 @@ The repository does **not** currently have:
 - permission engines
 - runtime orchestration
 
-## Track B Guardrails
+## Guardrails That Still Apply
 
-Codex may implement after this document exists:
+Codex may continue to implement:
 
-- customer-local auth/session controller
+- customer-local auth/session controller work
 - merchant-local session and store-context gating
 - admin-local session and permission enforcement
 - route guards and access boundaries within each surface
-- local persistence/session handling per surface
+- surface-owned runtime persistence/session handling
 
-Codex must still not implement until Track C:
+Codex must still not implement:
 
-- backend auth/data provider integration
-- repository/data-layer orchestration
-- DTO hydration from live APIs
-- production-grade sync/refresh behavior
 - payment verification
+- shared runtime auth/session logic
+- cross-surface auth/session coupling
 
 ## Decision Summary
 
 ### Approved strategy by surface
 
-- `customer-app`: customer-local phone/OTP auth with explicit guest and onboarding branches
+- `customer-app`: customer-local provider auth with Kakao/Zalo branches, explicit guest, phone fallback, and Supabase-backed customer runtime session
 - `merchant-console`: merchant-local session with onboarding and selected-store gates
 - `admin-console`: admin-local session with role/scope enforcement
 - `public-website`: remains public-only

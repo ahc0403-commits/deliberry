@@ -4,7 +4,7 @@ Status: Active
 Authority: Operational
 Surface: merchant-console
 Domains: orders, store-scope, query-read-model
-Last updated: 2026-03-16
+Last updated: 2026-03-28
 Retrieve when:
 - changing merchant orders route behavior, table filtering, or detail interactions
 - debugging whether order rendering problems come from routing, data reads, or local UI state
@@ -16,7 +16,7 @@ Related files:
 
 ## Purpose
 
-Describe the current merchant orders journey from store-scoped route entry into the orders screen and local detail panel behavior.
+Describe the current merchant orders journey from store-scoped route entry into the orders screen and persisted order status handling.
 
 ## Entry Points
 
@@ -29,7 +29,7 @@ Describe the current merchant orders journey from store-scoped route entry into 
 - `/${storeId}/orders` -> page resolves `storeId`
 - `merchant-console/src/app/(console)/[storeId]/layout.tsx` runs `ensureMerchantStoreScope(storeId)`
 - page renders `MerchantOrdersScreen(storeId)`
-- `merchantQueryServices.getOrdersData(storeId)` reads the fixture-backed orders bundle
+- `merchantQueryServices.getOrdersData(storeId)` reads the persisted orders bundle
 - user switches between local tabs: `active`, `completed`, `cancelled`
 - user opens and closes a local detail overlay through `selectedOrder`
 
@@ -38,14 +38,14 @@ Describe the current merchant orders journey from store-scoped route entry into 
 - `merchant-console/src/features/auth/server/access.ts`
 - `merchant-console/src/app/(console)/[storeId]/layout.tsx`
 - `merchant-console/src/shared/data/merchant-query-services.ts`
-- `merchant-console/src/shared/data/merchant-repository.ts`
+- `merchant-console/src/shared/data/supabase-merchant-runtime-repository.ts`
 - `merchant-console/src/features/orders/presentation/orders-screen.tsx`
 
 ## Key Dependent Screens and Files
 
 - `merchant-console/src/app/(console)/[storeId]/orders/page.tsx`
 - `merchant-console/src/features/orders/presentation/orders-screen.tsx`
-- `merchant-console/src/shared/data/merchant-mock-data.ts`
+- `merchant-console/src/shared/data/supabase-merchant-runtime-repository.ts`
 
 ## What Is Authoritative vs Derived In This Flow
 
@@ -61,9 +61,8 @@ Describe the current merchant orders journey from store-scoped route entry into 
 
 ## Known Shallow, Partial, Fixture-Backed, or Local-Only Limits
 
-- Orders are fixture-backed and in-memory only.
-- `storeId` is currently ignored by the repository.
-- Order actions do not mutate any state.
+- Orders are persisted and read from Supabase.
+- Order actions mutate persisted order status.
 - The detail panel is local overlay state only, not a route or persisted selection.
 
 ## Common Edit Mistakes

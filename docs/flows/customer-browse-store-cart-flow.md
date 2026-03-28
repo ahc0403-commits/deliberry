@@ -4,8 +4,8 @@ Status: active
 Authority: operational
 Surface: customer-app
 Domains: browse, store, menu, cart
-Last updated: 2026-03-16
-Last verified: 2026-03-16
+Last updated: 2026-03-28
+Last verified: 2026-03-28
 Retrieve when:
 - changing browse-to-store-to-cart continuity
 - debugging selected-store, add-to-cart, or cart entry behavior
@@ -71,7 +71,7 @@ Document the main browse-led ordering entry flow before checkout begins.
 
 ## Known shallow / partial / local-only limits
 
-- Browse content is mock-backed.
+- Browse content now reads the persisted store/menu runtime for the real ordering path.
 - Search/filter continuity is real in-session only.
 - Favorites and some store actions remain honesty-limited instead of live.
 - Cart is local-session only and tied to one selected store at a time.
@@ -79,7 +79,7 @@ Document the main browse-led ordering entry flow before checkout begins.
 ## Common edit mistakes
 
 - Changing store/menu behavior in one route and forgetting the other store route.
-- Treating `MockData` store/menu fixtures as mutable truth.
+- Treating fallback `MockData` store/menu fixtures as the main browse truth.
 - Losing search/filter context when navigating back from store/detail.
 - Reimplementing add-to-cart logic in widget code instead of the runtime controller.
 

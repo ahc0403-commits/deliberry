@@ -4,14 +4,14 @@ Status: Active
 Authority: Operational
 Surface: admin-console
 Domains: orders, platform-oversight, query-read-model
-Last updated: 2026-03-16
+Last updated: 2026-03-28
 Retrieve when:
 - changing admin order data reads or display logic
 - checking whether order actions mutate real state
 - debugging the split between repository data and local screen state
 Related files:
 - admin-console/src/shared/data/admin-query-services.ts
-- admin-console/src/shared/data/admin-repository.ts
+- admin-console/src/shared/data/supabase-admin-runtime-repository.ts
 - admin-console/src/features/orders/presentation/orders-screen.tsx
 
 ## Purpose
@@ -21,7 +21,7 @@ Identify where admin order data actually comes from and where the current screen
 ## Real Source-of-Truth Locations
 
 - Orders read-model entry: `admin-console/src/shared/data/admin-query-services.ts`
-- Orders fixture owner: `admin-console/src/shared/data/admin-repository.ts`
+- Orders runtime repository: `admin-console/src/shared/data/supabase-admin-runtime-repository.ts`
 - Local UI state owner: `admin-console/src/features/orders/presentation/orders-screen.tsx`
 
 ## What State Is Owned There
@@ -40,7 +40,7 @@ Identify where admin order data actually comes from and where the current screen
 
 - Authoritative:
   - read result returned by `adminQueryServices.getOrdersData()`
-  - fixture data returned by `adminRepository.getOrdersData()`
+  - persisted order data returned by `supabaseAdminRuntimeRepository.getOrdersData()`
 - Derived:
   - tab counts
   - filtered order lists
@@ -49,10 +49,10 @@ Identify where admin order data actually comes from and where the current screen
 
 ## What Is Still Shallow, Partial, Fixture-Backed, or Local-Only
 
-- Orders are fixture-backed and in-memory only.
+- Orders are persisted and read from Supabase.
 - There is no write path for order governance actions.
 - `activeTab` and `selectedOrder` exist only in screen-local React state.
-- The platform route itself is not currently session- or role-enforced.
+- The platform route is session- and role-gated before the screen renders, but the order actions themselves are still read-only.
 
 ## Known Risks
 
