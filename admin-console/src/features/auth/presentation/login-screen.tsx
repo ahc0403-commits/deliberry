@@ -44,7 +44,6 @@ export function AdminLoginScreen({ error }: { error?: string | null }) {
             type="email"
             className="auth-input"
             placeholder="admin@deliberry.com"
-            defaultValue="admin@deliberry.com"
             required
           />
         </div>
@@ -56,7 +55,6 @@ export function AdminLoginScreen({ error }: { error?: string | null }) {
             type="password"
             className="auth-input"
             placeholder="Enter your password"
-            defaultValue="demo1234"
             required
           />
         </div>
