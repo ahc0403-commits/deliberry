@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/data/customer_runtime_controller.dart';
+import '../../../core/data/customer_runtime_gateway.dart';
 import '../../../core/data/mock_data.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../app/router/route_names.dart';
@@ -19,6 +20,11 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
   double _rating = 0;
   final _controller = TextEditingController();
   bool _submitted = false;
+  bool _isSubmitting = false;
+  bool _isLoadingReview = false;
+  bool _hasRequestedReview = false;
+  List<String> _selectedTags = const <String>[];
+  CustomerOrderReview? _persistedReview;
 
   @override
   void dispose() {
@@ -26,14 +32,62 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
     super.dispose();
   }
 
-  void _submit() {
+  Future<void> _submit(CustomerOrderRecord record) async {
     if (_rating == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select a rating')),
       );
       return;
     }
-    setState(() => _submitted = true);
+    if (_isSubmitting) {
+      return;
+    }
+    setState(() => _isSubmitting = true);
+    try {
+      final review = await CustomerRuntimeController.instance.submitOrderReview(
+        orderId: record.order.id,
+        storeId: record.store.id,
+        rating: _rating.round(),
+        reviewText: _controller.text,
+        tags: _selectedTags,
+      );
+      if (!mounted) return;
+      setState(() {
+        _persistedReview = review;
+        _submitted = true;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Unable to submit review: $error')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
+    }
+  }
+
+  Future<void> _loadExistingReview(String orderId) async {
+    if (_isLoadingReview) return;
+    setState(() => _isLoadingReview = true);
+    try {
+      final review =
+          await CustomerRuntimeController.instance.readOrderReview(orderId);
+      if (review != null) {
+        _rating = review.rating.toDouble();
+        _controller.text = review.reviewText;
+        _selectedTags = List<String>.from(review.tags);
+        _persistedReview = review;
+        _submitted = true;
+      }
+    } catch (_) {
+      // Keep the screen usable even if review hydration fails.
+    } finally {
+      if (mounted) {
+        setState(() => _isLoadingReview = false);
+      }
+    }
   }
 
   @override
@@ -42,6 +96,12 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
     final record = runtime.findOrderRecordById(widget.orderId);
     final order = record?.order;
     final hasLinkedOrder = widget.orderId != null && order != null;
+    final isDelivered = order?.status == 'delivered';
+
+    if (hasLinkedOrder && !_hasRequestedReview) {
+      _hasRequestedReview = true;
+      _loadExistingReview(widget.orderId!);
+    }
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundGrey,
@@ -52,14 +112,27 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
       body: !hasLinkedOrder
           ? const _ReviewUnavailableView()
           : _submitted
-              ? _SuccessView(storeName: order.storeName)
-              : _FormView(
-                  order: order,
-                  rating: _rating,
-                  controller: _controller,
-                  onRatingChanged: (r) => setState(() => _rating = r),
-                  onSubmit: _submit,
-                ),
+              ? _SuccessView(
+                  storeName: order.storeName,
+                  rating: _persistedReview?.rating ?? _rating.round(),
+                  reviewText: _persistedReview?.reviewText ?? _controller.text,
+                  tags: _persistedReview?.tags ?? _selectedTags,
+                )
+              : !isDelivered
+                  ? _ReviewPendingView(storeName: order.storeName)
+                  : _FormView(
+                      order: order,
+                      rating: _rating,
+                      controller: _controller,
+                      selectedTags: _selectedTags,
+                      onRatingChanged: (r) => setState(() => _rating = r),
+                      onTagsChanged: (tags) => setState(() {
+                        _selectedTags = tags;
+                      }),
+                      onSubmit: () => _submit(record!),
+                      isSubmitting: _isSubmitting,
+                      isLoadingReview: _isLoadingReview,
+                    ),
     );
   }
 }
@@ -69,15 +142,23 @@ class _FormView extends StatelessWidget {
     required this.order,
     required this.rating,
     required this.controller,
+    required this.selectedTags,
     required this.onRatingChanged,
+    required this.onTagsChanged,
     required this.onSubmit,
+    required this.isSubmitting,
+    required this.isLoadingReview,
   });
 
   final MockOrder order;
   final double rating;
   final TextEditingController controller;
+  final List<String> selectedTags;
   final ValueChanged<double> onRatingChanged;
+  final ValueChanged<List<String>> onTagsChanged;
   final VoidCallback onSubmit;
+  final bool isSubmitting;
+  final bool isLoadingReview;
 
   @override
   Widget build(BuildContext context) {
@@ -96,7 +177,7 @@ class _FormView extends StatelessWidget {
           eyebrow: 'Reviews',
           title: 'Leave feedback for one completed order',
           subtitle:
-              'This form is tied to the current order context and saves only a local preview in this build.',
+              'This form is tied to the current order context and saves to the live review feed.',
           icon: Icons.rate_review_rounded,
           badge: order.id,
         ),
@@ -171,7 +252,7 @@ class _FormView extends StatelessWidget {
             ),
             InfoPill(
               icon: Icons.info_outline_rounded,
-              label: 'Local feedback preview',
+              label: 'Live review submission',
             ),
           ],
         ),
@@ -290,7 +371,10 @@ class _FormView extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              _QuickTags(),
+              _QuickTags(
+                initial: selectedTags,
+                onChanged: onTagsChanged,
+              ),
             ],
           ),
         ),
@@ -298,8 +382,8 @@ class _FormView extends StatelessWidget {
         const SizedBox(height: 24),
 
         FilledButton(
-          onPressed: onSubmit,
-          child: const Text('Save Feedback Preview'),
+          onPressed: isSubmitting || isLoadingReview ? null : onSubmit,
+          child: Text(isSubmitting ? 'Submitting...' : 'Submit Review'),
         ),
 
         const SizedBox(height: 24),
@@ -309,6 +393,14 @@ class _FormView extends StatelessWidget {
 }
 
 class _QuickTags extends StatefulWidget {
+  const _QuickTags({
+    required this.onChanged,
+    required this.initial,
+  });
+
+  final ValueChanged<List<String>> onChanged;
+  final List<String> initial;
+
   @override
   State<_QuickTags> createState() => _QuickTagsState();
 }
@@ -322,7 +414,13 @@ class _QuickTagsState extends State<_QuickTags> {
     'Worth the price',
     'Accurate order',
   ];
-  final _selected = <String>{};
+  late final Set<String> _selected;
+
+  @override
+  void initState() {
+    super.initState();
+    _selected = widget.initial.toSet();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -338,6 +436,7 @@ class _QuickTagsState extends State<_QuickTags> {
             } else {
               _selected.add(tag);
             }
+            widget.onChanged(_selected.toList());
           }),
           borderRadius: BorderRadius.circular(24),
           child: Container(
@@ -369,9 +468,17 @@ class _QuickTagsState extends State<_QuickTags> {
 }
 
 class _SuccessView extends StatelessWidget {
-  const _SuccessView({required this.storeName});
+  const _SuccessView({
+    required this.storeName,
+    required this.rating,
+    required this.reviewText,
+    required this.tags,
+  });
 
   final String storeName;
+  final int rating;
+  final String reviewText;
+  final List<String> tags;
 
   @override
   Widget build(BuildContext context) {
@@ -380,19 +487,33 @@ class _SuccessView extends StatelessWidget {
       children: [
         FeatureHeroCard(
           eyebrow: 'Feedback saved',
-          title: 'Review preview recorded',
+          title: 'Review submitted',
           subtitle:
-              'Thanks for rating $storeName. This feedback stays in the current demo flow and does not sync beyond this preview.',
+              'Thanks for rating $storeName. Your review is now part of the live store feedback feed.',
           icon: Icons.check_circle_rounded,
-          badge: 'Preview only',
+          badge: 'Submitted',
         ),
         const SizedBox(height: 24),
-        const EmptyState(
+        EmptyState(
           icon: Icons.rate_review_outlined,
-          title: 'Feedback saved in preview',
-          subtitle:
-              'Your review stays local to this session and is not sent to a backend service in this build.',
+          title: 'Review saved',
+          subtitle: reviewText.isEmpty
+              ? 'Thanks for the ${rating.toString()}-star rating.'
+              : reviewText,
         ),
+        if (tags.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: tags
+                .map((tag) => InfoPill(
+                      icon: Icons.local_offer_outlined,
+                      label: tag,
+                    ))
+                .toList(),
+          ),
+        ],
         const SizedBox(height: 20),
         FilledButton(
           onPressed: () => Navigator.pop(context),
@@ -430,6 +551,43 @@ class _ReviewUnavailableView extends StatelessWidget {
         FilledButton(
           onPressed: () =>
               Navigator.of(context).pushReplacementNamed(RouteNames.orders),
+          child: const Text('Go to Orders'),
+        ),
+      ],
+    );
+  }
+}
+
+class _ReviewPendingView extends StatelessWidget {
+  const _ReviewPendingView({required this.storeName});
+
+  final String storeName;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      children: [
+        FeatureHeroCard(
+          eyebrow: 'Reviews',
+          title: 'Review available after delivery',
+          subtitle:
+              'Your $storeName order is not marked as delivered yet, so reviews stay locked until delivery is confirmed.',
+          icon: Icons.rate_review_outlined,
+          badge: 'Delivery pending',
+        ),
+        const SizedBox(height: 24),
+        const EmptyState(
+          icon: Icons.schedule_rounded,
+          title: 'Check back after delivery',
+          subtitle:
+              'Once the order is delivered, you can rate and share feedback from this screen.',
+        ),
+        const SizedBox(height: 20),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pushReplacementNamed(
+            RouteNames.orders,
+          ),
           child: const Text('Go to Orders'),
         ),
       ],

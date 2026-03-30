@@ -181,6 +181,28 @@ class CustomerRuntimeController extends ChangeNotifier {
   bool get usesPersistedStoreData => _usesPersistedStoreData;
   bool get hasPersistedRuntimeLoaded => _persistedRuntimeLoaded;
 
+  Future<CustomerOrderReview?> readOrderReview(String orderId) async {
+    return _gateway.readOrderReview(orderId);
+  }
+
+  Future<CustomerOrderReview> submitOrderReview({
+    required String orderId,
+    required String storeId,
+    required int rating,
+    required String reviewText,
+    required List<String> tags,
+  }) async {
+    return _gateway.saveOrderReview(
+      CustomerOrderReview(
+        orderId: orderId,
+        storeId: storeId,
+        rating: rating,
+        reviewText: reviewText,
+        tags: tags,
+      ),
+    );
+  }
+
   MockAddress? get deliveryAddress {
     if (_addresses.isEmpty) return null;
     return _addresses.firstWhere(
