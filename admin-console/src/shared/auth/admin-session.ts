@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { PERMISSION_ROLES, type PermissionRole } from "../domain";
+import { createAdminServerSupabaseClient } from "../supabase/client";
 
 export const ADMIN_SESSION_COOKIE = "admin_session";
 export const ADMIN_ROLE_COOKIE = "admin_role";
@@ -18,6 +19,19 @@ function isPermissionRole(value: unknown): value is PermissionRole {
   return typeof value === "string" && PERMISSION_ROLES.includes(value as PermissionRole);
 }
 
+async function readSupabaseAdminId(): Promise<string | null> {
+  try {
+    const supabase = await createAdminServerSupabaseClient();
+    const { data, error } = await supabase.auth.getUser();
+    if (error || !data.user) {
+      return null;
+    }
+    return data.user.id;
+  } catch {
+    return null;
+  }
+}
+
 export async function readAdminSession(): Promise<AdminSession | null> {
   const store = await cookies();
   const value = store.get(ADMIN_SESSION_COOKIE)?.value;
@@ -27,8 +41,13 @@ export async function readAdminSession(): Promise<AdminSession | null> {
   }
 
   try {
+    const supabaseAdminId = await readSupabaseAdminId();
+    if (!supabaseAdminId) {
+      return null;
+    }
     const parsed = JSON.parse(value) as Partial<AdminSession>;
     if (!parsed.adminId || !parsed.adminName) return null;
+    if (parsed.adminId !== supabaseAdminId) return null;
     const roleFromCookie = store.get(ADMIN_ROLE_COOKIE)?.value;
     return {
       adminId: parsed.adminId,

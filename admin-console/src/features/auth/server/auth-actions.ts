@@ -9,8 +9,8 @@ import {
   ADMIN_SESSION_COOKIE,
 } from "../../../shared/auth/admin-session";
 import {
-  createAdminPublicSupabaseClient,
   createAdminServiceSupabaseClient,
+  createAdminServerSupabaseClient,
 } from "../../../shared/supabase/client";
 import { redirectAdminIfSessionExists } from "./access";
 
@@ -26,7 +26,7 @@ export async function signInAdminAction(formData: FormData) {
     redirectToLoginError("missing_credentials");
   }
 
-  const publicSupabase = createAdminPublicSupabaseClient();
+  const publicSupabase = await createAdminServerSupabaseClient();
   const authResult = await publicSupabase.auth.signInWithPassword({
     email,
     password,
@@ -81,6 +81,8 @@ export async function signInAdminAction(formData: FormData) {
 
 export async function signOutAdminAction() {
   const store = await cookies();
+  const supabase = await createAdminServerSupabaseClient();
+  await supabase.auth.signOut();
   store.delete(ADMIN_SESSION_COOKIE);
   store.delete(ADMIN_ROLE_COOKIE);
 
