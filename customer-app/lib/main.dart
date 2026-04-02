@@ -11,20 +11,16 @@ Future<void> main() async {
   await CustomerSupabaseClient.ensureInitialized();
   await CustomerSessionController.instance.restore();
   final startupWebCallback =
-      kIsWeb && Uri.base.queryParameters['provider'] == 'zalo'
-          ? Uri.base
-          : null;
+      kIsWeb && _isWebAuthCallback(Uri.base) ? Uri.base : null;
+
+  if (startupWebCallback != null &&
+      !CustomerSessionController.instance.hasAuthenticatedSession) {
+    await CustomerSessionController.instance.handleAuthCallback(
+      startupWebCallback,
+    );
+  }
 
   runApp(const DeliberryApp());
-
-  if (startupWebCallback != null) {
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      // Yield so widget-tree mount microtasks finish and listeners attach
-      await Future<void>.delayed(Duration.zero);
-      CustomerSessionController.instance.handleAuthCallback(startupWebCallback);
-    });
-    return;
-  }
 
   if (kIsWeb) {
     return;
@@ -38,4 +34,17 @@ Future<void> main() async {
   appLinks.uriLinkStream.listen((uri) {
     CustomerSessionController.instance.handleAuthCallback(uri);
   });
+}
+
+
+bool _isWebAuthCallback(Uri uri) {
+  if (!(uri.scheme == 'http' || uri.scheme == 'https')) {
+    return false;
+  }
+
+  final query = uri.queryParameters;
+  return query.containsKey('code') ||
+      query.containsKey('error') ||
+      query.containsKey('error_description') ||
+      query.containsKey('provider');
 }
