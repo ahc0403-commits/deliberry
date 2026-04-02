@@ -3,6 +3,15 @@
 import 'dart:html' as html;
 
 Future<bool> launchInCurrentTab(String url) async {
-  html.window.location.assign(url);
-  return true;
+  try {
+    html.window.open(url, '_self');
+    return true;
+  } catch (_) {
+    try {
+      html.window.location.assign(url);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
 }
