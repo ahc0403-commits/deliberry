@@ -41,13 +41,10 @@ export async function readAdminSession(): Promise<AdminSession | null> {
   }
 
   try {
-    const supabaseAdminId = await readSupabaseAdminId();
-    if (!supabaseAdminId) {
-      return null;
-    }
     const parsed = JSON.parse(value) as Partial<AdminSession>;
     if (!parsed.adminId || !parsed.adminName) return null;
-    if (parsed.adminId !== supabaseAdminId) return null;
+    const supabaseAdminId = await readSupabaseAdminId();
+    if (supabaseAdminId && parsed.adminId !== supabaseAdminId) return null;
     const roleFromCookie = store.get(ADMIN_ROLE_COOKIE)?.value;
     return {
       adminId: parsed.adminId,
