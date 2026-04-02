@@ -11,6 +11,7 @@ import '../backend/runtime_backend_config.dart';
 import '../supabase/supabase_client.dart';
 import 'customer_auth_adapter.dart';
 import 'customer_auth_attempt_store.dart';
+import 'web_current_tab_launcher.dart';
 
 class CustomerZaloAuthAdapter implements CustomerAuthAdapter {
   const CustomerZaloAuthAdapter();
@@ -76,11 +77,12 @@ class CustomerZaloAuthAdapter implements CustomerAuthAdapter {
       },
     );
 
-    final launched = await launchUrl(
-      authorizationUri,
-      mode: kIsWeb ? LaunchMode.platformDefault : LaunchMode.externalApplication,
-      webOnlyWindowName: kIsWeb ? '_self' : null,
-    );
+    final launched = kIsWeb
+        ? await launchInCurrentTab(authorizationUri.toString())
+        : await launchUrl(
+            authorizationUri,
+            mode: LaunchMode.externalApplication,
+          );
     if (!launched) {
       return CustomerAuthStartResult(
         provider: CustomerAuthProvider.zalo,
