@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { headers } from "next/headers";
 import type { ReactNode } from "react";
+import { redirect } from "next/navigation";
 
-import { ensureAdminPlatformAccess } from "../../features/auth/server/access";
 import { signOutAdminAction } from "../../features/auth/server/auth-actions";
-import { ADMIN_PATHNAME_HEADER, getAdminNavGroups } from "../../shared/auth/admin-access";
+import { getAdminNavGroups, isAdminRole } from "../../shared/auth/admin-access";
+import { readAdminRole, readAdminSession } from "../../shared/auth/admin-session";
 import { adminQueryServices } from "../../shared/data/admin-query-services";
 
 export default async function PlatformLayout({
@@ -12,19 +12,17 @@ export default async function PlatformLayout({
 }: {
   children: ReactNode;
 }) {
-  const requestHeaders = await headers();
-  const pathname = requestHeaders.get(ADMIN_PATHNAME_HEADER) ?? "/dashboard";
-  const access = await ensureAdminPlatformAccess(pathname);
+  const session = await readAdminSession();
+  if (!session) {
+    redirect("/login");
+  }
 
-  if (pathname === "/access-boundary") {
+  const role = await readAdminRole();
+  if (!isAdminRole(role)) {
     return <main className="platform-content">{children}</main>;
   }
 
-  if (!access.role) {
-    return <main className="platform-content">{children}</main>;
-  }
-
-  const navGroups = getAdminNavGroups(access.role);
+  const navGroups = getAdminNavGroups(role);
   const usersCount = adminQueryServices.getUsersData().users.length;
   const ordersCount = adminQueryServices.getOrdersData().orders.length;
   const disputesCount = adminQueryServices.getDisputesData().disputes.length;
