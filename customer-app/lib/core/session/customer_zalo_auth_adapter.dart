@@ -57,13 +57,19 @@ class CustomerZaloAuthAdapter implements CustomerAuthAdapter {
         : nonce;
     final codeChallenge = _codeChallengeFor(codeVerifier);
 
-    await CustomerAuthAttemptStore.write(
-      CustomerAuthAttempt(
-        provider: CustomerAuthProvider.zalo,
-        state: state,
-        codeVerifier: codeVerifier,
-      ),
+    final attempt = CustomerAuthAttempt(
+      provider: CustomerAuthProvider.zalo,
+      state: state,
+      codeVerifier: codeVerifier,
     );
+    try {
+      await CustomerAuthAttemptStore.write(attempt);
+    } catch (_) {
+      if (!kIsWeb) {
+        rethrow;
+      }
+      // Web can recover callback verification from encoded state.
+    }
 
     final authorizationUri = Uri.https(
       'oauth.zaloapp.com',
