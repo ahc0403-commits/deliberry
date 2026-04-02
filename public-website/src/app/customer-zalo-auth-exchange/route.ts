@@ -213,17 +213,19 @@ async function resolveSupabaseIdentity(
   const displayName = resolveDisplayName(profile, zaloUserId);
   const phoneNumber = profile.phone?.trim() || null;
 
-  const { data: existingAuthUser, error: existingAuthUserError } =
-    await supabaseAdmin
-      .schema("auth")
-      .from("users")
-      .select("id")
-      .eq("email", email)
-      .maybeSingle();
+  const { data: existingAuthUsers, error: existingAuthUserError } =
+    await supabaseAdmin.auth.admin.listUsers({
+      page: 1,
+      perPage: 200,
+    });
 
   if (existingAuthUserError) {
     throw new Error(`supabase_user_lookup_failed:${existingAuthUserError.message}`);
   }
+
+  const existingAuthUser = existingAuthUsers.users.find(
+    (candidate) => candidate.email?.trim().toLowerCase() === email.toLowerCase(),
+  );
 
   const userMetadata = {
     display_name: displayName,
@@ -399,6 +401,7 @@ async function handleExchange(payload: ExchangeRequest) {
       display_name: identity.displayName,
     });
   } catch (error) {
+    console.error("customer_zalo_auth_exchange_failed", error);
     return jsonResponse(502, {
       error_code: "provider_exchange_failed",
       message: error instanceof Error ? error.message : "Unknown exchange failure",
