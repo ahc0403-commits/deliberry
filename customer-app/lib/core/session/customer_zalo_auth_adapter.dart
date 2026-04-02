@@ -367,11 +367,13 @@ CustomerAuthAttempt? _resolveAttempt({
   required _WebStateRecovery? stateRecovery,
 }) {
   if (storedAttempt != null &&
-      storedAttempt.provider == CustomerAuthProvider.zalo &&
-      callbackState != null &&
-      callbackState.isNotEmpty &&
-      callbackState == storedAttempt.state) {
-    return storedAttempt;
+      storedAttempt.provider == CustomerAuthProvider.zalo) {
+    if (callbackState == null || callbackState.isEmpty) {
+      return storedAttempt;
+    }
+    if (callbackState == storedAttempt.state) {
+      return storedAttempt;
+    }
   }
 
   if (!kIsWeb || callbackState == null || callbackState.isEmpty) {
