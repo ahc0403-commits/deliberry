@@ -346,7 +346,8 @@ async function issueSupabaseSession(
 
 async function handleExchange(payload: ExchangeRequest) {
   const projectUrl = requiredEnv("PROJECT_URL");
-  const serviceRoleKey = requiredEnv("SERVICE_ROLE_KEY");
+  const serviceRoleKey =
+    requiredEnv("SUPABASE_SERVICE_ROLE_KEY") || requiredEnv("SERVICE_ROLE_KEY");
   const zaloAppId = requiredEnv("ZALO_APP_ID");
   const zaloAppSecret = requiredEnv("ZALO_APP_SECRET");
   const zaloRedirectUri = requiredEnv("ZALO_REDIRECT_URI");
