@@ -10,19 +10,16 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await CustomerSupabaseClient.ensureInitialized();
   await CustomerSessionController.instance.restore();
-  final startupWebCallback =
-      kIsWeb && _isWebAuthCallback(Uri.base) ? Uri.base : null;
-
-  if (startupWebCallback != null &&
-      !CustomerSessionController.instance.hasAuthenticatedSession) {
-    await CustomerSessionController.instance.handleAuthCallback(
-      startupWebCallback,
-    );
-  }
+  final startupWebCallback = kIsWeb ? _extractWebAuthCallback(Uri.base) : null;
 
   runApp(const DeliberryApp());
 
   if (kIsWeb) {
+    if (startupWebCallback != null &&
+        !CustomerSessionController.instance.hasAuthenticatedSession) {
+      // Keep first paint responsive on callback return.
+      CustomerSessionController.instance.handleAuthCallback(startupWebCallback);
+    }
     return;
   }
 
@@ -37,14 +34,25 @@ Future<void> main() async {
 }
 
 
-bool _isWebAuthCallback(Uri uri) {
+Uri? _extractWebAuthCallback(Uri uri) {
   if (!(uri.scheme == 'http' || uri.scheme == 'https')) {
-    return false;
+    return null;
   }
 
-  final query = uri.queryParameters;
+  final query = <String, String>{...uri.queryParameters};
+  final fragment = uri.fragment;
+  final fragmentQueryIndex = fragment.indexOf('?');
+  if (fragmentQueryIndex >= 0 && fragmentQueryIndex < fragment.length - 1) {
+    final fragmentQuery = Uri.splitQueryString(
+      fragment.substring(fragmentQueryIndex + 1),
+    );
+    query.addAll(fragmentQuery);
+  }
+
   return query.containsKey('code') ||
-      query.containsKey('error') ||
-      query.containsKey('error_description') ||
-      query.containsKey('provider');
+          query.containsKey('error') ||
+          query.containsKey('error_description') ||
+          query.containsKey('provider')
+      ? uri.replace(queryParameters: query)
+      : null;
 }
