@@ -4,11 +4,12 @@ import 'dart:html' as html;
 
 Future<bool> launchInCurrentTab(String url) async {
   try {
-    html.window.open(url, '_self');
+    // Force same-tab navigation for OAuth redirects on web.
+    html.window.location.assign(url);
     return true;
   } catch (_) {
     try {
-      html.window.location.assign(url);
+      html.window.location.href = url;
       return true;
     } catch (_) {
       return false;
