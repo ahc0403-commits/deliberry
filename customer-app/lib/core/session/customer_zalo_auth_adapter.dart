@@ -62,13 +62,8 @@ class CustomerZaloAuthAdapter implements CustomerAuthAdapter {
       state: state,
       codeVerifier: codeVerifier,
     );
-    try {
+    if (!kIsWeb) {
       await CustomerAuthAttemptStore.write(attempt);
-    } catch (_) {
-      if (!kIsWeb) {
-        rethrow;
-      }
-      // Web can recover callback verification from encoded state.
     }
 
     final authorizationUri = Uri.https(
