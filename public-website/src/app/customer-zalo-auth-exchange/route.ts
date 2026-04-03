@@ -173,12 +173,24 @@ async function exchangeAuthorizationCode(
 }
 
 async function fetchZaloProfile(accessToken: string) {
-  const profileUrl = new URL("https://graph.zalo.me/v2.0/me");
-  profileUrl.searchParams.set("access_token", accessToken);
-  profileUrl.searchParams.set("fields", "id,name,picture,phone");
+  const profileProxyUrl = requiredEnv("VIETNAM_ZALO_PROFILE_PROXY_URL");
+  const profileProxySecret = requiredEnv("VIETNAM_ZALO_PROXY_SHARED_SECRET");
 
-  const response = await fetch(profileUrl, {
-    method: "GET",
+  if (!profileProxyUrl || !profileProxySecret) {
+    throw new Error(
+      "zalo_profile_proxy_unconfigured:VIETNAM_ZALO_PROFILE_PROXY_URL and VIETNAM_ZALO_PROXY_SHARED_SECRET are required",
+    );
+  }
+
+  const response = await fetch(profileProxyUrl, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${profileProxySecret}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      access_token: accessToken,
+    }),
     cache: "no-store",
   });
   const text = await response.text();
