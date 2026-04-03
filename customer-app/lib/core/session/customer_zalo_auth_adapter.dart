@@ -161,7 +161,7 @@ class CustomerZaloAuthAdapter implements CustomerAuthAdapter {
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw StateError(
-        'Customer Zalo auth exchange failed with HTTP ${response.statusCode}.',
+        'Customer Zalo auth exchange failed with HTTP ${response.statusCode}: ${response.body}',
       );
     }
 

@@ -385,15 +385,25 @@ async function handleExchange(payload: ExchangeRequest) {
   }
 
   try {
+    console.log("[zalo-exchange] step=token_exchange");
     const tokenResponse = await exchangeAuthorizationCode(payload, {
       zaloAppId,
       zaloAppSecret,
     });
+    console.log("[zalo-exchange] step=token_exchange_ok");
+
+    console.log("[zalo-exchange] step=profile_fetch");
     const profile = await fetchZaloProfile(tokenResponse.access_token!);
+    console.log("[zalo-exchange] step=profile_fetch_ok", { zaloId: profile.id });
+
+    console.log("[zalo-exchange] step=resolve_identity");
     const identity = await resolveSupabaseIdentity(
       { projectUrl, serviceRoleKey },
       profile,
     );
+    console.log("[zalo-exchange] step=resolve_identity_ok", { actorId: identity.actorId });
+
+    console.log("[zalo-exchange] step=issue_session");
     const session = await issueSupabaseSession(
       { projectUrl, serviceRoleKey },
       {
@@ -401,6 +411,7 @@ async function handleExchange(payload: ExchangeRequest) {
         password: identity.password,
       },
     );
+    console.log("[zalo-exchange] step=issue_session_ok");
 
     return jsonResponse(200, {
       access_token: session["access_token"],
@@ -413,10 +424,11 @@ async function handleExchange(payload: ExchangeRequest) {
       display_name: identity.displayName,
     });
   } catch (error) {
-    console.error("customer_zalo_auth_exchange_failed", error);
+    const msg = error instanceof Error ? error.message : "Unknown exchange failure";
+    console.error("[zalo-exchange] step=FAILED", msg, error);
     return jsonResponse(502, {
       error_code: "provider_exchange_failed",
-      message: error instanceof Error ? error.message : "Unknown exchange failure",
+      message: msg,
     });
   }
 }
