@@ -19,6 +19,35 @@ class AuthScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // Surface any auth callback error from the redirect flow.
+                ListenableBuilder(
+                  listenable: CustomerSessionController.instance,
+                  builder: (context, _) {
+                    final error =
+                        CustomerSessionController.instance.lastAuthError;
+                    if (error == null || error.isEmpty) {
+                      return const SizedBox.shrink();
+                    }
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade50,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.red.shade200),
+                        ),
+                        child: Text(
+                          error,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.red.shade800,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
                 // Header
                 Center(
                   child: Container(
