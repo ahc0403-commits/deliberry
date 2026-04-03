@@ -72,7 +72,7 @@ class CustomerSupabaseOAuthAdapter {
   }
 
   Future<CustomerAuthIdentity> completeAuthCallback(Uri callbackUri) async {
-    if (!CustomerAuthRedirectConfig.current.matches(callbackUri)) {
+    if (!_matchesSupportedCallback(callbackUri)) {
       throw StateError(
         'Customer auth callback did not match the configured callback URI.',
       );
@@ -130,5 +130,23 @@ class CustomerSupabaseOAuthAdapter {
       phoneNumber: user.phone,
       needsOnboarding: (userMetadata?['needs_onboarding'] as bool?) ?? false,
     );
+  }
+}
+
+
+extension on CustomerSupabaseOAuthAdapter {
+  bool _matchesSupportedCallback(Uri callbackUri) {
+    if (CustomerAuthRedirectConfig.current.matches(callbackUri)) {
+      return true;
+    }
+
+    if (!kIsWeb) {
+      return false;
+    }
+
+    return (callbackUri.scheme == 'http' || callbackUri.scheme == 'https') &&
+        (callbackUri.queryParameters.containsKey('code') ||
+            callbackUri.queryParameters.containsKey('error') ||
+            callbackUri.queryParameters.containsKey('error_description'));
   }
 }

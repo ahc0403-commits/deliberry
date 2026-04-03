@@ -66,14 +66,28 @@ class AuthScreen extends StatelessWidget {
 
                 FilledButton.icon(
                   onPressed: () async {
-                    final result = await CustomerSessionController.instance
-                        .beginSignIn(CustomerAuthProvider.zalo);
-                    if (!context.mounted) return;
-                    if (!result.isReady) {
-                      final message = result.message ??
-                          'Zalo login is not available right now.';
+                    try {
+                      final result = await CustomerSessionController.instance
+                          .beginSignIn(CustomerAuthProvider.zalo);
+                      if (!context.mounted) return;
+                      if (!result.isReady) {
+                        final message = result.message ??
+                            'Zalo login is not available right now.';
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(message),
+                            duration: const Duration(seconds: 6),
+                          ),
+                        );
+                      }
+                    } catch (error) {
+                      if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(message)),
+                        SnackBar(
+                          content: Text('Zalo sign-in error: $error'),
+                          duration: const Duration(seconds: 10),
+                          backgroundColor: Colors.red,
+                        ),
                       );
                     }
                   },
