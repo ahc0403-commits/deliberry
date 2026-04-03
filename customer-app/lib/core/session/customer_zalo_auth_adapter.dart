@@ -46,12 +46,12 @@ class CustomerZaloAuthAdapter implements CustomerAuthAdapter {
       );
     }
 
-    final nonce = _randomToken();
-    final codeVerifier = _randomToken(length: 64);
+    final nonce = _randomToken(length: 16);
+    final codeVerifier = _randomToken(length: 43);
     final state = kIsWeb
         ? _webStateFor(
             nonce: nonce,
-            returnTo: Uri.base.toString(),
+            returnTo: _canonicalWebReturnTo(Uri.base),
             codeVerifier: codeVerifier,
           )
         : nonce;
@@ -62,7 +62,10 @@ class CustomerZaloAuthAdapter implements CustomerAuthAdapter {
       state: state,
       codeVerifier: codeVerifier,
     );
-    if (!kIsWeb) {
+    if (kIsWeb) {
+      // Keep web launch in the active user gesture path.
+      CustomerAuthAttemptStore.write(attempt);
+    } else {
       await CustomerAuthAttemptStore.write(attempt);
     }
 
@@ -318,6 +321,14 @@ String _webStateFor({
     'code_verifier': codeVerifier,
   });
   return base64Url.encode(utf8.encode(payload)).replaceAll('=', '');
+}
+
+String _canonicalWebReturnTo(Uri uri) {
+  final origin = uri.origin.trim();
+  if (origin.isEmpty) {
+    return uri.toString();
+  }
+  return '$origin/#/entry';
 }
 
 _WebStateRecovery? _decodeWebState(String? state) {
