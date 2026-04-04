@@ -224,27 +224,26 @@ async function resolveSupabaseIdentity(
   const password = await deterministicPasswordFor(zaloUserId, env.serviceRoleKey);
   const displayName = resolveDisplayName(profile, zaloUserId);
   const phoneNumber = profile.phone?.trim() || null;
+  const needsOnboarding = phoneNumber == null;
 
-  const { data: existingAuthUsers, error: existingAuthUserError } =
-    await supabaseAdmin.auth.admin.listUsers({
-      page: 1,
-      perPage: 200,
-    });
+  const { data: existingAuthUser, error: existingAuthUserError } =
+    await supabaseAdmin
+      .schema("auth")
+      .from("users")
+      .select("id")
+      .eq("email", email)
+      .maybeSingle();
 
   if (existingAuthUserError) {
     throw new Error(`supabase_user_lookup_failed:${existingAuthUserError.message}`);
   }
-
-  const existingAuthUser = existingAuthUsers.users.find(
-    (candidate) => candidate.email?.trim().toLowerCase() === email.toLowerCase(),
-  );
 
   const userMetadata = {
     display_name: displayName,
     phone_number: phoneNumber,
     provider: "zalo",
     zalo_user_id: zaloUserId,
-    needs_onboarding: phoneNumber == null,
+    needs_onboarding: needsOnboarding,
   };
   const appMetadata = {
     provider: "zalo",
@@ -299,7 +298,7 @@ async function resolveSupabaseIdentity(
     email,
     password,
     isNewCustomer,
-    needsOnboarding: phoneNumber == null,
+    needsOnboarding,
   };
 }
 
