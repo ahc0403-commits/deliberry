@@ -16,6 +16,7 @@ import {
   type MerchantReview,
   type MerchantOrder,
 } from "./merchant-mock-data";
+import { ExternalSalesService } from "./external-sales-service";
 import type {
   MerchantDashboardKpiSnapshot,
   MerchantOrdersQuery,
@@ -484,7 +485,23 @@ export class SupabaseMerchantRuntimeRepository implements MerchantRuntimeReposit
       );
     } catch {}
 
-    return mapPersistedOrder(refreshedOrder as PersistedOrderRow);
+    const updatedOrder = mapPersistedOrder(refreshedOrder as PersistedOrderRow);
+
+    // Fire-and-forget: external sales replication must not block order updates.
+    const externalSalesService = new ExternalSalesService(supabase);
+    if (nextStatus === "delivered") {
+      void externalSalesService.recordCompletedOrder({
+        storeId: input.storeId,
+        order: updatedOrder,
+      });
+    } else if (nextStatus === "cancelled") {
+      void externalSalesService.recordCancelledOrder({
+        storeId: input.storeId,
+        order: updatedOrder,
+      });
+    }
+
+    return updatedOrder;
   }
 
   async getMenuData(): Promise<never> {
