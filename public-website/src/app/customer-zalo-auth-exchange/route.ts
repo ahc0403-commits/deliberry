@@ -89,6 +89,30 @@ function requiredEnv(name: string) {
   return value;
 }
 
+function logAuthEvent(
+  event: string,
+  level: "INFO" | "ERROR",
+  fields: Record<string, unknown> = {},
+) {
+  const safe = { ...fields };
+  delete safe["access_token"];
+  delete safe["refresh_token"];
+  delete safe["service_role_key"];
+  delete safe["secret"];
+  delete safe["jwt"];
+  const entry = {
+    event,
+    level,
+    timestamp: new Date().toISOString(),
+    ...safe,
+  };
+  if (level === "ERROR") {
+    console.error(JSON.stringify(entry));
+  } else {
+    console.log(JSON.stringify(entry));
+  }
+}
+
 function buildAppRedirect(query: URLSearchParams) {
   const url = new URL(APP_CALLBACK_URI);
   query.forEach((value, key) => {
@@ -263,10 +287,11 @@ async function resolveSupabaseIdentity(
   const phoneNumber = profile.phone?.trim() || null;
   const needsOnboarding = phoneNumber == null;
 
-  console.log("[zalo-exchange] step=resolve_identity_client", {
-    projectUrlHost: new URL(env.projectUrl).host,
-    serviceRoleKeyPresent: env.serviceRoleKey.length > 0,
-    serviceRoleKeyKind: env.serviceRoleKey.startsWith("eyJ")
+  logAuthEvent("auth.user_lookup.start", "INFO", {
+    provider: "zalo",
+    project_url_host: new URL(env.projectUrl).host,
+    service_role_key_present: env.serviceRoleKey.length > 0,
+    service_role_key_kind: env.serviceRoleKey.startsWith("eyJ")
       ? "jwt"
       : env.serviceRoleKey.startsWith("sb_")
         ? "sb_secret"
@@ -457,7 +482,7 @@ async function handleExchange(payload: ExchangeRequest) {
   }
 
   try {
-    console.log("[zalo-exchange] env_presence", {
+    logAuthEvent("auth.exchange.env_check", "INFO", {
       projectUrlPresent: Boolean(projectUrl),
       projectUrlHost: projectUrl ? new URL(projectUrl).host : null,
       serviceRoleKeyPresent: Boolean(serviceRoleKey),
@@ -465,28 +490,38 @@ async function handleExchange(payload: ExchangeRequest) {
       zaloAppIdPresent: Boolean(zaloAppId),
       zaloAppSecretPresent: Boolean(zaloAppSecret),
       zaloRedirectUriPresent: Boolean(zaloRedirectUri),
-      proxyUrlPresent: Boolean(requiredEnv("VIETNAM_ZALO_PROFILE_PROXY_URL")),
-      proxySecretPresent: Boolean(requiredEnv("VIETNAM_ZALO_PROXY_SHARED_SECRET")),
+      proxyUrlPresent: Boolean(
+        process.env["VIETNAM_ZALO_PROFILE_PROXY_URL"]?.trim(),
+      ),
+      proxySecretPresent: Boolean(
+        process.env["VIETNAM_ZALO_PROXY_SHARED_SECRET"]?.trim(),
+      ),
     });
-    console.log("[zalo-exchange] step=token_exchange");
+    logAuthEvent("auth.exchange.start", "INFO", { provider: "zalo" });
     const tokenResponse = await exchangeAuthorizationCode(payload, {
       zaloAppId,
       zaloAppSecret,
     });
-    console.log("[zalo-exchange] step=token_exchange_ok");
+    logAuthEvent("auth.exchange.success", "INFO", { provider: "zalo" });
 
-    console.log("[zalo-exchange] step=profile_fetch");
+    logAuthEvent("auth.profile_fetch.start", "INFO", { provider: "zalo" });
     const profile = await fetchZaloProfile(tokenResponse.access_token!);
-    console.log("[zalo-exchange] step=profile_fetch_ok", { zaloId: profile.id });
+    logAuthEvent("auth.profile_fetch.success", "INFO", {
+      provider: "zalo",
+      zalo_id: profile.id,
+    });
 
-    console.log("[zalo-exchange] step=resolve_identity");
+    logAuthEvent("auth.user_lookup.start", "INFO", { provider: "zalo" });
     const identity = await resolveSupabaseIdentity(
       { projectUrl, serviceRoleKey },
       profile,
     );
-    console.log("[zalo-exchange] step=resolve_identity_ok", { actorId: identity.actorId });
+    logAuthEvent("auth.user_lookup.success", "INFO", {
+      provider: "zalo",
+      user_id: identity.actorId,
+    });
 
-    console.log("[zalo-exchange] step=issue_session");
+    logAuthEvent("auth.session.start", "INFO", { provider: "zalo" });
     const session = await issueSupabaseSession(
       { projectUrl, serviceRoleKey },
       {
@@ -494,7 +529,7 @@ async function handleExchange(payload: ExchangeRequest) {
         password: identity.password,
       },
     );
-    console.log("[zalo-exchange] step=issue_session_ok");
+    logAuthEvent("auth.session.issued", "INFO", { provider: "zalo" });
 
     return jsonResponse(200, {
       access_token: session["access_token"],
@@ -508,7 +543,11 @@ async function handleExchange(payload: ExchangeRequest) {
     });
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Unknown exchange failure";
-    console.error("[zalo-exchange] step=FAILED", msg, error);
+    logAuthEvent("auth.exchange.failed", "ERROR", {
+      provider: "zalo",
+      error_code: msg,
+      error_message: error instanceof Error ? error.message : String(error),
+    });
     return jsonResponse(502, {
       error_code: "provider_exchange_failed",
       message: msg,
