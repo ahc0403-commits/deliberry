@@ -82,7 +82,11 @@ function jsonResponse(status: number, body: Record<string, unknown>) {
 }
 
 function requiredEnv(name: string) {
-  return process.env[name]?.trim() ?? "";
+  const value = process.env[name]?.trim() ?? "";
+  if (!value) {
+    throw new Error(`missing_env:${name}`);
+  }
+  return value;
 }
 
 function buildAppRedirect(query: URLSearchParams) {
@@ -402,27 +406,37 @@ async function issueSupabaseSession(
 }
 
 async function handleExchange(payload: ExchangeRequest) {
-  const projectUrl = requiredEnv("PROJECT_URL");
-  const serviceRoleKey =
-    requiredEnv("SUPABASE_SERVICE_ROLE_KEY") || requiredEnv("SERVICE_ROLE_KEY");
-  const zaloAppId = requiredEnv("ZALO_APP_ID");
-  const zaloAppSecret = requiredEnv("ZALO_APP_SECRET");
-  const zaloRedirectUri = requiredEnv("ZALO_REDIRECT_URI");
-
-  if (!projectUrl || !serviceRoleKey) {
-    return jsonResponse(503, {
-      error_code: "supabase_admin_unconfigured",
-      message:
-        "PROJECT_URL and SERVICE_ROLE_KEY are required for customer Zalo auth exchange.",
-    });
-  }
-
-  if (!zaloAppId || !zaloAppSecret || !zaloRedirectUri) {
-    return jsonResponse(503, {
-      error_code: "provider_not_configured",
-      message:
-        "ZALO_APP_ID, ZALO_APP_SECRET, and ZALO_REDIRECT_URI are required for customer Zalo auth exchange.",
-    });
+  let projectUrl = "";
+  let serviceRoleKey = "";
+  let zaloAppId = "";
+  let zaloAppSecret = "";
+  let zaloRedirectUri = "";
+  try {
+    projectUrl = requiredEnv("SUPABASE_URL");
+    serviceRoleKey = requiredEnv("SUPABASE_SERVICE_ROLE_KEY");
+    zaloAppId = requiredEnv("ZALO_APP_ID");
+    zaloAppSecret = requiredEnv("ZALO_APP_SECRET");
+    zaloRedirectUri = requiredEnv("ZALO_REDIRECT_URI");
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (message === "missing_env:SUPABASE_URL" ||
+        message === "missing_env:SUPABASE_SERVICE_ROLE_KEY") {
+      return jsonResponse(503, {
+        error_code: "supabase_admin_unconfigured",
+        message:
+          "SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required for customer Zalo auth exchange.",
+      });
+    }
+    if (message === "missing_env:ZALO_APP_ID" ||
+        message === "missing_env:ZALO_APP_SECRET" ||
+        message === "missing_env:ZALO_REDIRECT_URI") {
+      return jsonResponse(503, {
+        error_code: "provider_not_configured",
+        message:
+          "ZALO_APP_ID, ZALO_APP_SECRET, and ZALO_REDIRECT_URI are required for customer Zalo auth exchange.",
+      });
+    }
+    throw error;
   }
 
   const authorizationCode = payload.authorization_code?.trim();
@@ -447,12 +461,7 @@ async function handleExchange(payload: ExchangeRequest) {
       projectUrlPresent: Boolean(projectUrl),
       projectUrlHost: projectUrl ? new URL(projectUrl).host : null,
       serviceRoleKeyPresent: Boolean(serviceRoleKey),
-      serviceRoleKeyEnv:
-        requiredEnv("SUPABASE_SERVICE_ROLE_KEY").length > 0
-          ? "SUPABASE_SERVICE_ROLE_KEY"
-          : requiredEnv("SERVICE_ROLE_KEY").length > 0
-            ? "SERVICE_ROLE_KEY"
-            : null,
+      serviceRoleKeyEnv: "SUPABASE_SERVICE_ROLE_KEY",
       zaloAppIdPresent: Boolean(zaloAppId),
       zaloAppSecretPresent: Boolean(zaloAppSecret),
       zaloRedirectUriPresent: Boolean(zaloRedirectUri),
