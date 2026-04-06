@@ -105,6 +105,7 @@ class CustomerZaloAuthAdapter implements CustomerAuthAdapter {
 
   @override
   Future<CustomerAuthIdentity> completeAuthCallback(Uri callbackUri) async {
+    debugPrint('[CustomerZaloAuth] callback:received uri=$callbackUri');
     if (!_matchesSupportedCallback(callbackUri)) {
       throw StateError(
         'Customer Zalo auth callback did not match the configured callback URI.',
@@ -117,6 +118,7 @@ class CustomerZaloAuthAdapter implements CustomerAuthAdapter {
         'Customer Zalo auth callback is missing the authorization code.',
       );
     }
+    debugPrint('[CustomerZaloAuth] callback:code_present');
 
     final state = callbackUri.queryParameters['state']?.trim();
     final stateRecovery = kIsWeb ? _decodeWebState(state) : null;
@@ -131,6 +133,7 @@ class CustomerZaloAuthAdapter implements CustomerAuthAdapter {
         'Customer Zalo auth callback is missing the matching auth attempt.',
       );
     }
+    debugPrint('[CustomerZaloAuth] callback:attempt_recovered');
     await CustomerAuthAttemptStore.clear();
 
     await CustomerSupabaseClient.ensureInitialized();
@@ -158,6 +161,9 @@ class CustomerZaloAuthAdapter implements CustomerAuthAdapter {
         },
       }),
     );
+    debugPrint(
+      '[CustomerZaloAuth] exchange:http_status=${response.statusCode}',
+    );
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw StateError(
@@ -167,7 +173,8 @@ class CustomerZaloAuthAdapter implements CustomerAuthAdapter {
 
     final payload = jsonDecode(response.body);
     if (payload is! Map) {
-      throw StateError('Customer Zalo auth exchange returned an invalid payload.');
+      throw StateError(
+          'Customer Zalo auth exchange returned an invalid payload.');
     }
 
     final json = Map<String, dynamic>.from(payload);
@@ -176,6 +183,7 @@ class CustomerZaloAuthAdapter implements CustomerAuthAdapter {
         'Customer Zalo auth exchange failed: ${json['error_code']}',
       );
     }
+    debugPrint('[CustomerZaloAuth] exchange:payload_ok');
 
     final refreshToken = json['refresh_token'] as String?;
     if (refreshToken == null || refreshToken.isEmpty) {
@@ -183,14 +191,19 @@ class CustomerZaloAuthAdapter implements CustomerAuthAdapter {
         'Customer Zalo auth exchange did not return a refresh token.',
       );
     }
+    debugPrint('[CustomerZaloAuth] exchange:refresh_token_present');
 
     final authResponse = await client.auth.setSession(refreshToken);
+    debugPrint(
+      '[CustomerZaloAuth] setSession:done hasSession=${authResponse.session != null} hasUser=${authResponse.user != null} currentUser=${client.auth.currentUser != null}',
+    );
     final user = authResponse.user ?? client.auth.currentUser;
     if (user == null) {
       throw StateError(
         'Customer Zalo auth exchange did not create a usable Supabase session.',
       );
     }
+    debugPrint('[CustomerZaloAuth] callback:user_ready id=${user.id}');
 
     return _mapUser(
       user,
@@ -230,8 +243,8 @@ class CustomerZaloAuthAdapter implements CustomerAuthAdapter {
     final displayName = (userMetadata?['display_name'] as String?)?.trim();
     final phoneNumber = user.phone;
     final providerName = (appMetadata['provider'] as String?)?.toLowerCase();
-    final needsOnboarding = (userMetadata?['needs_onboarding'] as bool?) ??
-        fallbackNeedsOnboarding;
+    final needsOnboarding =
+        (userMetadata?['needs_onboarding'] as bool?) ?? fallbackNeedsOnboarding;
 
     return CustomerAuthIdentity(
       actorId: user.id,
@@ -417,7 +430,8 @@ extension on CustomerZaloAuthAdapter {
       return false;
     }
 
-    final provider = callbackUri.queryParameters['provider']?.trim().toLowerCase();
+    final provider =
+        callbackUri.queryParameters['provider']?.trim().toLowerCase();
     return (callbackUri.scheme == 'http' || callbackUri.scheme == 'https') &&
         provider == 'zalo' &&
         callbackUri.queryParameters.containsKey('code');

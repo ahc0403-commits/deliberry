@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/session/customer_session_controller.dart';
+import '../entry/customer_entry_screen.dart';
 import '../../features/addresses/presentation/addresses_screen.dart';
 import '../../features/auth/presentation/auth_otp_screen.dart';
 import '../../features/auth/presentation/auth_phone_screen.dart';
@@ -34,16 +35,7 @@ class AppRouter {
     switch (settings.name) {
       case RouteNames.root:
       case RouteNames.entry:
-        if (session.requiresOnboarding) {
-          return _redirectRoute(RouteNames.onboarding, settings);
-        }
-        if (session.hasAuthenticatedSession || session.isGuest) {
-          return _redirectRoute(RouteNames.home, settings);
-        }
-        if (session.isOtpPending) {
-          return _redirectRoute(RouteNames.authOtp, settings);
-        }
-        return _route(const AuthScreen(), settings);
+        return _route(const CustomerEntryScreen(), settings);
       case RouteNames.home:
         return _guardRoute(
           session: session,

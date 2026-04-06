@@ -43,9 +43,13 @@ class CustomerSessionController extends ChangeNotifier {
   bool get hasSupabaseBackedSession => _identity != null;
 
   Future<void> restore() async {
+    debugPrint('[CustomerSession] restore:start');
     final authenticatedIdentity =
         await _authAdapter.restoreAuthenticatedIdentity();
     if (authenticatedIdentity != null) {
+      debugPrint(
+        '[CustomerSession] restore:authenticated actor=${authenticatedIdentity.actorId} needsOnboarding=${authenticatedIdentity.needsOnboarding}',
+      );
       _applyAuthenticatedIdentity(authenticatedIdentity, persist: false);
       _hydrated = true;
       notifyListeners();
@@ -56,8 +60,12 @@ class CustomerSessionController extends ChangeNotifier {
     if (snapshot != null) {
       _status = snapshot.status;
       _phoneNumber = snapshot.phoneNumber;
+      debugPrint(
+        '[CustomerSession] restore:snapshot status=${_status.name} phone=${_phoneNumber != null}',
+      );
     }
     _hydrated = true;
+    debugPrint('[CustomerSession] restore:done status=${_status.name}');
     notifyListeners();
   }
 
@@ -97,14 +105,20 @@ class CustomerSessionController extends ChangeNotifier {
   }
 
   Future<void> handleAuthCallback(Uri callbackUri) async {
+    debugPrint('[CustomerSession] callback:start uri=$callbackUri');
     try {
       final authenticatedIdentity =
           await _authAdapter.completeAuthCallback(callbackUri);
+      debugPrint(
+        '[CustomerSession] callback:identity actor=${authenticatedIdentity.actorId} needsOnboarding=${authenticatedIdentity.needsOnboarding}',
+      );
       await _applyAuthenticatedIdentity(authenticatedIdentity);
       _lastAuthError = null;
+      debugPrint('[CustomerSession] callback:status=${_status.name}');
       notifyListeners();
     } catch (error) {
       _lastAuthError = error.toString();
+      debugPrint('[CustomerSession] callback:error $_lastAuthError');
       notifyListeners();
     }
   }
@@ -143,12 +157,14 @@ class CustomerSessionController extends ChangeNotifier {
   }
 
   Future<void> signOut() async {
+    debugPrint('[CustomerSession] signOut:start');
     await _authAdapter.signOut();
     _identity = null;
     _lastAuthError = null;
     _phoneNumber = null;
     _status = CustomerAuthStatus.signedOut;
     await _persist();
+    debugPrint('[CustomerSession] signOut:done');
     notifyListeners();
   }
 
@@ -161,6 +177,9 @@ class CustomerSessionController extends ChangeNotifier {
     _status = authenticatedIdentity.needsOnboarding
         ? CustomerAuthStatus.onboardingRequired
         : CustomerAuthStatus.authenticated;
+    debugPrint(
+      '[CustomerSession] applyIdentity status=${_status.name} persist=$persist provider=${authenticatedIdentity.provider.name}',
+    );
     if (persist) {
       await _persist();
     }
