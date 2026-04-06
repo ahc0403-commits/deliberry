@@ -38,6 +38,39 @@ type ZaloProfileResponse = {
   message?: string;
 };
 
+function summarizeError(error: unknown) {
+  if (error == null) return "unknown";
+  if (typeof error === "string") return error;
+  if (error instanceof Error) return error.message;
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return String(error);
+  }
+}
+
+function summarizeSupabaseError(
+  error:
+    | {
+        code?: string | null;
+        message?: string | null;
+        details?: string | null;
+        hint?: string | null;
+      }
+    | null
+    | undefined,
+) {
+  if (!error) {
+    return "unknown";
+  }
+  return JSON.stringify({
+    code: error.code ?? null,
+    message: error.message ?? null,
+    details: error.details ?? null,
+    hint: error.hint ?? null,
+  });
+}
+
 function jsonResponse(status: number, body: Record<string, unknown>) {
   return new NextResponse(JSON.stringify(body), {
     status,
@@ -226,16 +259,28 @@ async function resolveSupabaseIdentity(
   const phoneNumber = profile.phone?.trim() || null;
   const needsOnboarding = phoneNumber == null;
 
-  const { data: existingAuthUser, error: existingAuthUserError } =
+  console.log("[zalo-exchange] step=resolve_identity_client", {
+    projectUrlHost: new URL(env.projectUrl).host,
+    serviceRoleKeyPresent: env.serviceRoleKey.length > 0,
+    serviceRoleKeyKind: env.serviceRoleKey.startsWith("eyJ")
+      ? "jwt"
+      : env.serviceRoleKey.startsWith("sb_")
+        ? "sb_secret"
+        : "other",
+  });
+
+  const { data: existingActorProfile, error: existingActorProfileError } =
     await supabaseAdmin
-      .schema("auth")
-      .from("users")
+      .from("actor_profiles")
       .select("id")
+      .eq("actor_type", "customer")
       .eq("email", email)
       .maybeSingle();
 
-  if (existingAuthUserError) {
-    throw new Error(`supabase_user_lookup_failed:${existingAuthUserError.message}`);
+  if (existingActorProfileError) {
+    throw new Error(
+      `actor_profile_lookup_failed:${summarizeSupabaseError(existingActorProfileError)}`,
+    );
   }
 
   const userMetadata = {
@@ -252,7 +297,7 @@ async function resolveSupabaseIdentity(
     zalo_user_id: zaloUserId,
   };
 
-  let authUserId = existingAuthUser?.id as string | undefined;
+  let authUserId = existingActorProfile?.id as string | undefined;
   const isNewCustomer = authUserId == null;
 
   if (authUserId == null) {
@@ -264,7 +309,9 @@ async function resolveSupabaseIdentity(
       app_metadata: appMetadata,
     });
     if (error || data.user == null) {
-      throw new Error(`supabase_user_create_failed:${error?.message ?? "unknown"}`);
+      throw new Error(
+        `supabase_user_create_failed:${summarizeError(error)}`,
+      );
     }
     authUserId = data.user.id;
   } else {
@@ -275,7 +322,9 @@ async function resolveSupabaseIdentity(
       app_metadata: appMetadata,
     });
     if (error) {
-      throw new Error(`supabase_user_update_failed:${error.message}`);
+      throw new Error(
+        `supabase_user_update_failed:${summarizeError(error)}`,
+      );
     }
   }
 
@@ -289,7 +338,9 @@ async function resolveSupabaseIdentity(
       phone_number: phoneNumber,
     });
   if (actorProfileError) {
-    throw new Error(`profile_bootstrap_failed:${actorProfileError.message}`);
+    throw new Error(
+      `profile_bootstrap_failed:${summarizeSupabaseError(actorProfileError)}`,
+    );
   }
 
   return {
@@ -336,7 +387,14 @@ async function issueSupabaseSession(
 
   if (!response.ok) {
     throw new Error(
-      `supabase_session_create_failed:${String(json["msg"] ?? response.status)}`,
+      `supabase_session_create_failed:${JSON.stringify({
+        status: response.status,
+        error: json["error"] ?? null,
+        code: json["code"] ?? null,
+        msg: json["msg"] ?? null,
+        message: json["message"] ?? null,
+        error_description: json["error_description"] ?? null,
+      })}`,
     );
   }
 
@@ -385,6 +443,22 @@ async function handleExchange(payload: ExchangeRequest) {
   }
 
   try {
+    console.log("[zalo-exchange] env_presence", {
+      projectUrlPresent: Boolean(projectUrl),
+      projectUrlHost: projectUrl ? new URL(projectUrl).host : null,
+      serviceRoleKeyPresent: Boolean(serviceRoleKey),
+      serviceRoleKeyEnv:
+        requiredEnv("SUPABASE_SERVICE_ROLE_KEY").length > 0
+          ? "SUPABASE_SERVICE_ROLE_KEY"
+          : requiredEnv("SERVICE_ROLE_KEY").length > 0
+            ? "SERVICE_ROLE_KEY"
+            : null,
+      zaloAppIdPresent: Boolean(zaloAppId),
+      zaloAppSecretPresent: Boolean(zaloAppSecret),
+      zaloRedirectUriPresent: Boolean(zaloRedirectUri),
+      proxyUrlPresent: Boolean(requiredEnv("VIETNAM_ZALO_PROFILE_PROXY_URL")),
+      proxySecretPresent: Boolean(requiredEnv("VIETNAM_ZALO_PROXY_SHARED_SECRET")),
+    });
     console.log("[zalo-exchange] step=token_exchange");
     const tokenResponse = await exchangeAuthorizationCode(payload, {
       zaloAppId,
