@@ -4,11 +4,10 @@ import { NextRequest, NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 
 const APP_CALLBACK_URI = "deliberry-customer-auth://zalo-callback/auth";
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+const baseCorsHeaders = {
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Cache-Control": "no-store",
 };
 
@@ -71,11 +70,62 @@ function summarizeSupabaseError(
   });
 }
 
-function jsonResponse(status: number, body: Record<string, unknown>) {
+function isAllowedAppOrigin(url: URL) {
+  if (url.protocol !== "http:" && url.protocol !== "https:") {
+    return false;
+  }
+
+  const host = url.hostname.toLowerCase();
+  const configuredOrigins = (process.env["CUSTOMER_AUTH_ALLOWED_ORIGINS"] ?? "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0);
+  if (configuredOrigins.length > 0) {
+    return configuredOrigins.includes(url.origin);
+  }
+
+  return (
+    host === "localhost" ||
+    host === "127.0.0.1" ||
+    host === "deli-berry.com" ||
+    host === "go.deli-berry.com" ||
+    host.endsWith(".deli-berry.com")
+  );
+}
+
+function resolveAllowedCorsOrigin(origin: string | null) {
+  if (!origin) {
+    return null;
+  }
+
+  try {
+    const url = new URL(origin);
+    return isAllowedAppOrigin(url) ? url.origin : null;
+  } catch {
+    return null;
+  }
+}
+
+function buildCorsHeaders(origin: string | null) {
+  const allowedOrigin = resolveAllowedCorsOrigin(origin);
+  return allowedOrigin == null
+    ? { ...baseCorsHeaders }
+    : {
+        ...baseCorsHeaders,
+        "Access-Control-Allow-Origin": allowedOrigin,
+        Vary: "Origin",
+      };
+}
+
+function jsonResponse(
+  status: number,
+  body: Record<string, unknown>,
+  origin: string | null = null,
+) {
   return new NextResponse(JSON.stringify(body), {
     status,
     headers: {
-      ...corsHeaders,
+      ...buildCorsHeaders(origin),
       "Content-Type": "application/json",
     },
   });
@@ -139,7 +189,7 @@ function decodeWebReturnTo(state: string | null) {
       return null;
     }
     const url = new URL(returnTo);
-    if (url.protocol !== "http:" && url.protocol !== "https:") {
+    if (!isAllowedAppOrigin(url)) {
       return null;
     }
     return url;
@@ -157,7 +207,7 @@ function htmlRedirect(target: URL, title: string) {
     {
       status: 200,
       headers: {
-        ...corsHeaders,
+        "Cache-Control": "no-store",
         "Content-Type": "text/html; charset=utf-8",
       },
     },
@@ -430,7 +480,10 @@ async function issueSupabaseSession(
   return json;
 }
 
-async function handleExchange(payload: ExchangeRequest) {
+async function handleExchange(
+  payload: ExchangeRequest,
+  origin: string | null,
+) {
   let projectUrl = "";
   let serviceRoleKey = "";
   let zaloAppId = "";
@@ -450,7 +503,7 @@ async function handleExchange(payload: ExchangeRequest) {
         error_code: "supabase_admin_unconfigured",
         message:
           "SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required for customer Zalo auth exchange.",
-      });
+      }, origin);
     }
     if (message === "missing_env:ZALO_APP_ID" ||
         message === "missing_env:ZALO_APP_SECRET" ||
@@ -459,7 +512,7 @@ async function handleExchange(payload: ExchangeRequest) {
         error_code: "provider_not_configured",
         message:
           "ZALO_APP_ID, ZALO_APP_SECRET, and ZALO_REDIRECT_URI are required for customer Zalo auth exchange.",
-      });
+      }, origin);
     }
     throw error;
   }
@@ -471,14 +524,14 @@ async function handleExchange(payload: ExchangeRequest) {
       error_code: "invalid_callback_payload",
       message:
         "authorization_code and redirect_uri are required for customer Zalo auth exchange.",
-    });
+    }, origin);
   }
 
   if (redirectUri !== zaloRedirectUri) {
     return jsonResponse(400, {
       error_code: "redirect_uri_mismatch",
       message: "redirect_uri did not match the configured Zalo redirect URI.",
-    });
+    }, origin);
   }
 
   try {
@@ -540,7 +593,7 @@ async function handleExchange(payload: ExchangeRequest) {
       is_new_customer: identity.isNewCustomer,
       needs_onboarding: identity.needsOnboarding,
       display_name: identity.displayName,
-    });
+    }, origin);
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Unknown exchange failure";
     logAuthEvent("auth.exchange.failed", "ERROR", {
@@ -551,12 +604,16 @@ async function handleExchange(payload: ExchangeRequest) {
     return jsonResponse(502, {
       error_code: "provider_exchange_failed",
       message: msg,
-    });
+    }, origin);
   }
 }
 
-export async function OPTIONS() {
-  return new NextResponse("ok", { headers: corsHeaders });
+export async function OPTIONS(request: NextRequest) {
+  const origin = request.headers.get("origin");
+  if (origin != null && resolveAllowedCorsOrigin(origin) == null) {
+    return new NextResponse("forbidden", { status: 403 });
+  }
+  return new NextResponse("ok", { headers: buildCorsHeaders(origin) });
 }
 
 export async function GET(request: NextRequest) {
@@ -595,7 +652,7 @@ export async function GET(request: NextRequest) {
     });
     return NextResponse.redirect(webReturnTo, {
       headers: {
-        ...corsHeaders,
+        "Cache-Control": "no-store",
       },
     });
   }
@@ -604,6 +661,14 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const origin = request.headers.get("origin");
+  if (origin != null && resolveAllowedCorsOrigin(origin) == null) {
+    return jsonResponse(403, {
+      error_code: "origin_not_allowed",
+      message: "Origin is not allowed for customer auth exchange.",
+    });
+  }
+
   let payload: ExchangeRequest;
   try {
     payload = (await request.json()) as ExchangeRequest;
@@ -611,8 +676,8 @@ export async function POST(request: NextRequest) {
     return jsonResponse(400, {
       error_code: "invalid_callback_payload",
       message: "Request body must be valid JSON.",
-    });
+    }, origin);
   }
 
-  return handleExchange(payload);
+  return handleExchange(payload, origin);
 }
