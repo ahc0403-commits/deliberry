@@ -219,17 +219,6 @@ function syntheticEmailFor(zaloUserId: string) {
   return `zalo-${safeId}@customer.zalo.deliberry.local`;
 }
 
-async function deterministicPasswordFor(zaloUserId: string, secret: string) {
-  const digest = await crypto.subtle.digest(
-    "SHA-256",
-    new TextEncoder().encode(`${secret}:${zaloUserId}`),
-  );
-  const base64 = Buffer.from(digest)
-    .toString("base64url")
-    .replace(/=/g, "");
-  return `Za_${base64}_lo!`;
-}
-
 function resolveDisplayName(profile: ZaloProfileResponse, userId: string) {
   const trimmed = profile.name?.trim();
   if (trimmed && trimmed.length > 0) {
@@ -332,7 +321,6 @@ async function resolveSupabaseIdentity(
 
   const zaloUserId = profile.id!;
   const email = syntheticEmailFor(zaloUserId);
-  const password = await deterministicPasswordFor(zaloUserId, env.serviceRoleKey);
   const displayName = resolveDisplayName(profile, zaloUserId);
   const phoneNumber = profile.phone?.trim() || null;
   const needsOnboarding = phoneNumber == null;
@@ -379,10 +367,14 @@ async function resolveSupabaseIdentity(
   let authUserId = existingActorProfile?.id as string | undefined;
   const isNewCustomer = authUserId == null;
 
+  // Random password per-call: invalidates any old deterministic credential
+  // and ensures no reusable password is derived from secrets.
+  const randomPassword = `Rnd_${crypto.randomUUID()}_${Date.now()}!`;
+
   if (authUserId == null) {
     const { data, error } = await supabaseAdmin.auth.admin.createUser({
       email,
-      password,
+      password: randomPassword,
       email_confirm: true,
       user_metadata: userMetadata,
       app_metadata: appMetadata,
@@ -396,7 +388,7 @@ async function resolveSupabaseIdentity(
   } else {
     const { error } = await supabaseAdmin.auth.admin.updateUserById(authUserId, {
       email,
-      password,
+      password: randomPassword,
       user_metadata: userMetadata,
       app_metadata: appMetadata,
     });
@@ -426,7 +418,6 @@ async function resolveSupabaseIdentity(
     actorId: authUserId,
     displayName,
     email,
-    password,
     isNewCustomer,
     needsOnboarding,
   };
@@ -437,24 +428,41 @@ async function issueSupabaseSession(
     projectUrl: string;
     serviceRoleKey: string;
   },
-  credentials: {
+  identity: {
     email: string;
-    password: string;
   },
 ) {
-  const response = await fetch(
-    `${env.projectUrl}/auth/v1/token?grant_type=password`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        apikey: env.serviceRoleKey,
-        Authorization: `Bearer ${env.serviceRoleKey}`,
-      },
-      body: JSON.stringify(credentials),
-      cache: "no-store",
+  const supabaseAdmin = createClient(env.projectUrl, env.serviceRoleKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  // Generate a magic link server-side (no email is actually sent).
+  const { data: linkData, error: linkError } =
+    await supabaseAdmin.auth.admin.generateLink({
+      type: "magiclink",
+      email: identity.email,
+    });
+
+  if (linkError || !linkData?.properties?.email_otp) {
+    throw new Error(
+      `supabase_session_link_failed:${summarizeError(linkError ?? "missing email_otp")}`,
+    );
+  }
+
+  // Verify the OTP server-side to obtain real session tokens.
+  const response = await fetch(`${env.projectUrl}/auth/v1/verify`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      apikey: env.serviceRoleKey,
     },
-  );
+    body: JSON.stringify({
+      type: "magiclink",
+      token: linkData.properties.email_otp,
+      email: identity.email,
+    }),
+    cache: "no-store",
+  });
 
   const text = await response.text();
   let json: Record<string, unknown>;
@@ -577,10 +585,7 @@ async function handleExchange(
     logAuthEvent("auth.session.start", "INFO", { provider: "zalo" });
     const session = await issueSupabaseSession(
       { projectUrl, serviceRoleKey },
-      {
-        email: identity.email,
-        password: identity.password,
-      },
+      { email: identity.email },
     );
     logAuthEvent("auth.session.issued", "INFO", { provider: "zalo" });
 
