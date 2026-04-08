@@ -5,12 +5,23 @@ import {
   validateWindow,
 } from "../_shared/settlement-core.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+const ALLOWED_ORIGINS = [
+  "https://admin.deli-berry.com",
+  "https://go.deli-berry.com",
+  "http://localhost:3103",
+  "http://localhost:3000",
+];
+
+function buildCorsHeaders(request: Request) {
+  const origin = request.headers.get("Origin") ?? "";
+  return {
+    "Access-Control-Allow-Origin": ALLOWED_ORIGINS.includes(origin) ? origin : "",
+    "Access-Control-Allow-Headers":
+      "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Vary": "Origin",
+  };
+}
 
 type TriggerRequest = {
   restaurant_id?: string;
@@ -19,11 +30,11 @@ type TriggerRequest = {
   period_label?: string;
 };
 
-function jsonResponse(status: number, body: Record<string, unknown>) {
+function jsonResponse(status: number, body: Record<string, unknown>, request: Request) {
   return new Response(JSON.stringify(body), {
     status,
     headers: {
-      ...corsHeaders,
+      ...buildCorsHeaders(request),
       "Content-Type": "application/json",
     },
   });
@@ -59,9 +70,7 @@ async function assertAdmin(request: Request): Promise<{ ok: true } | { ok: false
     return { ok: false, message: error?.message ?? "Invalid token." };
   }
 
-  const actorType =
-    (data.user.app_metadata?.actor_type as string | undefined) ??
-    (data.user.user_metadata?.actor_type as string | undefined);
+  const actorType = data.user.app_metadata?.actor_type as string | undefined;
   if (actorType !== "admin") {
     return { ok: false, message: "Admin privileges are required." };
   }
@@ -71,14 +80,14 @@ async function assertAdmin(request: Request): Promise<{ ok: true } | { ok: false
 
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: buildCorsHeaders(request) });
   }
 
   if (request.method !== "POST") {
     return jsonResponse(405, {
       error_code: "method_not_allowed",
       message: "Use POST for trigger-settlement.",
-    });
+    }, request);
   }
 
   const adminCheck = await assertAdmin(request);
@@ -86,7 +95,7 @@ Deno.serve(async (request) => {
     return jsonResponse(401, {
       error_code: "unauthorized",
       message: adminCheck.message,
-    });
+    }, request);
   }
 
   let payload: TriggerRequest;
@@ -96,14 +105,14 @@ Deno.serve(async (request) => {
     return jsonResponse(400, {
       error_code: "invalid_payload",
       message: "Request body must be valid JSON.",
-    });
+    }, request);
   }
 
   if (!payload.period_start || !payload.period_end) {
     return jsonResponse(400, {
       error_code: "invalid_period_window",
       message: "period_start and period_end are required.",
-    });
+    }, request);
   }
 
   try {
@@ -122,12 +131,12 @@ Deno.serve(async (request) => {
       ...result,
       window,
       scope: payload.restaurant_id?.trim() || "all_restaurants",
-    });
+    }, request);
   } catch (error) {
     return jsonResponse(500, {
       error_code: "settlement_generation_failed",
       message: error instanceof Error ? error.message : String(error),
-    });
+    }, request);
   }
 });
 

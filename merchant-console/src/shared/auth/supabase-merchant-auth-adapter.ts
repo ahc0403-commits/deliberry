@@ -229,7 +229,6 @@ export class SupabaseMerchantAuthAdapter implements MerchantAuthAdapter {
 
     const service = createMerchantServiceSupabaseClient();
     const { error: updateError } = await service.rpc("set_merchant_default_store", {
-        p_user_id: user.id,
         p_store_id: storeId,
       });
 

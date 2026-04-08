@@ -389,8 +389,6 @@ export class SupabaseMerchantRuntimeRepository implements MerchantRuntimeReposit
         p_order_id: input.orderId,
         p_store_id: input.storeId,
         p_next_status: nextStatus,
-        p_actor_id: input.actorId,
-        p_actor_type: input.actorType,
       },
     );
 
@@ -658,8 +656,6 @@ export class SupabaseMerchantRuntimeRepository implements MerchantRuntimeReposit
       "update_store_settings_with_audit",
       {
         p_store_id: input.storeId,
-        p_actor_id: input.actorId,
-        p_actor_type: input.actorType,
         p_settings_json: {
           auto_accept_orders: input.toggles.autoAcceptOrders,
           order_notifications: input.toggles.orderNotifications,
@@ -787,8 +783,6 @@ export class SupabaseMerchantRuntimeRepository implements MerchantRuntimeReposit
       "update_store_profile_with_audit",
       {
         p_store_id: input.storeId,
-        p_actor_id: input.actorId,
-        p_actor_type: input.actorType,
         p_name: input.store.name,
         p_cuisine_type: input.store.cuisineType,
         p_phone: input.store.phone,

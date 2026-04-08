@@ -3,18 +3,28 @@ import {
   runSettlementGeneration,
 } from "../_shared/settlement-core.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+// CRON-only function: no browser CORS needed, restrict to same-origin/internal
+const ALLOWED_ORIGINS = [
+  "https://admin.deli-berry.com",
+  "http://localhost:3103",
+];
 
-function jsonResponse(status: number, body: Record<string, unknown>) {
+function buildCorsHeaders(request: Request) {
+  const origin = request.headers.get("Origin") ?? "";
+  return {
+    "Access-Control-Allow-Origin": ALLOWED_ORIGINS.includes(origin) ? origin : "",
+    "Access-Control-Allow-Headers":
+      "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Vary": "Origin",
+  };
+}
+
+function jsonResponse(status: number, body: Record<string, unknown>, request: Request) {
   return new Response(JSON.stringify(body), {
     status,
     headers: {
-      ...corsHeaders,
+      ...buildCorsHeaders(request),
       "Content-Type": "application/json",
     },
   });
@@ -22,14 +32,14 @@ function jsonResponse(status: number, body: Record<string, unknown>) {
 
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: buildCorsHeaders(request) });
   }
 
   if (request.method !== "POST") {
     return jsonResponse(405, {
       error_code: "method_not_allowed",
       message: "Use POST for generate-settlement.",
-    });
+    }, request);
   }
 
   const cronSecret = Deno.env.get("CRON_SECRET") ?? "";
@@ -38,7 +48,7 @@ Deno.serve(async (request) => {
     return jsonResponse(401, {
       error_code: "unauthorized",
       message: "CRON_SECRET authorization failed.",
-    });
+    }, request);
   }
 
   try {
@@ -48,12 +58,12 @@ Deno.serve(async (request) => {
       ok: true,
       ...result,
       window,
-    });
+    }, request);
   } catch (error) {
     return jsonResponse(500, {
       error_code: "settlement_generation_failed",
       message: error instanceof Error ? error.message : String(error),
-    });
+    }, request);
   }
 });
 
