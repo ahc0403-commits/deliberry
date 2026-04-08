@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../backend/runtime_backend_config.dart';
+import '../services/external_sales_service.dart';
 import '../session/customer_session_controller.dart';
 import '../supabase/supabase_client.dart';
 import '../theme/app_theme.dart';
@@ -24,6 +26,8 @@ class CustomerOrderRecord {
     required this.instructions,
     required this.paymentLabel,
     required this.paymentStatusLabel,
+    this.paymentMethodCode,
+    this.paymentStatusCode,
     required this.statusHeadline,
     required this.etaLabel,
     required this.milestones,
@@ -40,6 +44,8 @@ class CustomerOrderRecord {
   final String instructions;
   final String paymentLabel;
   final String paymentStatusLabel;
+  final String? paymentMethodCode;
+  final String? paymentStatusCode;
   final String statusHeadline;
   final String etaLabel;
   final List<OrderMilestone> milestones;
@@ -56,6 +62,8 @@ class CustomerOrderRecord {
     String? instructions,
     String? paymentLabel,
     String? paymentStatusLabel,
+    String? paymentMethodCode,
+    String? paymentStatusCode,
     String? statusHeadline,
     String? etaLabel,
     List<OrderMilestone>? milestones,
@@ -72,6 +80,8 @@ class CustomerOrderRecord {
       instructions: instructions ?? this.instructions,
       paymentLabel: paymentLabel ?? this.paymentLabel,
       paymentStatusLabel: paymentStatusLabel ?? this.paymentStatusLabel,
+      paymentMethodCode: paymentMethodCode ?? this.paymentMethodCode,
+      paymentStatusCode: paymentStatusCode ?? this.paymentStatusCode,
       statusHeadline: statusHeadline ?? this.statusHeadline,
       etaLabel: etaLabel ?? this.etaLabel,
       milestones: milestones ?? this.milestones,
@@ -105,7 +115,7 @@ class CustomerRuntimeController extends ChangeNotifier {
     _cartItems = _cloneCartItems(MockData.cartItems);
     _stores = List<MockStore>.from(MockData.stores);
     _selectedStoreId = _cartItems.isEmpty ? null : _stores.first.id;
-    _addresses = _cloneAddresses(MockData.addresses);
+    _addresses = const <MockAddress>[];
     _activeOrderRecords = const <CustomerOrderRecord>[];
     _pastOrderRecords = const <CustomerOrderRecord>[];
     CustomerSessionController.instance.addListener(_handleSessionChanged);
@@ -139,6 +149,7 @@ class CustomerRuntimeController extends ChangeNotifier {
     'store-5': {'Halal'},
     'store-6': {'Vegetarian'},
   };
+  static const int minimumOrderCentavos = 1000;
 
   late List<String> _recentSearches;
   late String _searchQuery;
@@ -156,6 +167,7 @@ class CustomerRuntimeController extends ChangeNotifier {
       <String, List<MockMenuItem>>{};
   final CustomerRuntimeGateway _gateway =
       const SupabaseCustomerRuntimeGateway();
+  final Set<String> _externalSalesSyncKeys = <String>{};
   bool _isHydratingPersistedRuntime = false;
   bool _persistedRuntimeLoaded = false;
   bool _usesPersistedStoreData = false;
@@ -224,6 +236,9 @@ class CustomerRuntimeController extends ChangeNotifier {
   int get cartServiceFee => _cartItems.isEmpty ? 0 : MockData.cartServiceFee;
   int get cartTotal =>
       cartSubtotal + cartDeliveryFee + cartServiceFee - _promoDiscount;
+  bool get meetsMinimumOrder => cartSubtotal >= minimumOrderCentavos;
+  int get minimumOrderShortfallCentavos =>
+      meetsMinimumOrder ? 0 : minimumOrderCentavos - cartSubtotal;
 
   int get activeFilterCount {
     var count = 0;
@@ -418,11 +433,21 @@ class CustomerRuntimeController extends ChangeNotifier {
     final address = deliveryAddress;
     if (store == null || _cartItems.isEmpty || address == null) {
       _lastRuntimeBlocker = 'checkout_input_missing';
+      notifyListeners();
+      return null;
+    }
+    if (!meetsMinimumOrder) {
+      _lastRuntimeBlocker = 'minimum_order_not_met';
+      notifyListeners();
       return null;
     }
 
     final now = DateTime.now().toUtc();
-    final paymentMethod = paymentMethodIndex == 0 ? 'cash' : 'card';
+    final paymentMethod = switch (paymentMethodIndex) {
+      0 => 'cash',
+      2 => 'digital_wallet',
+      _ => 'card',
+    };
     final created = await _gateway.createOrder(
       CustomerOrderCreateInput(
         traceId: 'cust-${now.microsecondsSinceEpoch}',
@@ -431,6 +456,7 @@ class CustomerRuntimeController extends ChangeNotifier {
         customerPhone: CustomerSessionController.instance.phoneNumber ??
             CustomerSessionController.instance.identity?.phoneNumber ??
             '',
+        promoCode: _promoCode,
         paymentStatus: 'pending',
         paymentMethod: paymentMethod,
         totalCentavos: cartTotal,
@@ -445,6 +471,7 @@ class CustomerRuntimeController extends ChangeNotifier {
         lineItems: _cartItems
             .map(
               (item) => CustomerOrderCreateLineItem(
+                menuItemId: item.menuItem.id,
                 name: item.menuItem.name,
                 quantity: item.quantity,
                 unitPriceCentavos: item.menuItem.price,
@@ -615,6 +642,9 @@ class CustomerRuntimeController extends ChangeNotifier {
     }
     _addresses = [..._addresses, newAddress];
     notifyListeners();
+    if (CustomerSessionController.instance.hasSupabaseBackedSession) {
+      unawaited(_syncAddressSave(newAddress));
+    }
   }
 
   void updateAddress(MockAddress updated) {
@@ -633,6 +663,9 @@ class CustomerRuntimeController extends ChangeNotifier {
     }
     _addresses[index] = updated;
     notifyListeners();
+    if (CustomerSessionController.instance.hasSupabaseBackedSession) {
+      unawaited(_syncAddressSave(updated));
+    }
   }
 
   void deleteAddress(String id) {
@@ -655,6 +688,9 @@ class CustomerRuntimeController extends ChangeNotifier {
       );
     }
     notifyListeners();
+    if (CustomerSessionController.instance.hasSupabaseBackedSession) {
+      unawaited(_syncAddressDelete(id));
+    }
   }
 
   void setDefaultAddress(String id) {
@@ -668,6 +704,9 @@ class CustomerRuntimeController extends ChangeNotifier {
             ))
         .toList();
     notifyListeners();
+    if (CustomerSessionController.instance.hasSupabaseBackedSession) {
+      unawaited(_syncSetDefaultAddress(id));
+    }
   }
 
   void _addRecentSearch(String term) {
@@ -718,7 +757,7 @@ class CustomerRuntimeController extends ChangeNotifier {
       final storeRows = await client
           .from('stores')
           .select(
-              'id, name, cuisine_type, rating, review_count, avg_prep_time, delivery_radius, status')
+              'id, name, cuisine_type, rating, review_count, avg_prep_time, delivery_radius, status, store_type')
           .eq('accepting_orders', true)
           .order('rating', ascending: false);
 
@@ -753,9 +792,12 @@ class CustomerRuntimeController extends ChangeNotifier {
       _menuItemsByStore = groupedMenu;
       _usesPersistedStoreData = persistedStores.isNotEmpty;
       if (CustomerSessionController.instance.hasSupabaseBackedSession) {
+        _addresses = await _gateway.readAddresses();
         _activeOrderRecords = await _gateway.readActiveOrders();
         _pastOrderRecords = await _gateway.readPastOrders();
+        unawaited(_syncExternalSalesFromPersistedOrders(client));
       } else {
+        _addresses = const <MockAddress>[];
         _activeOrderRecords = const <CustomerOrderRecord>[];
         _pastOrderRecords = const <CustomerOrderRecord>[];
       }
@@ -774,6 +816,27 @@ class CustomerRuntimeController extends ChangeNotifier {
     }
   }
 
+  Future<void> _syncAddressSave(MockAddress address) async {
+    try {
+      _addresses = await _gateway.saveAddress(address);
+      notifyListeners();
+    } catch (_) {}
+  }
+
+  Future<void> _syncAddressDelete(String addressId) async {
+    try {
+      _addresses = await _gateway.deleteAddress(addressId);
+      notifyListeners();
+    } catch (_) {}
+  }
+
+  Future<void> _syncSetDefaultAddress(String addressId) async {
+    try {
+      _addresses = await _gateway.setDefaultAddress(addressId);
+      notifyListeners();
+    } catch (_) {}
+  }
+
   MockStore _mapPersistedStore(Map<String, dynamic> row, int index) {
     return MockStore(
       id: row['id'] as String? ?? 'persisted-store-$index',
@@ -785,6 +848,9 @@ class CustomerRuntimeController extends ChangeNotifier {
       deliveryFee: 299,
       imageColor:
           index.isEven ? AppTheme.primaryColor : AppTheme.secondaryColor,
+      storeType: (row['store_type'] as String?)?.trim().isNotEmpty == true
+          ? (row['store_type'] as String).trim()
+          : 'direct',
       distance: row['delivery_radius'] as String? ?? 'Nearby',
       isFeatured: index < 3,
       promoText: row['status'] == 'open' ? 'Open now' : null,
@@ -802,20 +868,6 @@ class CustomerRuntimeController extends ChangeNotifier {
           _parseHexColor(row['image_color_hex'] as String? ?? '#FF6B6B'),
       isPopular: row['is_popular'] as bool? ?? false,
     );
-  }
-
-  static List<MockAddress> _cloneAddresses(List<MockAddress> addresses) {
-    return addresses
-        .map(
-          (a) => MockAddress(
-            id: a.id,
-            label: a.label,
-            street: a.street,
-            detail: a.detail,
-            isDefault: a.isDefault,
-          ),
-        )
-        .toList();
   }
 
   static List<MockCartItem> _cloneCartItems(List<MockCartItem> items) {
@@ -846,5 +898,72 @@ class CustomerRuntimeController extends ChangeNotifier {
     final withAlpha =
         normalized.length == 6 ? 'FF$normalized' : normalized.padLeft(8, 'F');
     return Color(int.tryParse(withAlpha, radix: 16) ?? 0xFFFF6B6B);
+  }
+
+  Future<void> _syncExternalSalesFromPersistedOrders(
+    SupabaseClient client,
+  ) async {
+    if (!RuntimeBackendConfig.current.isConfigured) {
+      return;
+    }
+
+    final externalSales = ExternalSalesService(client);
+    final actorId = CustomerSessionController.instance.identity?.actorId;
+    final records = [..._activeOrderRecords, ..._pastOrderRecords];
+
+    for (final record in records) {
+      final status = record.order.status;
+      final orderId = record.order.id;
+      final storeId = record.store.id;
+      final grossAmount = record.order.total;
+      final discountAmount = (record.subtotalCentavos -
+              grossAmount +
+              record.deliveryFeeCentavos +
+              record.serviceFeeCentavos)
+          .clamp(0, grossAmount);
+      final items = record.items
+          .map((item) => <String, dynamic>{
+                'name': item.menuItem.name,
+                'quantity': item.quantity,
+                'price': item.menuItem.price,
+              })
+          .toList();
+
+      if (status == 'delivered') {
+        final key = 'completed:$orderId';
+        if (_externalSalesSyncKeys.contains(key)) {
+          continue;
+        }
+        _externalSalesSyncKeys.add(key);
+        unawaited(
+          externalSales.recordCompleted(
+            restaurantId: storeId,
+            orderId: orderId,
+            grossAmount: grossAmount,
+            discountAmount: discountAmount,
+            deliveryFee: record.deliveryFeeCentavos,
+            paymentMethod: record.paymentMethodCode,
+            customerId: actorId,
+            items: items,
+          ),
+        );
+      }
+
+      if (status == 'cancelled') {
+        final key = 'cancelled:$orderId';
+        if (_externalSalesSyncKeys.contains(key)) {
+          continue;
+        }
+        _externalSalesSyncKeys.add(key);
+        unawaited(
+          externalSales.recordCancelled(
+            restaurantId: storeId,
+            orderId: orderId,
+            grossAmount: grossAmount,
+            reason: 'cancelled',
+          ),
+        );
+      }
+    }
   }
 }

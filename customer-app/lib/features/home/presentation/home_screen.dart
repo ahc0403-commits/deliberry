@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../app/router/route_names.dart';
 import '../../../core/data/customer_runtime_controller.dart';
-import '../../../core/data/mock_data.dart';
+import '../../../core/data/mock_data.dart' show MockData, formatCentavos;
 import '../../../core/theme/app_theme.dart';
 import '../../common/presentation/widgets.dart';
 
@@ -22,6 +22,19 @@ class HomeScreen extends StatelessWidget {
 
         return Scaffold(
           backgroundColor: AppTheme.backgroundGrey,
+          floatingActionButton: runtime.cartItemCount > 0
+              ? FloatingActionButton.extended(
+                  onPressed: () =>
+                      Navigator.of(context).pushNamed(RouteNames.cart),
+                  icon: const Icon(Icons.shopping_cart_rounded, size: 20),
+                  label: Text(
+                    '${runtime.cartItemCount} item${runtime.cartItemCount == 1 ? '' : 's'} · \$${formatCentavos(runtime.cartTotal)}',
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  backgroundColor: AppTheme.primaryColor,
+                  foregroundColor: Colors.white,
+                )
+              : null,
           body: CustomScrollView(
             slivers: [
               SliverAppBar(
@@ -210,6 +223,7 @@ class HomeScreen extends StatelessWidget {
                           deliveryTime: store.deliveryTime,
                           deliveryFee: store.deliveryFee,
                           imageColor: store.imageColor,
+                          isDirect: store.isDirect,
                           promoText: store.promoText,
                           onTap: () => Navigator.of(context).pushNamed(
                             RouteNames.store,
@@ -246,6 +260,7 @@ class HomeScreen extends StatelessWidget {
                       deliveryTime: store.deliveryTime,
                       deliveryFee: store.deliveryFee,
                       imageColor: store.imageColor,
+                      isDirect: store.isDirect,
                       promoText: store.promoText,
                       onTap: () => Navigator.of(context).pushNamed(
                         RouteNames.store,

@@ -30,6 +30,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       label: 'Card •••• 4242',
       detail: 'Placeholder only',
     ),
+    _PaymentOption(
+      icon: Icons.account_balance_wallet_outlined,
+      label: 'Digital Wallet',
+      detail: 'Placeholder only',
+    ),
   ];
 
   @override
@@ -44,7 +49,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     if (CustomerSessionController.instance.isGuest) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Sign in to place your order. Your cart will stay here.'),
+          content:
+              Text('Sign in to place your order. Your cart will stay here.'),
         ),
       );
       Navigator.of(context).pushNamed(RouteNames.auth);
@@ -64,22 +70,36 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     setState(() => _isSubmitting = false);
 
     if (order == null) {
+      final blocker = runtime.lastRuntimeBlocker;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            runtime.lastRuntimeBlocker == 'authenticated_customer_session_required'
-                ? 'Sign in with Kakao or Zalo to place a real order.'
-                : 'Your cart is empty.',
-          ),
+          content: Text(_messageForBlocker(blocker)),
         ),
       );
+      if (blocker == 'checkout_input_missing' &&
+          runtime.deliveryAddress == null) {
+        Navigator.of(context).pushNamed(RouteNames.addresses);
+      }
       return;
     }
 
     Navigator.of(context).pushReplacementNamed(
-      RouteNames.orderStatus,
+      RouteNames.orderCompletion,
       arguments: order.order.id,
     );
+  }
+
+  String _messageForBlocker(String? blocker) {
+    switch (blocker) {
+      case 'authenticated_customer_session_required':
+        return 'Sign in with Kakao or Zalo to place a real order.';
+      case 'checkout_input_missing':
+        return 'Add a delivery address before placing your order.';
+      case 'minimum_order_not_met':
+        return 'Minimum order is \$${formatCentavos(CustomerRuntimeController.minimumOrderCentavos)} before checkout.';
+      default:
+        return 'Unable to place order right now. Please review checkout details.';
+    }
   }
 
   @override
@@ -92,6 +112,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         final selectedAddress = runtime.deliveryAddress;
         final store = runtime.selectedStore;
         final cartItems = runtime.cartItems;
+        final isPlaceOrderEnabled = !_isSubmitting &&
+            selectedAddress != null &&
+            runtime.meetsMinimumOrder;
 
         return Scaffold(
           backgroundColor: AppTheme.backgroundGrey,
@@ -434,8 +457,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         children: [
                           PriceRow(
                             label: 'Subtotal',
-                            amount:
-                                '\$${formatCentavos(runtime.cartSubtotal)}',
+                            amount: '\$${formatCentavos(runtime.cartSubtotal)}',
                           ),
                           PriceRow(
                             label: 'Delivery fee',
@@ -466,6 +488,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         ],
                       ),
                     ),
+                    if (!runtime.meetsMinimumOrder) ...[
+                      const SizedBox(height: 12),
+                      _InfoNoticeCard(
+                        message:
+                            'Minimum order is \$${formatCentavos(CustomerRuntimeController.minimumOrderCentavos)}. Add \$${formatCentavos(runtime.minimumOrderShortfallCentavos)} more to continue.',
+                      ),
+                    ],
                   ],
                 ),
           bottomNavigationBar: cartItems.isEmpty
@@ -473,7 +502,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               : BottomCTABar(
                   label: _isSubmitting ? 'Placing Order...' : 'Place Order',
                   trailingText: '\$${formatCentavos(runtime.cartTotal)}',
-                  onPressed: _isSubmitting ? null : _placeOrder,
+                  onPressed: isPlaceOrderEnabled ? _placeOrder : null,
                 ),
         );
       },
