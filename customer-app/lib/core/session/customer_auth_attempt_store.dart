@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'customer_auth_adapter.dart';
 
@@ -20,10 +20,13 @@ class CustomerAuthAttemptStore {
   CustomerAuthAttemptStore._();
 
   static const _storageKey = 'customer_auth_attempt_v1';
+  static const _storage = FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+    webOptions: WebOptions.defaultOptions,
+  );
 
   static Future<CustomerAuthAttempt?> read() async {
-    final preferences = await SharedPreferences.getInstance();
-    final raw = preferences.getString(_storageKey);
+    final raw = await _storage.read(key: _storageKey);
     if (raw == null || raw.isEmpty) {
       return null;
     }
@@ -67,10 +70,9 @@ class CustomerAuthAttemptStore {
   }
 
   static Future<void> write(CustomerAuthAttempt attempt) async {
-    final preferences = await SharedPreferences.getInstance();
-    await preferences.setString(
-      _storageKey,
-      jsonEncode({
+    await _storage.write(
+      key: _storageKey,
+      value: jsonEncode({
         'provider': attempt.provider.name,
         'state': attempt.state,
         'codeVerifier': attempt.codeVerifier,
@@ -79,7 +81,6 @@ class CustomerAuthAttemptStore {
   }
 
   static Future<void> clear() async {
-    final preferences = await SharedPreferences.getInstance();
-    await preferences.remove(_storageKey);
+    await _storage.delete(key: _storageKey);
   }
 }

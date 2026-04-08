@@ -18,7 +18,7 @@ class CustomerSessionController extends ChangeNotifier {
   static final CustomerSessionController instance =
       CustomerSessionController._();
   static final CustomerSessionStore _store =
-      SharedPreferencesCustomerSessionStore();
+      SecureCustomerSessionStore();
   static final CustomerAuthAdapter _authAdapter = CustomerMultiAuthAdapter();
 
   CustomerAuthStatus _status = CustomerAuthStatus.signedOut;

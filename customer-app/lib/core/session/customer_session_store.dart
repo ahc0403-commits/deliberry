@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'customer_session_controller.dart';
 
@@ -20,13 +20,16 @@ abstract class CustomerSessionStore {
   Future<void> clear();
 }
 
-class SharedPreferencesCustomerSessionStore implements CustomerSessionStore {
+class SecureCustomerSessionStore implements CustomerSessionStore {
   static const _storageKey = 'customer_session_snapshot_v1';
+  static const _storage = FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+    webOptions: WebOptions.defaultOptions,
+  );
 
   @override
   Future<CustomerSessionSnapshot?> read() async {
-    final preferences = await SharedPreferences.getInstance();
-    final raw = preferences.getString(_storageKey);
+    final raw = await _storage.read(key: _storageKey);
     if (raw == null || raw.isEmpty) {
       return null;
     }
@@ -66,10 +69,9 @@ class SharedPreferencesCustomerSessionStore implements CustomerSessionStore {
 
   @override
   Future<void> write(CustomerSessionSnapshot snapshot) async {
-    final preferences = await SharedPreferences.getInstance();
-    await preferences.setString(
-      _storageKey,
-      jsonEncode({
+    await _storage.write(
+      key: _storageKey,
+      value: jsonEncode({
         'status': snapshot.status.name,
         'phoneNumber': snapshot.phoneNumber,
       }),
@@ -78,7 +80,6 @@ class SharedPreferencesCustomerSessionStore implements CustomerSessionStore {
 
   @override
   Future<void> clear() async {
-    final preferences = await SharedPreferences.getInstance();
-    await preferences.remove(_storageKey);
+    await _storage.delete(key: _storageKey);
   }
 }
