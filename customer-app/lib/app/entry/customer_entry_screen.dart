@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../core/data/customer_runtime_controller.dart';
 import '../../core/session/customer_session_controller.dart';
 import '../../core/theme/app_theme.dart';
-import '../../features/common/presentation/widgets.dart';
 import '../router/route_names.dart';
 
 class CustomerEntryScreen extends StatelessWidget {
@@ -11,11 +11,21 @@ class CustomerEntryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final session = CustomerSessionController.instance;
+    final runtime = CustomerRuntimeController.instance;
 
     return ListenableBuilder(
-      listenable: session,
+      listenable: Listenable.merge([session, runtime]),
       builder: (context, _) {
         if (!session.isHydrated) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (session.isSignedIn && runtime.addresses.isEmpty) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Navigator.of(context).pushReplacementNamed(RouteNames.addresses);
+          });
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
@@ -61,7 +71,7 @@ class _EntryLandingScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: ScrollableSafeContent(
+      body: SafeArea(
         child: Column(
           children: [
             Expanded(
