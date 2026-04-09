@@ -22,6 +22,7 @@ class CustomerAuthAttemptStore {
   static const _storageKey = 'customer_auth_attempt_v1';
   static const _storage = FlutterSecureStorage(
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
+    mOptions: MacOsOptions(useDataProtectionKeyChain: false),
     webOptions: WebOptions.defaultOptions,
   );
 

@@ -24,6 +24,7 @@ class SecureCustomerSessionStore implements CustomerSessionStore {
   static const _storageKey = 'customer_session_snapshot_v1';
   static const _storage = FlutterSecureStorage(
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
+    mOptions: MacOsOptions(useDataProtectionKeyChain: false),
     webOptions: WebOptions.defaultOptions,
   );
 
