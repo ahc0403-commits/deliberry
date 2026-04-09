@@ -12,6 +12,21 @@ Future<void> main() async {
   await CustomerSessionController.instance.restore();
   final startupWebCallback = kIsWeb ? _extractWebAuthCallback(Uri.base) : null;
 
+  // On native platforms, attach the deep-link listener BEFORE runApp so that
+  // a warm-start URI event is never lost to a race with widget mounting.
+  AppLinks? appLinks;
+  Uri? nativeInitialLink;
+  if (!kIsWeb) {
+    appLinks = AppLinks();
+    // Subscribe to the stream immediately so events are buffered from the
+    // platform channel even while getInitialLink() and runApp() execute.
+    appLinks.uriLinkStream.listen((uri) {
+      debugPrint('[main] deeplink:stream uri=$uri');
+      CustomerSessionController.instance.handleAuthCallback(uri);
+    });
+    nativeInitialLink = await appLinks.getInitialLink();
+  }
+
   runApp(const DeliberryApp());
 
   if (kIsWeb) {
@@ -23,14 +38,12 @@ Future<void> main() async {
     return;
   }
 
-  final appLinks = AppLinks();
-  final initialLink = await appLinks.getInitialLink();
-  if (initialLink != null) {
-    await CustomerSessionController.instance.handleAuthCallback(initialLink);
+  // Handle cold-start deep link (app was not running when the link arrived).
+  if (nativeInitialLink != null) {
+    debugPrint('[main] deeplink:initial uri=$nativeInitialLink');
+    await CustomerSessionController.instance
+        .handleAuthCallback(nativeInitialLink);
   }
-  appLinks.uriLinkStream.listen((uri) {
-    CustomerSessionController.instance.handleAuthCallback(uri);
-  });
 }
 
 
