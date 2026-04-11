@@ -66,7 +66,8 @@ class SecureCustomerSessionStore implements CustomerSessionStore {
             : null,
         allowSupabaseRestore: allowSupabaseRestore is bool
             ? allowSupabaseRestore
-            : status.first == CustomerAuthStatus.authenticated,
+            : status.first == CustomerAuthStatus.authenticated ||
+                status.first == CustomerAuthStatus.onboardingRequired,
       );
     } catch (_) {
       await clear();

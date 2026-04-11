@@ -40,13 +40,17 @@ class CustomerSessionController extends ChangeNotifier {
   bool get hasAuthenticatedSession =>
       _status == CustomerAuthStatus.authenticated;
   bool get hasSupabaseBackedSession => _identity != null;
+  bool get hasRestorableSupabaseSession =>
+      _status == CustomerAuthStatus.authenticated ||
+      _status == CustomerAuthStatus.onboardingRequired;
 
   Future<void> restore() async {
     debugPrint('[CustomerSession] restore:start');
     var snapshot = await _store.read();
     final shouldRestoreAuthenticatedSession =
         snapshot?.allowSupabaseRestore == true &&
-            snapshot?.status == CustomerAuthStatus.authenticated;
+            (snapshot?.status == CustomerAuthStatus.authenticated ||
+                snapshot?.status == CustomerAuthStatus.onboardingRequired);
     if (shouldRestoreAuthenticatedSession) {
       final authenticatedIdentity =
           await _authAdapter.restoreAuthenticatedIdentity();
@@ -87,7 +91,7 @@ class CustomerSessionController extends ChangeNotifier {
       CustomerSessionSnapshot(
         status: _status,
         phoneNumber: _phoneNumber,
-        allowSupabaseRestore: _status == CustomerAuthStatus.authenticated,
+        allowSupabaseRestore: hasRestorableSupabaseSession,
       ),
     );
   }
