@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -20,6 +21,7 @@ class CustomerAuthAttemptStore {
   CustomerAuthAttemptStore._();
 
   static const _storageKey = 'customer_auth_attempt_v1';
+  static const _consumedCallbackKey = 'customer_auth_consumed_callback_v1';
   static const _storage = FlutterSecureStorage(
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
     mOptions: MacOsOptions(useDataProtectionKeyChain: false),
@@ -81,7 +83,49 @@ class CustomerAuthAttemptStore {
     );
   }
 
+  static Future<bool> isConsumedCallback(String fingerprint) async {
+    final consumed = await _storage.read(key: _consumedCallbackKey);
+    return consumed == fingerprint;
+  }
+
+  static Future<void> markCallbackConsumed(String fingerprint) async {
+    await _storage.write(key: _consumedCallbackKey, value: fingerprint);
+  }
+
+  static Future<void> clearConsumedCallback() async {
+    await _storage.delete(key: _consumedCallbackKey);
+  }
+
   static Future<void> clear() async {
     await _storage.delete(key: _storageKey);
   }
+}
+
+String customerAuthCallbackFingerprint({
+  required CustomerAuthProvider provider,
+  required String? code,
+  required String? state,
+  required String? error,
+  required String? errorDescription,
+}) {
+  final random = Random.secure();
+  final normalizedCode = code?.trim() ?? '';
+  final normalizedState = state?.trim() ?? '';
+  final normalizedError = error?.trim() ?? '';
+  final normalizedErrorDescription = errorDescription?.trim() ?? '';
+
+  if (normalizedCode.isEmpty &&
+      normalizedState.isEmpty &&
+      normalizedError.isEmpty &&
+      normalizedErrorDescription.isEmpty) {
+    return '${provider.name}-empty-${random.nextInt(1 << 32)}';
+  }
+
+  return [
+    provider.name,
+    normalizedCode,
+    normalizedState,
+    normalizedError,
+    normalizedErrorDescription,
+  ].join('|');
 }

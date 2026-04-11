@@ -17,8 +17,7 @@ class CustomerSessionController extends ChangeNotifier {
 
   static final CustomerSessionController instance =
       CustomerSessionController._();
-  static final CustomerSessionStore _store =
-      SecureCustomerSessionStore();
+  static final CustomerSessionStore _store = SecureCustomerSessionStore();
   static final CustomerAuthAdapter _authAdapter = CustomerMultiAuthAdapter();
 
   CustomerAuthStatus _status = CustomerAuthStatus.signedOut;
@@ -116,6 +115,8 @@ class CustomerSessionController extends ChangeNotifier {
       _lastAuthError = null;
       debugPrint('[CustomerSession] callback:status=${_status.name}');
       notifyListeners();
+    } on CustomerIgnoredAuthCallback catch (ignored) {
+      debugPrint('[CustomerSession] callback:ignored $ignored');
     } catch (error) {
       _lastAuthError = error.toString();
       debugPrint('[CustomerSession] callback:error $_lastAuthError');

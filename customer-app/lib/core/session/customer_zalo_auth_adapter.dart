@@ -62,12 +62,8 @@ class CustomerZaloAuthAdapter implements CustomerAuthAdapter {
       state: state,
       codeVerifier: codeVerifier,
     );
-    if (kIsWeb) {
-      // Keep web launch in the active user gesture path.
-      CustomerAuthAttemptStore.write(attempt);
-    } else {
-      await CustomerAuthAttemptStore.write(attempt);
-    }
+    await CustomerAuthAttemptStore.clearConsumedCallback();
+    await CustomerAuthAttemptStore.write(attempt);
 
     final authorizationUri = Uri.https(
       'oauth.zaloapp.com',
@@ -121,12 +117,23 @@ class CustomerZaloAuthAdapter implements CustomerAuthAdapter {
     debugPrint('[CustomerZaloAuth] callback:code_present');
 
     final state = callbackUri.queryParameters['state']?.trim();
-    final stateRecovery = kIsWeb ? _decodeWebState(state) : null;
+    final callbackFingerprint = customerAuthCallbackFingerprint(
+      provider: CustomerAuthProvider.zalo,
+      code: code,
+      state: state,
+      error: callbackUri.queryParameters['error'],
+      errorDescription: callbackUri.queryParameters['error_description'],
+    );
+    if (await CustomerAuthAttemptStore.isConsumedCallback(
+        callbackFingerprint)) {
+      throw const CustomerIgnoredAuthCallback(
+        'Customer Zalo auth callback was already consumed.',
+      );
+    }
     final attempt = await CustomerAuthAttemptStore.read();
     final recoveredAttempt = _resolveAttempt(
       storedAttempt: attempt,
       callbackState: state,
-      stateRecovery: stateRecovery,
     );
     if (recoveredAttempt == null) {
       throw StateError(
@@ -204,6 +211,7 @@ class CustomerZaloAuthAdapter implements CustomerAuthAdapter {
       );
     }
     debugPrint('[CustomerZaloAuth] callback:user_ready id=${user.id}');
+    await CustomerAuthAttemptStore.markCallbackConsumed(callbackFingerprint);
 
     return _mapUser(
       user,
@@ -344,80 +352,19 @@ String _canonicalWebReturnTo(Uri uri) {
   return '$origin/#/entry';
 }
 
-_WebStateRecovery? _decodeWebState(String? state) {
-  if (state == null || state.isEmpty) {
-    return null;
-  }
-
-  try {
-    final normalized = state.replaceAll('-', '+').replaceAll('_', '/');
-    final padded = normalized.padRight(
-      normalized.length + ((4 - normalized.length % 4) % 4),
-      '=',
-    );
-    final payload = jsonDecode(
-      utf8.decode(base64.decode(padded)),
-    );
-    if (payload is! Map<String, dynamic>) {
-      return null;
-    }
-
-    final nonce = payload['nonce'];
-    final codeVerifier = payload['code_verifier'];
-    if (nonce is! String ||
-        nonce.isEmpty ||
-        codeVerifier is! String ||
-        codeVerifier.isEmpty) {
-      return null;
-    }
-
-    return _WebStateRecovery(
-      nonce: nonce,
-      codeVerifier: codeVerifier,
-    );
-  } catch (_) {
-    return null;
-  }
-}
-
 CustomerAuthAttempt? _resolveAttempt({
   required CustomerAuthAttempt? storedAttempt,
   required String? callbackState,
-  required _WebStateRecovery? stateRecovery,
 }) {
-  if (storedAttempt != null &&
-      storedAttempt.provider == CustomerAuthProvider.zalo) {
-    if (callbackState == null || callbackState.isEmpty) {
-      return storedAttempt;
-    }
-    if (callbackState == storedAttempt.state) {
-      return storedAttempt;
-    }
-  }
-
-  if (!kIsWeb || callbackState == null || callbackState.isEmpty) {
+  if (storedAttempt == null ||
+      storedAttempt.provider != CustomerAuthProvider.zalo ||
+      callbackState == null ||
+      callbackState.isEmpty ||
+      callbackState != storedAttempt.state) {
     return null;
   }
 
-  if (stateRecovery == null) {
-    return null;
-  }
-
-  return CustomerAuthAttempt(
-    provider: CustomerAuthProvider.zalo,
-    state: callbackState,
-    codeVerifier: stateRecovery.codeVerifier,
-  );
-}
-
-class _WebStateRecovery {
-  const _WebStateRecovery({
-    required this.nonce,
-    required this.codeVerifier,
-  });
-
-  final String nonce;
-  final String codeVerifier;
+  return storedAttempt;
 }
 
 extension on CustomerZaloAuthAdapter {

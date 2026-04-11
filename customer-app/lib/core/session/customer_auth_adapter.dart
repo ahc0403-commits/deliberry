@@ -45,6 +45,15 @@ abstract class CustomerAuthAdapter {
   Future<void> signOut();
 }
 
+class CustomerIgnoredAuthCallback implements Exception {
+  const CustomerIgnoredAuthCallback(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
+}
+
 class CustomerAuthRedirectConfig {
   const CustomerAuthRedirectConfig({
     required this.callbackScheme,

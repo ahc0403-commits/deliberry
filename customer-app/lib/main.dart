@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'app/app.dart';
 import 'core/session/customer_session_controller.dart';
+import 'core/session/web_auth_callback_location.dart';
 import 'core/supabase/supabase_client.dart';
 
 Future<void> main() async {
@@ -32,6 +33,7 @@ Future<void> main() async {
   if (kIsWeb) {
     if (startupWebCallback != null &&
         !CustomerSessionController.instance.hasAuthenticatedSession) {
+      await clearHandledWebAuthCallbackLocation(Uri.base);
       // Keep first paint responsive on callback return.
       CustomerSessionController.instance.handleAuthCallback(startupWebCallback);
     }
@@ -45,7 +47,6 @@ Future<void> main() async {
         .handleAuthCallback(nativeInitialLink);
   }
 }
-
 
 Uri? _extractWebAuthCallback(Uri uri) {
   if (!(uri.scheme == 'http' || uri.scheme == 'https')) {
