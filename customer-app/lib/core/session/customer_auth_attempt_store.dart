@@ -22,6 +22,7 @@ class CustomerAuthAttemptStore {
 
   static const _storageKey = 'customer_auth_attempt_v1';
   static const _consumedCallbackKey = 'customer_auth_consumed_callback_v1';
+  static const _ttl = Duration(minutes: 10);
   static const _storage = FlutterSecureStorage(
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
     mOptions: MacOsOptions(useDataProtectionKeyChain: false),
@@ -39,6 +40,15 @@ class CustomerAuthAttemptStore {
       if (payload is! Map<String, dynamic>) {
         await clear();
         return null;
+      }
+
+      final createdAtMs = payload['createdAt'];
+      if (createdAtMs is int) {
+        final age = DateTime.now().millisecondsSinceEpoch - createdAtMs;
+        if (age > _ttl.inMilliseconds) {
+          await clear();
+          return null;
+        }
       }
 
       final providerName = payload['provider'];
@@ -79,6 +89,7 @@ class CustomerAuthAttemptStore {
         'provider': attempt.provider.name,
         'state': attempt.state,
         'codeVerifier': attempt.codeVerifier,
+        'createdAt': DateTime.now().millisecondsSinceEpoch,
       }),
     );
   }

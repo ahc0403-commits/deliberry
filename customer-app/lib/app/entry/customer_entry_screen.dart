@@ -5,8 +5,25 @@ import '../../core/session/customer_session_controller.dart';
 import '../../core/theme/app_theme.dart';
 import '../router/route_names.dart';
 
-class CustomerEntryScreen extends StatelessWidget {
+class CustomerEntryScreen extends StatefulWidget {
   const CustomerEntryScreen({super.key});
+
+  @override
+  State<CustomerEntryScreen> createState() => _CustomerEntryScreenState();
+}
+
+class _CustomerEntryScreenState extends State<CustomerEntryScreen> {
+  bool _navigating = false;
+
+  void _navigateOnce(String routeName) {
+    if (_navigating) return;
+    _navigating = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        Navigator.of(context).pushReplacementNamed(routeName);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,36 +40,28 @@ class CustomerEntryScreen extends StatelessWidget {
         }
 
         if (session.isSignedIn && runtime.addresses.isEmpty) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            Navigator.of(context).pushReplacementNamed(RouteNames.addresses);
-          });
+          _navigateOnce(RouteNames.addresses);
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }
 
         if (session.isSignedIn || session.isGuest) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            Navigator.of(context).pushReplacementNamed(RouteNames.home);
-          });
+          _navigateOnce(RouteNames.home);
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }
 
         if (session.requiresOnboarding) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            Navigator.of(context).pushReplacementNamed(RouteNames.onboarding);
-          });
+          _navigateOnce(RouteNames.onboarding);
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }
 
         if (session.isOtpPending) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            Navigator.of(context).pushReplacementNamed(RouteNames.authOtp);
-          });
+          _navigateOnce(RouteNames.authOtp);
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );

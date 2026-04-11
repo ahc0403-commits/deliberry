@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../supabase/supabase_client.dart';
 import 'customer_auth_adapter.dart';
 import 'customer_multi_auth_adapter.dart';
 import 'customer_session_store.dart';
@@ -58,7 +60,7 @@ class CustomerSessionController extends ChangeNotifier {
         debugPrint(
           '[CustomerSession] restore:authenticated actor=${authenticatedIdentity.actorId} needsOnboarding=${authenticatedIdentity.needsOnboarding}',
         );
-        _applyAuthenticatedIdentity(authenticatedIdentity, persist: false);
+        await _applyAuthenticatedIdentity(authenticatedIdentity, persist: false);
         _hydrated = true;
         notifyListeners();
         return;
@@ -119,7 +121,7 @@ class CustomerSessionController extends ChangeNotifier {
   }
 
   Future<void> handleAuthCallback(Uri callbackUri) async {
-    debugPrint('[CustomerSession] callback:start uri=$callbackUri');
+    debugPrint('[CustomerSession] callback:start host=${callbackUri.host} path=${callbackUri.path} hasCode=${callbackUri.queryParameters.containsKey("code")}');
     try {
       final authenticatedIdentity =
           await _authAdapter.completeAuthCallback(callbackUri);
@@ -162,6 +164,23 @@ class CustomerSessionController extends ChangeNotifier {
     _status = CustomerAuthStatus.authenticated;
     await _persist();
     notifyListeners();
+
+    // Best-effort: clear the remote needs_onboarding flag so future session
+    // restores don't re-trigger onboarding. Failure is non-fatal because the
+    // local snapshot already records authenticated status.
+    try {
+      final client = CustomerSupabaseClient.maybeClient;
+      if (client?.auth.currentUser != null) {
+        await client!.auth.updateUser(
+          UserAttributes(data: {'needs_onboarding': false}),
+        );
+        debugPrint('[CustomerSession] completeOnboarding: remote flag cleared');
+      }
+    } catch (e) {
+      debugPrint(
+        '[CustomerSession] completeOnboarding: remote sync failed (non-fatal): $e',
+      );
+    }
   }
 
   Future<void> continueAsGuest() async {
@@ -192,7 +211,24 @@ class CustomerSessionController extends ChangeNotifier {
   }) async {
     _identity = authenticatedIdentity;
     _phoneNumber = authenticatedIdentity.phoneNumber;
-    _status = authenticatedIdentity.needsOnboarding
+
+    // Determine effective onboarding requirement.
+    // completeOnboarding() sets local status to authenticated but cannot update
+    // the remote user metadata. If the locally-persisted session already shows
+    // onboarding was completed (status == authenticated), don't let the stale
+    // remote needs_onboarding flag re-trigger onboarding.
+    var needsOnboarding = authenticatedIdentity.needsOnboarding;
+    if (needsOnboarding) {
+      final snapshot = await _store.read();
+      if (snapshot?.status == CustomerAuthStatus.authenticated) {
+        debugPrint(
+          '[CustomerSession] applyIdentity: suppressing needsOnboarding (local onboarding already completed)',
+        );
+        needsOnboarding = false;
+      }
+    }
+
+    _status = needsOnboarding
         ? CustomerAuthStatus.onboardingRequired
         : CustomerAuthStatus.authenticated;
     debugPrint(

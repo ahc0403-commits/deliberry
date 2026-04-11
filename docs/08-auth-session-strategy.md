@@ -4,8 +4,8 @@ Status: active
 Authority: operational
 Surface: cross-surface
 Domains: auth, session, permissions
-Last updated: 2026-03-28
-Last verified: 2026-03-28
+Last updated: 2026-04-11
+Last verified: 2026-04-11
 Retrieve when:
 - changing auth or session behavior across surfaces
 - checking approved non-live auth/session direction before runtime work
@@ -56,11 +56,24 @@ The repository still does **not** currently have:
 - Supabase-backed session restoration remains customer-local
 - no shared runtime auth helpers may be introduced
 
+### Zalo OAuth flow (live)
+
+- PKCE with S256 code challenge protects the authorization flow
+- code_verifier is stored in `CustomerAuthAttemptStore` with a 10-minute TTL and never exposed in URL state
+- web state parameter encodes nonce and return_to (no secrets)
+- GET callback lands on `public-website` at `go.deli-berry.com/customer-zalo-auth-exchange`
+- exchange endpoint on `public-website` performs token exchange, profile fetch via Cloudflare proxy at `proxy.deli-berry.com`, and Supabase identity resolution
+- POST exchange returns a Supabase refresh token which the app uses via `setSession()`
+- `completeOnboarding()` clears the remote `needs_onboarding` flag best-effort
+- local session snapshot prevents stale remote `needs_onboarding` from re-triggering onboarding
+
 ### Local persistence and session handling direction
 
 - use a customer-local session controller
 - keep session state inside `customer-app/lib/core` or `customer-app/lib/shared`
 - session restoration must remain customer-local
+- `CustomerSessionSnapshot` persisted via `FlutterSecureStorage` (localStorage on web)
+- `allowSupabaseRestore` flag gates whether Supabase session is restored on cold start
 - direct TypeScript imports from `shared` are not allowed
 
 ### Guest mode handling
@@ -72,7 +85,8 @@ The repository still does **not** currently have:
 ### Remaining auth blockers
 
 - Kakao live login still requires final browser-credential verification against the hosted project
-- Zalo live login still requires final end-to-end callback/exchange/session verification against the hosted project
+- Zalo live login is functional; operator must rotate secrets (ZALO_APP_SECRET, SUPABASE_SERVICE_ROLE_KEY, VIETNAM_ZALO_PROXY_SHARED_SECRET) in Vercel dashboard
+- rate limiting on POST exchange endpoint is not yet configured (recommended: Vercel WAF rule)
 - review and payment flows remain separate scope and must not be used as auth proxies
 
 ## Merchant Console Strategy
@@ -148,6 +162,7 @@ The repository still does **not** currently have:
 - `public-website` stays public-only
 - no authenticated merchant/admin/customer console behavior belongs there
 - merchant onboarding and inquiry remain public entry only
+- `public-website` hosts the customer Zalo auth exchange endpoint at `/customer-zalo-auth-exchange` (GET redirect + POST token exchange) — this is a stateless API route, not authenticated console behavior
 
 ## Shared Boundary Rule
 

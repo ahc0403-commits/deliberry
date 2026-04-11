@@ -22,7 +22,7 @@ Future<void> main() async {
     // Subscribe to the stream immediately so events are buffered from the
     // platform channel even while getInitialLink() and runApp() execute.
     appLinks.uriLinkStream.listen((uri) {
-      debugPrint('[main] deeplink:stream uri=$uri');
+      debugPrint('[main] deeplink:stream host=${uri.host} path=${uri.path}');
       CustomerSessionController.instance.handleAuthCallback(uri);
     });
     nativeInitialLink = await appLinks.getInitialLink();
@@ -42,7 +42,7 @@ Future<void> main() async {
 
   // Handle cold-start deep link (app was not running when the link arrived).
   if (nativeInitialLink != null) {
-    debugPrint('[main] deeplink:initial uri=$nativeInitialLink');
+    debugPrint('[main] deeplink:initial host=${nativeInitialLink.host} path=${nativeInitialLink.path}');
     await CustomerSessionController.instance
         .handleAuthCallback(nativeInitialLink);
   }

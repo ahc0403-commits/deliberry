@@ -101,7 +101,7 @@ class CustomerZaloAuthAdapter implements CustomerAuthAdapter {
 
   @override
   Future<CustomerAuthIdentity> completeAuthCallback(Uri callbackUri) async {
-    debugPrint('[CustomerZaloAuth] callback:received uri=$callbackUri');
+    debugPrint('[CustomerZaloAuth] callback:received host=${callbackUri.host} path=${callbackUri.path} hasCode=${callbackUri.queryParameters.containsKey("code")}');
     if (!_matchesSupportedCallback(callbackUri)) {
       throw StateError(
         'Customer Zalo auth callback did not match the configured callback URI.',
@@ -271,48 +271,18 @@ class CustomerZaloAuthConfig {
   const CustomerZaloAuthConfig({
     required this.appId,
     required this.redirectUri,
-    required this.callbackScheme,
-    required this.callbackHost,
-    required this.callbackPath,
   });
 
   static const CustomerZaloAuthConfig current = CustomerZaloAuthConfig(
     appId: String.fromEnvironment('ZALO_APP_ID', defaultValue: ''),
     redirectUri: String.fromEnvironment('ZALO_REDIRECT_URI', defaultValue: ''),
-    callbackScheme: String.fromEnvironment(
-      'AUTH_CALLBACK_SCHEME',
-      defaultValue: 'deliberry-customer-auth',
-    ),
-    callbackHost: String.fromEnvironment(
-      'AUTH_CALLBACK_HOST',
-      defaultValue: 'zalo-callback',
-    ),
-    callbackPath: String.fromEnvironment(
-      'AUTH_CALLBACK_PATH',
-      defaultValue: '/auth',
-    ),
   );
 
   final String appId;
   final String redirectUri;
-  final String callbackScheme;
-  final String callbackHost;
-  final String callbackPath;
 
   bool get isConfigured =>
       appId.trim().isNotEmpty && redirectUri.trim().isNotEmpty;
-
-  Uri get callbackUri => Uri(
-        scheme: callbackScheme,
-        host: callbackHost,
-        path: callbackPath,
-      );
-
-  bool matchesCallback(Uri uri) {
-    return uri.scheme == callbackScheme &&
-        uri.host == callbackHost &&
-        uri.path == callbackPath;
-  }
 }
 
 final _random = Random.secure();
