@@ -43,19 +43,28 @@ class CustomerSessionController extends ChangeNotifier {
 
   Future<void> restore() async {
     debugPrint('[CustomerSession] restore:start');
-    final authenticatedIdentity =
-        await _authAdapter.restoreAuthenticatedIdentity();
-    if (authenticatedIdentity != null) {
-      debugPrint(
-        '[CustomerSession] restore:authenticated actor=${authenticatedIdentity.actorId} needsOnboarding=${authenticatedIdentity.needsOnboarding}',
-      );
-      _applyAuthenticatedIdentity(authenticatedIdentity, persist: false);
-      _hydrated = true;
-      notifyListeners();
-      return;
+    var snapshot = await _store.read();
+    final shouldRestoreAuthenticatedSession =
+        snapshot?.allowSupabaseRestore == true &&
+            snapshot?.status == CustomerAuthStatus.authenticated;
+    if (shouldRestoreAuthenticatedSession) {
+      final authenticatedIdentity =
+          await _authAdapter.restoreAuthenticatedIdentity();
+      if (authenticatedIdentity != null) {
+        debugPrint(
+          '[CustomerSession] restore:authenticated actor=${authenticatedIdentity.actorId} needsOnboarding=${authenticatedIdentity.needsOnboarding}',
+        );
+        _applyAuthenticatedIdentity(authenticatedIdentity, persist: false);
+        _hydrated = true;
+        notifyListeners();
+        return;
+      }
+      await _store.clear();
+      snapshot = null;
+    } else {
+      await _authAdapter.signOut();
     }
 
-    final snapshot = await _store.read();
     if (snapshot != null) {
       _status = snapshot.status;
       _phoneNumber = snapshot.phoneNumber;
@@ -69,8 +78,7 @@ class CustomerSessionController extends ChangeNotifier {
   }
 
   Future<void> _persist() async {
-    if (_status == CustomerAuthStatus.signedOut ||
-        _status == CustomerAuthStatus.authenticated) {
+    if (_status == CustomerAuthStatus.signedOut) {
       await _store.clear();
       return;
     }
@@ -79,13 +87,16 @@ class CustomerSessionController extends ChangeNotifier {
       CustomerSessionSnapshot(
         status: _status,
         phoneNumber: _phoneNumber,
+        allowSupabaseRestore: _status == CustomerAuthStatus.authenticated,
       ),
     );
   }
 
   Future<void> startPhoneEntry() async {
+    await _authAdapter.signOut();
     _identity = null;
     _lastAuthError = null;
+    _phoneNumber = null;
     _status = CustomerAuthStatus.signedOut;
     await _persist();
     notifyListeners();
@@ -150,8 +161,10 @@ class CustomerSessionController extends ChangeNotifier {
   }
 
   Future<void> continueAsGuest() async {
+    await _authAdapter.signOut();
     _identity = null;
     _lastAuthError = null;
+    _phoneNumber = null;
     _status = CustomerAuthStatus.guest;
     await _persist();
     notifyListeners();

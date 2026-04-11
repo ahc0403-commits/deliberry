@@ -8,10 +8,12 @@ class CustomerSessionSnapshot {
   const CustomerSessionSnapshot({
     required this.status,
     this.phoneNumber,
+    this.allowSupabaseRestore = false,
   });
 
   final CustomerAuthStatus status;
   final String? phoneNumber;
+  final bool allowSupabaseRestore;
 }
 
 abstract class CustomerSessionStore {
@@ -44,6 +46,7 @@ class SecureCustomerSessionStore implements CustomerSessionStore {
 
       final statusName = payload['status'];
       final phoneNumber = payload['phoneNumber'];
+      final allowSupabaseRestore = payload['allowSupabaseRestore'];
       if (statusName is! String) {
         await clear();
         return null;
@@ -61,6 +64,9 @@ class SecureCustomerSessionStore implements CustomerSessionStore {
         phoneNumber: phoneNumber is String && phoneNumber.isNotEmpty
             ? phoneNumber
             : null,
+        allowSupabaseRestore: allowSupabaseRestore is bool
+            ? allowSupabaseRestore
+            : status.first == CustomerAuthStatus.authenticated,
       );
     } catch (_) {
       await clear();
@@ -75,6 +81,7 @@ class SecureCustomerSessionStore implements CustomerSessionStore {
       value: jsonEncode({
         'status': snapshot.status.name,
         'phoneNumber': snapshot.phoneNumber,
+        'allowSupabaseRestore': snapshot.allowSupabaseRestore,
       }),
     );
   }
