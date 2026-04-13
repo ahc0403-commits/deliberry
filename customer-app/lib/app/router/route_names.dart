@@ -25,4 +25,5 @@ abstract final class RouteNames {
   static const settings = '/settings';
   static const addresses = '/addresses';
   static const notifications = '/notifications';
+  static const orderCompletion = '/orders/completion';
 }

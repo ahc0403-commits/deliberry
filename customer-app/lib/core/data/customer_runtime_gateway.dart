@@ -47,12 +47,14 @@ class CustomerOrderReview {
 
 class CustomerOrderCreateLineItem {
   const CustomerOrderCreateLineItem({
+    this.menuItemId,
     required this.name,
     required this.quantity,
     required this.unitPriceCentavos,
     this.modifiers = const <String>[],
   });
 
+  final String? menuItemId;
   final String name;
   final int quantity;
   final int unitPriceCentavos;
@@ -65,6 +67,7 @@ class CustomerOrderCreateInput {
     required this.storeId,
     required this.storeName,
     required this.customerPhone,
+    this.promoCode,
     required this.paymentStatus,
     required this.paymentMethod,
     required this.totalCentavos,
@@ -81,6 +84,7 @@ class CustomerOrderCreateInput {
   final String storeId;
   final String storeName;
   final String customerPhone;
+  final String? promoCode;
   final String paymentStatus;
   final String paymentMethod;
   final int totalCentavos;

@@ -288,6 +288,7 @@ class StoreCard extends StatelessWidget {
     required this.deliveryTime,
     required this.deliveryFee,
     required this.imageColor,
+    this.isDirect = false,
     this.promoText,
     this.onTap,
     super.key,
@@ -299,6 +300,7 @@ class StoreCard extends StatelessWidget {
   final String deliveryTime;
   final int deliveryFee;
   final Color imageColor;
+  final bool isDirect;
   final String? promoText;
   final VoidCallback? onTap;
 

@@ -16,6 +16,7 @@ class MockStore {
     required this.deliveryTime,
     required this.deliveryFee,
     required this.imageColor,
+    this.storeType = 'direct',
     this.distance = '1.2 km',
     this.isFeatured = false,
     this.promoText,
@@ -29,9 +30,12 @@ class MockStore {
   final String deliveryTime;
   final int deliveryFee; // centavos (R-010)
   final Color imageColor;
+  final String storeType;
   final String distance;
   final bool isFeatured;
   final String? promoText;
+
+  bool get isDirect => storeType == 'direct';
 }
 
 class MockMenuItem {

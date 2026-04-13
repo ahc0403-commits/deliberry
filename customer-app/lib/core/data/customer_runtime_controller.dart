@@ -942,7 +942,7 @@ class CustomerRuntimeController extends ChangeNotifier {
             grossAmount: grossAmount,
             discountAmount: discountAmount,
             deliveryFee: record.deliveryFeeCentavos,
-            paymentMethod: record.paymentMethodCode,
+            paymentMethod: record.paymentMethodCode ?? 'unknown',
             customerId: actorId,
             items: items,
           ),
