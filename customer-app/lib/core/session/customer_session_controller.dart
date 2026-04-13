@@ -71,6 +71,19 @@ class CustomerSessionController extends ChangeNotifier {
       await _authAdapter.signOut();
     } else {
       debugPrint('[CustomerSession] restore:skipping signOut (pending web OAuth callback)');
+      // Supabase OAuth (e.g. Kakao) auto-establishes a session from the URL
+      // fragment during Supabase.initialize(). If that session exists, adopt it
+      // now — handleAuthCallback will never fire for fragment-based callbacks.
+      final oauthIdentity = await _authAdapter.restoreAuthenticatedIdentity();
+      if (oauthIdentity != null) {
+        debugPrint(
+          '[CustomerSession] restore:oauth_fragment actor=${oauthIdentity.actorId} needsOnboarding=${oauthIdentity.needsOnboarding}',
+        );
+        await _applyAuthenticatedIdentity(oauthIdentity);
+        _hydrated = true;
+        notifyListeners();
+        return;
+      }
     }
 
     if (snapshot != null) {
@@ -246,8 +259,18 @@ class CustomerSessionController extends ChangeNotifier {
       return false;
     }
     final params = Uri.base.queryParameters;
-    return params.containsKey('code') ||
+    if (params.containsKey('code') ||
         params.containsKey('error') ||
-        params.containsKey('error_description');
+        params.containsKey('error_description')) {
+      return true;
+    }
+    // Supabase OAuth (e.g. Kakao) returns tokens in the URL fragment:
+    // #access_token=...&refresh_token=...
+    final fragment = Uri.base.fragment;
+    if (fragment.contains('access_token') ||
+        fragment.contains('refresh_token')) {
+      return true;
+    }
+    return false;
   }
 }
