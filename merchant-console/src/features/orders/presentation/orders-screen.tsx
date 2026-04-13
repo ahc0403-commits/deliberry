@@ -64,7 +64,13 @@ export function MerchantOrdersScreen({
   const pendingCount = orders.filter((order) => order.status === "pending").length;
 
   function handleOrderStatusUpdate(
-    nextStatus: "preparing" | "cancelled" | "ready" | "in_transit",
+    nextStatus:
+      | "confirmed"
+      | "preparing"
+      | "ready"
+      | "in_transit"
+      | "delivered"
+      | "cancelled",
   ) {
     if (!selectedOrder) {
       return;
@@ -144,7 +150,7 @@ export function MerchantOrdersScreen({
           <div className="merchant-hero-panel-label">Queue focus</div>
           <div className="merchant-hero-panel-value">{filteredOrders.length} in {currentTab.label.toLowerCase()}</div>
           <div className="merchant-hero-panel-text">
-            Pending orders can be accepted or rejected here. Ready orders can move to pickup without leaving this queue.
+            Pending orders can be accepted or rejected here. In-transit orders can be completed without leaving this queue.
           </div>
         </div>
       </section>
@@ -402,8 +408,12 @@ export function MerchantOrdersScreen({
 
             {selectedOrder.status === "pending" ? (
               <div className="order-detail-footer">
-                <button className="btn btn-success" onClick={() => handleOrderStatusUpdate("preparing")} disabled={actionPending}>Accept Order</button>
+                <button className="btn btn-success" onClick={() => handleOrderStatusUpdate("confirmed")} disabled={actionPending}>Accept Order</button>
                 <button className="btn btn-danger" onClick={() => handleOrderStatusUpdate("cancelled")} disabled={actionPending}>Reject</button>
+              </div>
+            ) : selectedOrder.status === "confirmed" ? (
+              <div className="order-detail-footer">
+                <button className="btn btn-primary" onClick={() => handleOrderStatusUpdate("preparing")} disabled={actionPending}>Start Preparing</button>
               </div>
             ) : selectedOrder.status === "preparing" ? (
               <div className="order-detail-footer">
@@ -412,6 +422,10 @@ export function MerchantOrdersScreen({
             ) : selectedOrder.status === "ready" ? (
               <div className="order-detail-footer">
                 <button className="btn btn-primary" onClick={() => handleOrderStatusUpdate("in_transit")} disabled={actionPending}>Mark Picked Up</button>
+              </div>
+            ) : selectedOrder.status === "in_transit" ? (
+              <div className="order-detail-footer">
+                <button className="btn btn-success" onClick={() => handleOrderStatusUpdate("delivered")} disabled={actionPending}>Mark Delivered</button>
               </div>
             ) : null}
             {actionError ? (

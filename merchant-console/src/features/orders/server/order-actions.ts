@@ -13,7 +13,13 @@ import { supabaseMerchantRuntimeRepository } from "../../../shared/data/supabase
 export async function updateMerchantOrderStatusAction(input: {
   storeId: string;
   orderId: string;
-  status: "confirmed" | "preparing" | "ready" | "in_transit" | "cancelled";
+  status:
+    | "confirmed"
+    | "preparing"
+    | "ready"
+    | "in_transit"
+    | "delivered"
+    | "cancelled";
 }): Promise<
   | {
       ok: true;
