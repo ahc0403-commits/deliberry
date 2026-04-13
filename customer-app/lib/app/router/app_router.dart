@@ -290,22 +290,29 @@ class AppRouter {
     );
   }
 
-  static MaterialPageRoute<dynamic> _redirectRoute(
+  static Route<dynamic> _redirectRoute(
     String routeName,
     RouteSettings settings,
   ) {
-    return MaterialPageRoute<dynamic>(
-      settings: settings,
-      builder: (context) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          Navigator.of(context).pushReplacementNamed(routeName);
-        });
-        return const SizedBox.shrink();
-      },
+    if (routeName == settings.name) {
+      return _route(
+        _StubScreen(
+          title: 'Route Redirect Loop',
+          subtitle: settings.name,
+        ),
+        settings,
+      );
+    }
+
+    return onGenerateRoute(
+      RouteSettings(
+        name: routeName,
+        arguments: settings.arguments,
+      ),
     );
   }
 
-  static MaterialPageRoute<dynamic> _guardRoute({
+  static Route<dynamic> _guardRoute({
     required CustomerSessionController session,
     required _CustomerAccess access,
     required String fallbackRouteName,
