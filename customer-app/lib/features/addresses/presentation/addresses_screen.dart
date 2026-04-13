@@ -1,12 +1,31 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/router/route_names.dart';
 import '../../../core/data/customer_runtime_controller.dart';
 import '../../../core/data/mock_data.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../common/presentation/widgets.dart';
 
 class AddressesScreen extends StatelessWidget {
-  const AddressesScreen({super.key});
+  const AddressesScreen({
+    this.returnRouteName = RouteNames.home,
+    this.isRequiredGate = false,
+    super.key,
+  });
+
+  final String returnRouteName;
+  final bool isRequiredGate;
+
+  void _handleExit(BuildContext context, CustomerRuntimeController runtime) {
+    if (!isRequiredGate) {
+      Navigator.of(context).maybePop();
+      return;
+    }
+    if (runtime.addresses.isEmpty) {
+      return;
+    }
+    Navigator.of(context).pushReplacementNamed(returnRouteName);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -17,82 +36,101 @@ class AddressesScreen extends StatelessWidget {
       builder: (context, _) {
         final addresses = runtime.addresses;
 
-        return Scaffold(
-          backgroundColor: AppTheme.backgroundGrey,
-          appBar: AppBar(
-            title: const Text('My Addresses'),
-            backgroundColor: Colors.white,
-            actions: [
-              IconButton(
-                icon: Icon(Icons.add_rounded, color: AppTheme.primaryColor),
-                onPressed: () => _showAddAddressSheet(context, runtime),
-                tooltip: 'Add address',
+        return PopScope(
+          canPop: !isRequiredGate,
+          onPopInvokedWithResult: (didPop, _) {
+            if (didPop) return;
+            _handleExit(context, runtime);
+          },
+          child: Scaffold(
+            backgroundColor: AppTheme.backgroundGrey,
+            appBar: AppBar(
+              title: const Text('My Addresses'),
+              backgroundColor: Colors.white,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back_rounded),
+                onPressed: () => _handleExit(context, runtime),
               ),
-            ],
-          ),
-          body: Column(
-            children: [
-              Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-                  children: [
-                    FeatureHeroCard(
-                      eyebrow: 'Addresses',
-                      title: 'Manage where this session delivers',
-                      subtitle:
-                          'Your saved addresses stay available across the current app session, but they do not sync beyond this device session.',
-                      icon: Icons.location_on_rounded,
-                      badge:
-                          '${addresses.length} saved address${addresses.length == 1 ? '' : 'es'}',
-                    ),
-                    const SizedBox(height: 16),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: const [
-                        InfoPill(
-                          icon: Icons.info_outline_rounded,
-                          label: 'Local-session only',
-                          highlight: true,
-                        ),
-                        InfoPill(
-                          icon: Icons.edit_location_alt_outlined,
-                          label: 'No map or geocoding',
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    if (addresses.isEmpty)
-                      const EmptyState(
-                        icon: Icons.location_off_outlined,
-                        title: 'No saved addresses',
-                        subtitle:
-                            'Add an address to start using this account area for checkout and delivery.',
-                      )
-                    else
-                      ...List.generate(addresses.length, (index) {
-                        final address = addresses[index];
-                        return Padding(
-                          padding: EdgeInsets.only(
-                            bottom: index == addresses.length - 1 ? 0 : 12,
-                          ),
-                          child: _AddressCard(
-                            address: address,
-                            onEdit: () =>
-                                _showEditSheet(context, runtime, address),
-                            onDelete: () =>
-                                _confirmDelete(context, runtime, address),
-                            onSetDefault: address.isDefault
-                                ? null
-                                : () => runtime.setDefaultAddress(address.id),
-                          ),
-                        );
-                      }),
-                  ],
+              actions: [
+                IconButton(
+                  icon: Icon(Icons.add_rounded, color: AppTheme.primaryColor),
+                  onPressed: () => _showAddAddressSheet(context, runtime),
+                  tooltip: 'Add address',
                 ),
-              ),
-              _AddButton(onTap: () => _showAddAddressSheet(context, runtime)),
-            ],
+              ],
+            ),
+            body: Column(
+              children: [
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                    children: [
+                      FeatureHeroCard(
+                        eyebrow: 'Addresses',
+                        title: 'Manage where this session delivers',
+                        subtitle:
+                            'Your saved addresses stay available across the current app session, but they do not sync beyond this device session.',
+                        icon: Icons.location_on_rounded,
+                        badge:
+                            '${addresses.length} saved address${addresses.length == 1 ? '' : 'es'}',
+                      ),
+                      const SizedBox(height: 16),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          if (isRequiredGate)
+                            const InfoPill(
+                              icon: Icons.lock_outline_rounded,
+                              label: 'Address required before home',
+                              highlight: true,
+                            ),
+                          const InfoPill(
+                            icon: Icons.info_outline_rounded,
+                            label: 'Local-session only',
+                            highlight: true,
+                          ),
+                          const InfoPill(
+                            icon: Icons.edit_location_alt_outlined,
+                            label: 'No map or geocoding',
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      if (addresses.isEmpty)
+                        const EmptyState(
+                          icon: Icons.location_off_outlined,
+                          title: 'No saved addresses',
+                          subtitle:
+                              'Add an address to start using this account area for checkout and delivery.',
+                        )
+                      else
+                        ...List.generate(addresses.length, (index) {
+                          final address = addresses[index];
+                          return Padding(
+                            padding: EdgeInsets.only(
+                              bottom: index == addresses.length - 1 ? 0 : 12,
+                            ),
+                            child: _AddressCard(
+                              address: address,
+                              onEdit: () =>
+                                  _showEditSheet(context, runtime, address),
+                              onDelete: () =>
+                                  _confirmDelete(context, runtime, address),
+                              onSetDefault: address.isDefault
+                                  ? null
+                                  : () => runtime.setDefaultAddress(address.id),
+                            ),
+                          );
+                        }),
+                    ],
+                  ),
+                ),
+                _AddButton(
+                  onTap: () => _showAddAddressSheet(context, runtime),
+                ),
+              ],
+            ),
           ),
         );
       },

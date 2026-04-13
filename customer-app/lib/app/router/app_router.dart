@@ -253,11 +253,15 @@ class AppRouter {
           settings: settings,
         );
       case RouteNames.addresses:
+        final addressArgs = settings.arguments as AddressRouteArgs?;
         return _guardRoute(
           session: session,
           access: _CustomerAccess.authenticatedOnly,
           fallbackRouteName: RouteNames.authLogin,
-          child: const AddressesScreen(),
+          child: AddressesScreen(
+            returnRouteName: addressArgs?.returnRouteName ?? RouteNames.home,
+            isRequiredGate: addressArgs?.isRequiredGate ?? false,
+          ),
           settings: settings,
         );
       case RouteNames.notifications:

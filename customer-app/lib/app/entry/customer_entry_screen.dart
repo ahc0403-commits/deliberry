@@ -15,12 +15,15 @@ class CustomerEntryScreen extends StatefulWidget {
 class _CustomerEntryScreenState extends State<CustomerEntryScreen> {
   bool _navigating = false;
 
-  void _navigateOnce(String routeName) {
+  void _navigateOnce(String routeName, {Object? arguments}) {
     if (_navigating) return;
     _navigating = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        Navigator.of(context).pushReplacementNamed(routeName);
+        Navigator.of(context).pushReplacementNamed(
+          routeName,
+          arguments: arguments,
+        );
       }
     });
   }
@@ -40,7 +43,13 @@ class _CustomerEntryScreenState extends State<CustomerEntryScreen> {
         }
 
         if (session.isSignedIn && runtime.addresses.isEmpty) {
-          _navigateOnce(RouteNames.addresses);
+          _navigateOnce(
+            RouteNames.addresses,
+            arguments: const AddressRouteArgs(
+              returnRouteName: RouteNames.home,
+              isRequiredGate: true,
+            ),
+          );
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );

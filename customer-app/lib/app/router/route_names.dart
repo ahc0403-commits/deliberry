@@ -27,3 +27,13 @@ abstract final class RouteNames {
   static const notifications = '/notifications';
   static const orderCompletion = '/orders/completion';
 }
+
+class AddressRouteArgs {
+  const AddressRouteArgs({
+    this.returnRouteName = RouteNames.home,
+    this.isRequiredGate = false,
+  });
+
+  final String returnRouteName;
+  final bool isRequiredGate;
+}
