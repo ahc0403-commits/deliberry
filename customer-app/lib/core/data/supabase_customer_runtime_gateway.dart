@@ -368,8 +368,6 @@ class SupabaseCustomerRuntimeGateway implements CustomerRuntimeGateway {
     return rows.map(_mapPersistedOrderRecord).toList();
   }
 
-  String _buildOrderId(DateTime now) => 'ord-${now.microsecondsSinceEpoch}';
-
   String _buildOrderNumber(DateTime now) {
     final suffix =
         (now.microsecondsSinceEpoch % 100000).toString().padLeft(5, '0');
@@ -883,15 +881,8 @@ class SupabaseCustomerRuntimeGateway implements CustomerRuntimeGateway {
     }
 
     final now = DateTime.now().toUtc();
-    final orderId = _buildOrderId(now);
-    final orderNumber = _buildOrderNumber(now);
     final actorType =
         CustomerSessionController.instance.isGuest ? 'guest' : 'customer';
-    final customerName = await _resolveStoredDisplayName(
-      client,
-      user,
-      _resolveCustomerName(user, input.customerPhone),
-    );
 
     try {
       await observability.recordEvent(
@@ -908,49 +899,28 @@ class SupabaseCustomerRuntimeGateway implements CustomerRuntimeGateway {
     } catch (_) {}
 
     try {
-      await client.from('actor_profiles').upsert({
-        'id': user.id,
-        'actor_type': actorType,
-        'display_name': customerName,
-        'phone_number': input.customerPhone,
-        'updated_at': now.toIso8601String(),
-      });
-
-      final orderRow = Map<String, dynamic>.from(await client
-          .from('orders')
-          .insert({
-            'id': orderId,
-            'order_number': orderNumber,
-            'customer_actor_id': user.id,
-            'store_id': input.storeId,
-            'customer_name': customerName,
-            'customer_phone': input.customerPhone,
-            'status': 'pending',
-            'payment_status': input.paymentStatus,
-            'payment_method': input.paymentMethod,
-            'total_centavos': input.totalCentavos,
-            'currency': 'USD',
-            'subtotal_centavos': input.subtotalCentavos,
-            'delivery_fee_centavos': input.deliveryFeeCentavos,
-            'delivery_address': input.deliveryAddress,
-            'notes': input.instructions.trim(),
-            'estimated_delivery_at': input.estimatedDeliveryAtUtc,
-            'line_items_summary': input.lineItems
-                .map(
-                  (item) => {
-                    'name': item.name,
-                    'quantity': item.quantity,
-                    'unit_price_centavos': item.unitPriceCentavos,
-                    'modifiers': item.modifiers,
-                  },
-                )
-                .toList(),
-            'created_at': now.toIso8601String(),
-          })
-          .select(
-            'id, order_number, status, payment_status, total_centavos, created_at, payment_method, estimated_delivery_at',
-          )
-          .single());
+      final rpcResponse = await client.rpc(
+        'create_customer_order',
+        params: {
+          'p_store_id': input.storeId,
+          'p_payment_method': input.paymentMethod,
+          'p_delivery_address': input.deliveryAddress,
+          'p_notes': input.instructions.trim(),
+          'p_line_items': input.lineItems
+              .map(
+                (item) => {
+                  'menu_item_id': item.menuItemId,
+                  'quantity': item.quantity,
+                  'modifiers': item.modifiers,
+                },
+              )
+              .toList(),
+          'p_promo_code': input.promoCode,
+          'p_estimated_delivery_at': input.estimatedDeliveryAtUtc,
+        },
+      );
+      final orderRow = Map<String, dynamic>.from(rpcResponse as Map);
+      final returnedOrderId = orderRow['id'] as String?;
 
       try {
         await observability.recordEvent(
@@ -961,7 +931,7 @@ class SupabaseCustomerRuntimeGateway implements CustomerRuntimeGateway {
           attemptSource: 'persisted',
           actorType: actorType,
           storeId: input.storeId,
-          orderId: (orderRow['id'] as String?) ?? orderId,
+          orderId: returnedOrderId ?? 'order-unavailable',
           itemCount: input.itemCount,
           paymentMethod: input.paymentMethod,
           durationMs: stopwatch.elapsedMilliseconds,
@@ -969,8 +939,9 @@ class SupabaseCustomerRuntimeGateway implements CustomerRuntimeGateway {
       } catch (_) {}
 
       return PersistedCustomerOrder(
-        id: (orderRow['id'] as String?) ?? orderId,
-        orderNumber: (orderRow['order_number'] as String?) ?? orderNumber,
+        id: returnedOrderId ?? 'order-unavailable',
+        orderNumber: (orderRow['order_number'] as String?) ??
+            _buildOrderNumber(now),
         status: (orderRow['status'] as String?) ?? 'pending',
         totalCentavos: (orderRow['total_centavos'] as num?)?.toInt() ??
             input.totalCentavos,

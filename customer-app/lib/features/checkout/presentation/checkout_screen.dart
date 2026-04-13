@@ -45,8 +45,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   Future<void> _placeOrder() async {
     final runtime = CustomerRuntimeController.instance;
-    if (_isSubmitting || runtime.cartItems.isEmpty) return;
+    debugPrint(
+      '[Checkout] placeOrder:tap submitting=$_isSubmitting cartItems=${runtime.cartItems.length}',
+    );
+    if (_isSubmitting || runtime.cartItems.isEmpty) {
+      debugPrint(
+        '[Checkout] placeOrder:validation_failed submitting=$_isSubmitting cartItems=${runtime.cartItems.length}',
+      );
+      return;
+    }
     if (CustomerSessionController.instance.isGuest) {
+      debugPrint('[Checkout] placeOrder:validation_failed guest_session');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content:
@@ -58,35 +67,64 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
 
     setState(() => _isSubmitting = true);
-    await Future<void>.delayed(const Duration(milliseconds: 500));
+    try {
+      debugPrint('[Checkout] placeOrder:validation_passed');
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+      debugPrint(
+        '[Checkout] placeOrder:submit_start paymentIndex=$_selectedPaymentIndex',
+      );
 
-    final order = await runtime.submitOrder(
-      instructions: _instructionsController.text,
-      paymentMethodIndex: _selectedPaymentIndex,
-    );
+      final order = await runtime.submitOrder(
+        instructions: _instructionsController.text,
+        paymentMethodIndex: _selectedPaymentIndex,
+      );
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    setState(() => _isSubmitting = false);
+      if (order == null) {
+        final blocker = runtime.lastRuntimeBlocker;
+        debugPrint(
+          '[Checkout] placeOrder:submit_failure blocker=${blocker ?? 'unknown'}',
+        );
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_messageForBlocker(blocker)),
+          ),
+        );
+        if (blocker == 'checkout_input_missing' &&
+            runtime.deliveryAddress == null) {
+          Navigator.of(context).pushNamed(RouteNames.addresses);
+        }
+        return;
+      }
 
-    if (order == null) {
-      final blocker = runtime.lastRuntimeBlocker;
+      debugPrint(
+        '[Checkout] placeOrder:submit_success orderId=${order.order.id}',
+      );
+      debugPrint(
+        '[Checkout] placeOrder:navigate route=${RouteNames.orderCompletion} orderId=${order.order.id}',
+      );
+      Navigator.of(context).pushReplacementNamed(
+        RouteNames.orderCompletion,
+        arguments: order.order.id,
+      );
+    } catch (error, stackTrace) {
+      debugPrint('[Checkout] placeOrder:submit_exception error=$error');
+      debugPrintStack(
+        stackTrace: stackTrace,
+        label: '[Checkout] placeOrder:submit_exception_stack',
+      );
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_messageForBlocker(blocker)),
+        const SnackBar(
+          content: Text('Unable to place order right now. Please try again.'),
         ),
       );
-      if (blocker == 'checkout_input_missing' &&
-          runtime.deliveryAddress == null) {
-        Navigator.of(context).pushNamed(RouteNames.addresses);
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
       }
-      return;
     }
-
-    Navigator.of(context).pushReplacementNamed(
-      RouteNames.orderCompletion,
-      arguments: order.order.id,
-    );
   }
 
   String _messageForBlocker(String? blocker) {

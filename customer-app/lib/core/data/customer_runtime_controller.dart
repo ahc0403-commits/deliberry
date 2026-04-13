@@ -754,12 +754,12 @@ class CustomerRuntimeController extends ChangeNotifier {
         return;
       }
 
-      final storeRows = await client
-          .from('stores')
-          .select(
-              'id, name, cuisine_type, rating, review_count, avg_prep_time, delivery_radius, status, store_type')
-          .eq('accepting_orders', true)
-          .order('rating', ascending: false);
+        final storeRows = await client
+            .from('stores')
+            .select(
+              'id, name, cuisine_type, rating, review_count, avg_prep_time, delivery_radius, status')
+            .eq('accepting_orders', true)
+            .order('rating', ascending: false);
 
       final persistedStores = List<Map<String, dynamic>>.from(storeRows)
           .asMap()
@@ -848,9 +848,7 @@ class CustomerRuntimeController extends ChangeNotifier {
       deliveryFee: 299,
       imageColor:
           index.isEven ? AppTheme.primaryColor : AppTheme.secondaryColor,
-      storeType: (row['store_type'] as String?)?.trim().isNotEmpty == true
-          ? (row['store_type'] as String).trim()
-          : 'direct',
+      storeType: 'direct',
       distance: row['delivery_radius'] as String? ?? 'Nearby',
       isFeatured: index < 3,
       promoText: row['status'] == 'open' ? 'Open now' : null,

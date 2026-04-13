@@ -15,6 +15,7 @@ import '../../features/home/presentation/discovery_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
 import '../../features/notifications/presentation/notifications_screen.dart';
 import '../../features/onboarding/presentation/onboarding_screen.dart';
+import '../../features/orders/presentation/order_completion_screen.dart';
 import '../../features/orders/presentation/order_detail_screen.dart';
 import '../../features/orders/presentation/order_status_screen.dart';
 import '../../features/orders/presentation/orders_screen.dart';
@@ -201,6 +202,16 @@ class AppRouter {
           access: _CustomerAccess.customerFlow,
           fallbackRouteName: RouteNames.entry,
           child: const CheckoutScreen(),
+          settings: settings,
+        );
+      case RouteNames.orderCompletion:
+        return _guardRoute(
+          session: session,
+          access: _CustomerAccess.authenticatedOnly,
+          fallbackRouteName: RouteNames.authLogin,
+          child: OrderCompletionScreen(
+            orderId: settings.arguments as String?,
+          ),
           settings: settings,
         );
       case RouteNames.orderDetail:
