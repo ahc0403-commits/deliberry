@@ -89,7 +89,9 @@ function isAllowedAppOrigin(url: URL) {
     host === "127.0.0.1" ||
     host === "deli-berry.com" ||
     host === "go.deli-berry.com" ||
-    host.endsWith(".deli-berry.com")
+    host.endsWith(".deli-berry.com") ||
+    host === "deliberry-customer.vercel.app" ||
+    host.endsWith(".deliberry-customer.vercel.app")
   );
 }
 

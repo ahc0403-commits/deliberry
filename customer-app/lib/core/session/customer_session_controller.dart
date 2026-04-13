@@ -67,8 +67,10 @@ class CustomerSessionController extends ChangeNotifier {
       }
       await _store.clear();
       snapshot = null;
-    } else {
+    } else if (!_hasPendingWebOAuthCallback()) {
       await _authAdapter.signOut();
+    } else {
+      debugPrint('[CustomerSession] restore:skipping signOut (pending web OAuth callback)');
     }
 
     if (snapshot != null) {
@@ -237,5 +239,15 @@ class CustomerSessionController extends ChangeNotifier {
     if (persist) {
       await _persist();
     }
+  }
+
+  static bool _hasPendingWebOAuthCallback() {
+    if (!kIsWeb) {
+      return false;
+    }
+    final params = Uri.base.queryParameters;
+    return params.containsKey('code') ||
+        params.containsKey('error') ||
+        params.containsKey('error_description');
   }
 }
