@@ -544,39 +544,46 @@ class CustomerRuntimeController extends ChangeNotifier {
       2 => 'digital_wallet',
       _ => 'card',
     };
-    final created = await _gateway.createOrder(
-      CustomerOrderCreateInput(
-        traceId: 'cust-${now.microsecondsSinceEpoch}',
-        storeId: store.id,
-        storeName: store.name,
-        customerPhone: CustomerSessionController.instance.phoneNumber ??
-            CustomerSessionController.instance.identity?.phoneNumber ??
-            '',
-        promoCode: _promoCode,
-        paymentStatus: 'pending',
-        paymentMethod: paymentMethod,
-        totalCentavos: cartTotal,
-        itemCount: cartItemCount,
-        subtotalCentavos: cartSubtotal,
-        deliveryFeeCentavos: cartDeliveryFee,
-        deliveryAddress:
-            '${address.street}${address.detail.isEmpty ? '' : ', ${address.detail}'}',
-        instructions: instructions,
-        estimatedDeliveryAtUtc:
-            now.add(const Duration(minutes: 30)).toIso8601String(),
-        lineItems: _cartItems
-            .map(
-              (item) => CustomerOrderCreateLineItem(
-                menuItemId: item.menuItem.id,
-                name: item.menuItem.name,
-                quantity: item.quantity,
-                unitPriceCentavos: item.menuItem.price,
-                modifiers: item.modifiers,
-              ),
-            )
-            .toList(),
-      ),
-    );
+    PersistedCustomerOrder? created;
+    try {
+      created = await _gateway.createOrder(
+        CustomerOrderCreateInput(
+          traceId: 'cust-${now.microsecondsSinceEpoch}',
+          storeId: store.id,
+          storeName: store.name,
+          customerPhone: CustomerSessionController.instance.phoneNumber ??
+              CustomerSessionController.instance.identity?.phoneNumber ??
+              '',
+          promoCode: _promoCode,
+          paymentStatus: 'pending',
+          paymentMethod: paymentMethod,
+          totalCentavos: cartTotal,
+          itemCount: cartItemCount,
+          subtotalCentavos: cartSubtotal,
+          deliveryFeeCentavos: cartDeliveryFee,
+          deliveryAddress:
+              '${address.street}${address.detail.isEmpty ? '' : ', ${address.detail}'}',
+          instructions: instructions,
+          estimatedDeliveryAtUtc:
+              now.add(const Duration(minutes: 30)).toIso8601String(),
+          lineItems: _cartItems
+              .map(
+                (item) => CustomerOrderCreateLineItem(
+                  menuItemId: item.menuItem.id,
+                  name: item.menuItem.name,
+                  quantity: item.quantity,
+                  unitPriceCentavos: item.menuItem.price,
+                  modifiers: item.modifiers,
+                ),
+              )
+              .toList(),
+        ),
+      );
+    } catch (error) {
+      _lastRuntimeBlocker = _mapOrderCreateErrorToBlocker(error);
+      notifyListeners();
+      return null;
+    }
 
     if (created == null) {
       _lastRuntimeBlocker = 'persisted_order_create_failed';
@@ -591,6 +598,24 @@ class CustomerRuntimeController extends ChangeNotifier {
     await refreshPersistedRuntime();
     notifyListeners();
     return findOrderRecordById(created.id);
+  }
+
+  String _mapOrderCreateErrorToBlocker(Object error) {
+    final message = error.toString().toLowerCase();
+    if (message.contains('authenticated session is required')) {
+      return 'authenticated_customer_session_required';
+    }
+    if (message.contains('delivery address is required')) {
+      return 'checkout_input_missing';
+    }
+    if (message.contains('one or more requested line items are unavailable') ||
+        message.contains('at least one valid line item is required')) {
+      return 'cart_line_items_unavailable';
+    }
+    if (message.contains('is not accepting orders')) {
+      return 'store_menu_unavailable';
+    }
+    return 'persisted_order_create_failed';
   }
 
   bool reorder(String orderId) {
