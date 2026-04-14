@@ -67,9 +67,9 @@ class AddressesScreen extends StatelessWidget {
                     children: [
                       FeatureHeroCard(
                         eyebrow: 'Addresses',
-                        title: 'Manage where this session delivers',
+                        title: 'Manage your saved delivery addresses',
                         subtitle:
-                            'Your saved addresses stay available across the current app session, but they do not sync beyond this device session.',
+                            'Signed-in addresses sync with your customer account so they stay available after refresh and on future visits.',
                         icon: Icons.location_on_rounded,
                         badge:
                             '${addresses.length} saved address${addresses.length == 1 ? '' : 'es'}',
@@ -87,7 +87,7 @@ class AddressesScreen extends StatelessWidget {
                             ),
                           const InfoPill(
                             icon: Icons.info_outline_rounded,
-                            label: 'Local-session only',
+                            label: 'Account-synced when signed in',
                             highlight: true,
                           ),
                           const InfoPill(

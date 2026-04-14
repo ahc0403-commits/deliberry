@@ -42,6 +42,12 @@ class _CustomerEntryScreenState extends State<CustomerEntryScreen> {
           );
         }
 
+        if (session.isSignedIn && !runtime.hasPersistedRuntimeLoaded) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
         if (session.isSignedIn && runtime.addresses.isEmpty) {
           _navigateOnce(
             RouteNames.addresses,

@@ -941,8 +941,13 @@ class CustomerRuntimeController extends ChangeNotifier {
   Future<void> _syncAddressSave(MockAddress address) async {
     try {
       _addresses = await _gateway.saveAddress(address);
+      _lastRuntimeBlocker = null;
       notifyListeners();
-    } catch (_) {}
+    } catch (error) {
+      _lastRuntimeBlocker = 'address_save_failed';
+      debugPrint('[CustomerRuntime] address_save_failed: $error');
+      notifyListeners();
+    }
   }
 
   Future<void> _syncAddressDelete(String addressId) async {
