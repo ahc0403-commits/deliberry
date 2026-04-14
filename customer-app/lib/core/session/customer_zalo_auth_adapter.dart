@@ -38,11 +38,13 @@ class CustomerZaloAuthAdapter implements CustomerAuthAdapter {
     }
 
     if (!CustomerZaloAuthConfig.current.isConfigured) {
-      return const CustomerAuthStartResult(
+      final validationError = CustomerZaloAuthConfig.current.validationError;
+      return CustomerAuthStartResult(
         provider: CustomerAuthProvider.zalo,
         blockerCode: 'zalo_config_missing',
-        message:
-            'Zalo auth config is missing. Set ZALO_APP_ID and ZALO_REDIRECT_URI.',
+        message: validationError == null
+            ? 'Zalo auth config is missing. Set ZALO_APP_ID and ZALO_REDIRECT_URI.'
+            : 'Zalo auth config is invalid: $validationError',
       );
     }
 
@@ -100,9 +102,13 @@ class CustomerZaloAuthAdapter implements CustomerAuthAdapter {
   }
 
   @override
-  Future<CustomerAuthIdentity> completeAuthCallback(Uri callbackUri) async {
-    debugPrint('[CustomerZaloAuth] callback:received host=${callbackUri.host} path=${callbackUri.path} hasCode=${callbackUri.queryParameters.containsKey("code")}');
-    if (!_matchesSupportedCallback(callbackUri)) {
+  Future<CustomerAuthCompletionResult> completeAuthCallback(
+    Uri callbackUri,
+  ) async {
+    debugPrint(
+        '[CustomerZaloAuth] callback:received host=${callbackUri.host} path=${callbackUri.path} hasCode=${callbackUri.queryParameters.containsKey("code")}');
+    final callback = detectCustomerAuthCallback(callbackUri);
+    if (callback == null || callback.provider != CustomerAuthProvider.zalo) {
       throw StateError(
         'Customer Zalo auth callback did not match the configured callback URI.',
       );
@@ -142,14 +148,6 @@ class CustomerZaloAuthAdapter implements CustomerAuthAdapter {
     }
     debugPrint('[CustomerZaloAuth] callback:attempt_recovered');
     await CustomerAuthAttemptStore.clear();
-
-    await CustomerSupabaseClient.ensureInitialized();
-    final client = CustomerSupabaseClient.maybeClient;
-    if (client == null) {
-      throw StateError(
-        'Customer Supabase runtime is unavailable for Zalo auth exchange.',
-      );
-    }
 
     final response = await http.post(
       Uri.parse(
@@ -192,31 +190,16 @@ class CustomerZaloAuthAdapter implements CustomerAuthAdapter {
     }
     debugPrint('[CustomerZaloAuth] exchange:payload_ok');
 
-    final refreshToken = json['refresh_token'] as String?;
-    if (refreshToken == null || refreshToken.isEmpty) {
-      throw StateError(
-        'Customer Zalo auth exchange did not return a refresh token.',
-      );
-    }
-    debugPrint('[CustomerZaloAuth] exchange:refresh_token_present');
-
-    final authResponse = await client.auth.setSession(refreshToken);
-    debugPrint(
-      '[CustomerZaloAuth] setSession:done hasSession=${authResponse.session != null} hasUser=${authResponse.user != null} currentUser=${client.auth.currentUser != null}',
+    final completion = _parseCompletionResult(
+      payload: json,
+      callback: callback,
     );
-    final user = authResponse.user ?? client.auth.currentUser;
-    if (user == null) {
-      throw StateError(
-        'Customer Zalo auth exchange did not create a usable Supabase session.',
-      );
-    }
-    debugPrint('[CustomerZaloAuth] callback:user_ready id=${user.id}');
+    debugPrint(
+      '[CustomerZaloAuth] exchange:completion_ready transport=${completion.sessionTransport.name}',
+    );
     await CustomerAuthAttemptStore.markCallbackConsumed(callbackFingerprint);
 
-    return _mapUser(
-      user,
-      fallbackNeedsOnboarding: json['needs_onboarding'] as bool? ?? false,
-    );
+    return completion;
   }
 
   @override
@@ -251,6 +234,14 @@ class CustomerZaloAuthAdapter implements CustomerAuthAdapter {
     final displayName = (userMetadata?['display_name'] as String?)?.trim();
     final phoneNumber = user.phone;
     final providerName = (appMetadata['provider'] as String?)?.toLowerCase();
+    if (providerName != null &&
+        providerName.isNotEmpty &&
+        providerName != 'zalo' &&
+        providerName != 'phone') {
+      throw StateError(
+        'Customer Zalo auth restore resolved to an unsupported provider identity.',
+      );
+    }
     final needsOnboarding =
         (userMetadata?['needs_onboarding'] as bool?) ?? fallbackNeedsOnboarding;
 
@@ -282,7 +273,13 @@ class CustomerZaloAuthConfig {
   final String redirectUri;
 
   bool get isConfigured =>
-      appId.trim().isNotEmpty && redirectUri.trim().isNotEmpty;
+      appId.trim().isNotEmpty &&
+      redirectUri.trim().isNotEmpty &&
+      validationError == null;
+
+  String? get validationError => CustomerZaloRedirectAuthority.validate(
+        redirectUri,
+      );
 }
 
 final _random = Random.secure();
@@ -338,19 +335,60 @@ CustomerAuthAttempt? _resolveAttempt({
 }
 
 extension on CustomerZaloAuthAdapter {
-  bool _matchesSupportedCallback(Uri callbackUri) {
-    if (CustomerAuthRedirectConfig.current.matches(callbackUri)) {
-      return true;
+  CustomerAuthCompletionResult _parseCompletionResult({
+    required Map<String, dynamic> payload,
+    required CustomerAuthCallbackContract callback,
+  }) {
+    final contractVersion = payload['contract_version'] as String?;
+    if (contractVersion != customerAuthCompletionContractVersion) {
+      throw StateError(
+        'Customer Zalo auth exchange returned an unsupported contract version.',
+      );
     }
 
-    if (!kIsWeb) {
-      return false;
+    final resultType = payload['result'] as String?;
+    if (resultType != 'authenticated') {
+      throw StateError(
+        'Customer Zalo auth exchange returned an unexpected result type.',
+      );
     }
 
-    final provider =
-        callbackUri.queryParameters['provider']?.trim().toLowerCase();
-    return (callbackUri.scheme == 'http' || callbackUri.scheme == 'https') &&
-        provider == 'zalo' &&
-        callbackUri.queryParameters.containsKey('code');
+    final providerName = payload['provider'] as String?;
+    if (providerName?.trim().toLowerCase() != 'zalo') {
+      throw StateError(
+        'Customer Zalo auth exchange returned an unexpected provider.',
+      );
+    }
+
+    final session = payload['session'];
+    if (session is! Map) {
+      throw StateError(
+        'Customer Zalo auth exchange did not return a session envelope.',
+      );
+    }
+
+    final sessionJson = Map<String, dynamic>.from(session);
+    final refreshToken = sessionJson['refresh_token'] as String?;
+    if (refreshToken == null || refreshToken.trim().isEmpty) {
+      throw StateError(
+        'Customer Zalo auth exchange did not return a refresh token.',
+      );
+    }
+
+    final sessionTransport = sessionJson['transport'] as String?;
+    if (sessionTransport != 'refresh_token_exchange') {
+      throw StateError(
+        'Customer Zalo auth exchange returned an unsupported session transport.',
+      );
+    }
+
+    return CustomerAuthCompletionResult(
+      provider: CustomerAuthProvider.zalo,
+      callback: callback,
+      sessionTransport: CustomerAuthSessionTransport.refreshTokenExchange,
+      refreshToken: refreshToken,
+      accessToken: sessionJson['access_token'] as String?,
+      expiresInSeconds: sessionJson['expires_in'] as int?,
+    );
   }
 }

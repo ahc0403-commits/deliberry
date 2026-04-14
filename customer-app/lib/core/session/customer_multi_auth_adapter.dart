@@ -29,16 +29,25 @@ class CustomerMultiAuthAdapter implements CustomerAuthAdapter {
   }
 
   @override
-  Future<CustomerAuthIdentity> completeAuthCallback(Uri callbackUri) async {
-    if (callbackUri.queryParameters.containsKey('code') &&
-        callbackUri.queryParameters.containsKey('provider')) {
-      return zaloAdapter.completeAuthCallback(callbackUri);
+  Future<CustomerAuthCompletionResult> completeAuthCallback(
+    Uri callbackUri,
+  ) async {
+    final callback = detectCustomerAuthCallback(callbackUri);
+    if (callback == null) {
+      throw StateError(
+        'Customer auth callback did not match the normalized callback contract.',
+      );
     }
 
-    try {
-      return await socialAdapter.completeAuthCallback(callbackUri);
-    } catch (_) {
-      return zaloAdapter.completeAuthCallback(callbackUri);
+    switch (callback.provider) {
+      case CustomerAuthProvider.zalo:
+        return zaloAdapter.completeAuthCallback(callback.normalizedUri);
+      case CustomerAuthProvider.kakao:
+        return socialAdapter.completeAuthCallback(callback.normalizedUri);
+      case CustomerAuthProvider.phone:
+        throw StateError(
+          'Customer phone auth does not use the social auth callback contract.',
+        );
     }
   }
 

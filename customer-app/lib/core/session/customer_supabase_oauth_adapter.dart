@@ -58,7 +58,9 @@ class CustomerSupabaseOAuthAdapter {
 
     return CustomerAuthStartResult(
       provider: provider,
-      authorizationUri: kIsWeb ? Uri.parse(redirectTo) : CustomerAuthRedirectConfig.current.callbackUri,
+      authorizationUri: kIsWeb
+          ? Uri.parse(redirectTo)
+          : CustomerAuthRedirectConfig.current.callbackUri,
     );
   }
 
@@ -71,8 +73,11 @@ class CustomerSupabaseOAuthAdapter {
     return _mapUser(user);
   }
 
-  Future<CustomerAuthIdentity> completeAuthCallback(Uri callbackUri) async {
-    if (!_matchesSupportedCallback(callbackUri)) {
+  Future<CustomerAuthCompletionResult> completeAuthCallback(
+    Uri callbackUri,
+  ) async {
+    final callback = detectCustomerAuthCallback(callbackUri);
+    if (callback == null || callback.provider != CustomerAuthProvider.kakao) {
       throw StateError(
         'Customer auth callback did not match the configured callback URI.',
       );
@@ -97,7 +102,18 @@ class CustomerSupabaseOAuthAdapter {
       );
     }
 
-    return _mapUser(currentUser);
+    final identity = _mapUser(currentUser);
+    if (identity == null) {
+      throw StateError(
+        'Customer social auth callback resolved to an unsupported provider identity.',
+      );
+    }
+
+    return CustomerAuthCompletionResult(
+      provider: CustomerAuthProvider.kakao,
+      callback: callback,
+      sessionTransport: CustomerAuthSessionTransport.existingSupabaseSession,
+    );
   }
 
   Future<void> signOut() async {
@@ -109,7 +125,7 @@ class CustomerSupabaseOAuthAdapter {
     await client.auth.signOut();
   }
 
-  CustomerAuthIdentity _mapUser(User user) {
+  CustomerAuthIdentity? _mapUser(User user) {
     final appMetadata = user.appMetadata;
     final userMetadata = user.userMetadata;
     final actorType = (appMetadata['actor_type'] as String?) ??
@@ -117,36 +133,19 @@ class CustomerSupabaseOAuthAdapter {
         'customer';
     final displayName = (userMetadata?['display_name'] as String?)?.trim();
     final providerName = (appMetadata['provider'] as String?)?.toLowerCase();
-    final provider = switch (providerName) {
-      'kakao' => CustomerAuthProvider.kakao,
-      _ => CustomerAuthProvider.kakao,
-    };
+    if (providerName != null &&
+        providerName.isNotEmpty &&
+        providerName != 'kakao') {
+      return null;
+    }
 
     return CustomerAuthIdentity(
       actorId: user.id,
       actorType: actorType,
-      provider: provider,
+      provider: CustomerAuthProvider.kakao,
       displayName: displayName?.isEmpty == true ? null : displayName,
       phoneNumber: user.phone,
       needsOnboarding: (userMetadata?['needs_onboarding'] as bool?) ?? false,
     );
-  }
-}
-
-
-extension on CustomerSupabaseOAuthAdapter {
-  bool _matchesSupportedCallback(Uri callbackUri) {
-    if (CustomerAuthRedirectConfig.current.matches(callbackUri)) {
-      return true;
-    }
-
-    if (!kIsWeb) {
-      return false;
-    }
-
-    return (callbackUri.scheme == 'http' || callbackUri.scheme == 'https') &&
-        (callbackUri.queryParameters.containsKey('code') ||
-            callbackUri.queryParameters.containsKey('error') ||
-            callbackUri.queryParameters.containsKey('error_description'));
   }
 }

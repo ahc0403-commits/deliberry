@@ -48,6 +48,8 @@ class CustomerSessionController extends ChangeNotifier {
 
   Future<void> restore() async {
     debugPrint('[CustomerSession] restore:start');
+    final pendingCallback =
+        kIsWeb ? detectCustomerAuthCallback(Uri.base) : null;
     var snapshot = await _store.read();
     final shouldRestoreAuthenticatedSession =
         snapshot?.allowSupabaseRestore == true &&
@@ -60,30 +62,20 @@ class CustomerSessionController extends ChangeNotifier {
         debugPrint(
           '[CustomerSession] restore:authenticated actor=${authenticatedIdentity.actorId} needsOnboarding=${authenticatedIdentity.needsOnboarding}',
         );
-        await _applyAuthenticatedIdentity(authenticatedIdentity, persist: false);
+        await _applyAuthenticatedIdentity(authenticatedIdentity,
+            persist: false);
         _hydrated = true;
         notifyListeners();
         return;
       }
       await _store.clear();
       snapshot = null;
-    } else if (!_hasPendingWebOAuthCallback()) {
+    } else if (pendingCallback == null) {
       await _authAdapter.signOut();
     } else {
-      debugPrint('[CustomerSession] restore:skipping signOut (pending web OAuth callback)');
-      // Supabase OAuth (e.g. Kakao) auto-establishes a session from the URL
-      // fragment during Supabase.initialize(). If that session exists, adopt it
-      // now — handleAuthCallback will never fire for fragment-based callbacks.
-      final oauthIdentity = await _authAdapter.restoreAuthenticatedIdentity();
-      if (oauthIdentity != null) {
-        debugPrint(
-          '[CustomerSession] restore:oauth_fragment actor=${oauthIdentity.actorId} needsOnboarding=${oauthIdentity.needsOnboarding}',
-        );
-        await _applyAuthenticatedIdentity(oauthIdentity);
-        _hydrated = true;
-        notifyListeners();
-        return;
-      }
+      debugPrint(
+        '[CustomerSession] restore:skipping signOut (pending auth callback provider=${pendingCallback.provider.name})',
+      );
     }
 
     if (snapshot != null) {
@@ -136,10 +128,27 @@ class CustomerSessionController extends ChangeNotifier {
   }
 
   Future<void> handleAuthCallback(Uri callbackUri) async {
-    debugPrint('[CustomerSession] callback:start host=${callbackUri.host} path=${callbackUri.path} hasCode=${callbackUri.queryParameters.containsKey("code")}');
+    final callback = detectCustomerAuthCallback(callbackUri);
+    if (callback == null) {
+      debugPrint(
+        '[CustomerSession] callback:ignored_non_callback host=${callbackUri.host} path=${callbackUri.path}',
+      );
+      return;
+    }
+    debugPrint(
+      '[CustomerSession] callback:start provider=${callback.provider.name} host=${callback.normalizedUri.host} path=${callback.normalizedUri.path} hasCode=${callback.hasAuthorizationCode} hasError=${callback.hasProviderError} hasSessionTokens=${callback.hasSessionTokens}',
+    );
     try {
+      final completion =
+          await _authAdapter.completeAuthCallback(callback.normalizedUri);
+      await _adoptCompletedAuthSession(completion);
       final authenticatedIdentity =
-          await _authAdapter.completeAuthCallback(callbackUri);
+          await _authAdapter.restoreAuthenticatedIdentity();
+      if (authenticatedIdentity == null) {
+        throw StateError(
+          'Customer auth callback completed without a restorable authenticated identity.',
+        );
+      }
       debugPrint(
         '[CustomerSession] callback:identity actor=${authenticatedIdentity.actorId} needsOnboarding=${authenticatedIdentity.needsOnboarding}',
       );
@@ -154,6 +163,43 @@ class CustomerSessionController extends ChangeNotifier {
       debugPrint('[CustomerSession] callback:error $_lastAuthError');
       notifyListeners();
     }
+  }
+
+  Future<void> _adoptCompletedAuthSession(
+    CustomerAuthCompletionResult completion,
+  ) async {
+    if (!completion.requiresSessionAdoption) {
+      debugPrint(
+        '[CustomerSession] callback:session_reuse provider=${completion.provider.name}',
+      );
+      return;
+    }
+
+    final refreshToken = completion.refreshToken?.trim();
+    if (refreshToken == null || refreshToken.isEmpty) {
+      throw StateError(
+        'Customer auth callback completion is missing the refresh token needed for session adoption.',
+      );
+    }
+
+    await CustomerSupabaseClient.ensureInitialized();
+    final client = CustomerSupabaseClient.maybeClient;
+    if (client == null) {
+      throw StateError(
+        'Customer Supabase runtime is unavailable for auth session adoption.',
+      );
+    }
+
+    final authResponse = await client.auth.setSession(refreshToken);
+    final user = authResponse.user ?? client.auth.currentUser;
+    if (user == null) {
+      throw StateError(
+        'Customer auth callback session adoption did not create a usable Supabase session.',
+      );
+    }
+    debugPrint(
+      '[CustomerSession] callback:session_adopted provider=${completion.provider.name} user=${user.id}',
+    );
   }
 
   Future<void> requestOtp({
@@ -252,25 +298,5 @@ class CustomerSessionController extends ChangeNotifier {
     if (persist) {
       await _persist();
     }
-  }
-
-  static bool _hasPendingWebOAuthCallback() {
-    if (!kIsWeb) {
-      return false;
-    }
-    final params = Uri.base.queryParameters;
-    if (params.containsKey('code') ||
-        params.containsKey('error') ||
-        params.containsKey('error_description')) {
-      return true;
-    }
-    // Supabase OAuth (e.g. Kakao) returns tokens in the URL fragment:
-    // #access_token=...&refresh_token=...
-    final fragment = Uri.base.fragment;
-    if (fragment.contains('access_token') ||
-        fragment.contains('refresh_token')) {
-      return true;
-    }
-    return false;
   }
 }

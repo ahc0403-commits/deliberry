@@ -4,6 +4,8 @@ import { NextRequest, NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 
 const APP_CALLBACK_URI = "deliberry-customer-auth://zalo-callback/auth";
+const AUTH_COMPLETION_RESULT_VERSION = "customer_auth_completion_v1";
+const EXPECTED_ZALO_EXCHANGE_PATH = "/customer-zalo-auth-exchange";
 const baseCorsHeaders = {
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
@@ -16,6 +18,25 @@ type ExchangeRequest = {
   redirect_uri?: string;
   code_verifier?: string;
   device_context?: Record<string, unknown>;
+};
+
+type CustomerAuthCompletionEnvelope = {
+  contract_version: typeof AUTH_COMPLETION_RESULT_VERSION;
+  provider: "zalo";
+  result: "authenticated";
+  session: {
+    transport: "refresh_token_exchange";
+    access_token?: string;
+    refresh_token: string;
+    expires_in?: number;
+  };
+  identity: {
+    actor_id: string;
+    actor_type: "customer";
+    is_new_customer: boolean;
+    needs_onboarding: boolean;
+    display_name: string;
+  };
 };
 
 type ZaloTokenResponse = {
@@ -139,6 +160,29 @@ function requiredEnv(name: string) {
     throw new Error(`missing_env:${name}`);
   }
   return value;
+}
+
+function validateZaloRedirectAuthority(redirectUri: string) {
+  let parsed: URL;
+  try {
+    parsed = new URL(redirectUri);
+  } catch {
+    throw new Error("invalid_zalo_redirect_uri:absolute_uri_required");
+  }
+
+  if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+    throw new Error("invalid_zalo_redirect_uri:http_or_https_required");
+  }
+  if (parsed.pathname !== EXPECTED_ZALO_EXCHANGE_PATH) {
+    throw new Error(
+      `invalid_zalo_redirect_uri:expected_path_${EXPECTED_ZALO_EXCHANGE_PATH}`,
+    );
+  }
+  if (parsed.search.length > 0 || parsed.hash.length > 0) {
+    throw new Error("invalid_zalo_redirect_uri:no_query_or_fragment_allowed");
+  }
+
+  return parsed.toString();
 }
 
 function logAuthEvent(
@@ -504,7 +548,9 @@ async function handleExchange(
     serviceRoleKey = requiredEnv("SUPABASE_SERVICE_ROLE_KEY");
     zaloAppId = requiredEnv("ZALO_APP_ID");
     zaloAppSecret = requiredEnv("ZALO_APP_SECRET");
-    zaloRedirectUri = requiredEnv("ZALO_REDIRECT_URI");
+    zaloRedirectUri = validateZaloRedirectAuthority(
+      requiredEnv("ZALO_REDIRECT_URI"),
+    );
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     if (message === "missing_env:SUPABASE_URL" ||
@@ -522,6 +568,13 @@ async function handleExchange(
         error_code: "provider_not_configured",
         message:
           "ZALO_APP_ID, ZALO_APP_SECRET, and ZALO_REDIRECT_URI are required for customer Zalo auth exchange.",
+      }, origin);
+    }
+    if (message.startsWith("invalid_zalo_redirect_uri:")) {
+      return jsonResponse(503, {
+        error_code: "redirect_authority_invalid",
+        message:
+          "ZALO_REDIRECT_URI must be an absolute http(s) URL for /customer-zalo-auth-exchange with no query string or fragment.",
       }, origin);
     }
     throw error;
@@ -591,16 +644,26 @@ async function handleExchange(
     );
     logAuthEvent("auth.session.issued", "INFO", { provider: "zalo" });
 
-    return jsonResponse(200, {
-      access_token: session["access_token"],
-      refresh_token: session["refresh_token"],
-      expires_in: session["expires_in"],
-      actor_id: identity.actorId,
-      actor_type: "customer",
-      is_new_customer: identity.isNewCustomer,
-      needs_onboarding: identity.needsOnboarding,
-      display_name: identity.displayName,
-    }, origin);
+    const completion: CustomerAuthCompletionEnvelope = {
+      contract_version: AUTH_COMPLETION_RESULT_VERSION,
+      provider: "zalo",
+      result: "authenticated",
+      session: {
+        transport: "refresh_token_exchange",
+        access_token: session["access_token"] as string | undefined,
+        refresh_token: session["refresh_token"] as string,
+        expires_in: session["expires_in"] as number | undefined,
+      },
+      identity: {
+        actor_id: identity.actorId,
+        actor_type: "customer",
+        is_new_customer: identity.isNewCustomer,
+        needs_onboarding: identity.needsOnboarding,
+        display_name: identity.displayName,
+      },
+    };
+
+    return jsonResponse(200, completion, origin);
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Unknown exchange failure";
     logAuthEvent("auth.exchange.failed", "ERROR", {
@@ -633,14 +696,17 @@ export async function GET(request: NextRequest) {
   }
 
   const redirectQuery = new URLSearchParams();
+  redirectQuery.set("provider", "zalo");
   if (query.has("code")) {
     redirectQuery.set("code", query.get("code") ?? "");
+    redirectQuery.set("result", "authenticated");
   }
   if (query.has("state")) {
     redirectQuery.set("state", query.get("state") ?? "");
   }
   if (query.has("error")) {
     redirectQuery.set("error", query.get("error") ?? "");
+    redirectQuery.set("result", "error");
   }
   if (query.has("error_description")) {
     redirectQuery.set(
@@ -648,7 +714,6 @@ export async function GET(request: NextRequest) {
       query.get("error_description") ?? "",
     );
   }
-  redirectQuery.set("provider", "zalo");
 
   const webReturnTo = decodeWebReturnTo(query.get("state"));
   if (webReturnTo != null) {

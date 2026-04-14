@@ -44,7 +44,7 @@ The repository still does **not** currently have:
 
 ### Approved auth mechanism
 
-- customer auth is customer-local and provider-split
+- customer auth is customer-local and provider-split at launch time
 - Kakao and Zalo are the active primary provider branches
 - guest mode remains explicit
 - phone/OTP remains fallback only
@@ -52,9 +52,46 @@ The repository still does **not** currently have:
 
 ### Login handling direction
 
-- login entry, provider launch, callback handling, and guest branching stay inside `customer-app`
+- login entry, callback handling, and guest branching stay inside `customer-app`
+- provider launch behavior stays inside provider adapters only
+- callback detection uses a single normalized contract inside `customer-app/lib/core/session/customer_auth_adapter.dart`
+- callback completion returns one normalized completion result contract, regardless of provider
+- `CustomerSessionController` is the only owner allowed to adopt an authenticated customer session into runtime state
 - Supabase-backed session restoration remains customer-local
 - no shared runtime auth helpers may be introduced
+
+### Customer callback contract (approved)
+
+The app accepts one normalized callback contract:
+
+- `provider`
+- `code`
+- `state`
+- `error`
+- `error_description`
+- Supabase web fragment/session tokens when present
+
+The app uses one detector for both startup and restore:
+
+- `detectCustomerAuthCallback(Uri uri)`
+
+### Customer callback completion result contract (approved)
+
+Provider adapters must return one normalized completion result contract:
+
+- `provider`
+- `callback`
+- `sessionTransport`
+- optional `refreshToken`
+- optional `accessToken`
+- optional `expiresInSeconds`
+
+Current session transport values:
+
+- `existingSupabaseSession`
+  - used by Kakao when the provider callback already created a usable Supabase session
+- `refreshTokenExchange`
+  - used by Zalo when the public exchange route returns a refresh token that `CustomerSessionController` must adopt
 
 ### Zalo OAuth flow (live)
 
@@ -63,9 +100,43 @@ The repository still does **not** currently have:
 - web state parameter encodes nonce and return_to (no secrets)
 - GET callback lands on `public-website` at `go.deli-berry.com/customer-zalo-auth-exchange`
 - exchange endpoint on `public-website` performs token exchange, profile fetch via Cloudflare proxy at `proxy.deli-berry.com`, and Supabase identity resolution
-- POST exchange returns a Supabase refresh token which the app uses via `setSession()`
+- GET redirect from `public-website` returns the normalized app callback query contract with `provider=zalo`
+- POST exchange returns the normalized completion payload contract:
+  - `contract_version=customer_auth_completion_v1`
+  - `provider=zalo`
+  - `result=authenticated`
+  - `session.transport=refresh_token_exchange`
+  - `session.refresh_token`
+  - optional `session.access_token`
+  - optional `session.expires_in`
+  - `identity.actor_id`
+  - `identity.actor_type`
+  - `identity.is_new_customer`
+  - `identity.needs_onboarding`
+  - `identity.display_name`
+- `CustomerSessionController` performs the final `setSession()` adoption using that refresh token
 - `completeOnboarding()` clears the remote `needs_onboarding` flag best-effort
 - local session snapshot prevents stale remote `needs_onboarding` from re-triggering onboarding
+
+### Redirect URI authority chain (approved)
+
+Redirect authority is explicit and singular by layer:
+
+1. `customer-app/scripts/vercel-build.sh`
+   - validates `AUTH_CALLBACK_SCHEME`, `AUTH_CALLBACK_HOST`, and `AUTH_CALLBACK_PATH` as the app callback authority
+   - validates `ZALO_REDIRECT_URI` as an absolute http(s) URL for `/customer-zalo-auth-exchange`
+2. `public-website/src/app/customer-zalo-auth-exchange/route.ts`
+   - validates runtime `ZALO_REDIRECT_URI`
+   - rejects exchange requests whose `redirect_uri` does not exactly match runtime authority
+3. provider dashboard configuration
+   - must match the same `ZALO_REDIRECT_URI`
+
+This means the callback chain is:
+
+- provider callback -> `ZALO_REDIRECT_URI`
+- public exchange route -> normalized app callback contract
+- `customer-app` detector -> normalized completion result
+- `CustomerSessionController` -> session adoption and route handoff
 
 ### Local persistence and session handling direction
 

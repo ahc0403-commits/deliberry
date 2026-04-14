@@ -31,6 +31,8 @@ Document the real current auth, guest, and onboarding route flow in the customer
   - `/entry` -> `/auth/login` -> `/auth/phone` -> `/auth/otp` -> `/onboarding` -> `/home`
 - Guest path:
   - `/entry` -> `/auth/login` -> `/guest` -> `/home`
+- Social callback path:
+  - provider launch -> normalized callback detection -> `CustomerSessionController.handleAuthCallback(...)` -> onboarding/home redirect
 - Redirect path:
   - `/` or `/entry` -> router redirect based on `CustomerSessionController.status`
 
@@ -40,6 +42,8 @@ Document the real current auth, guest, and onboarding route flow in the customer
   - auth status
   - phone number
   - guest vs authenticated vs onboarding state
+  - normalized callback completion consumption
+  - sole session adoption ownership
 - [app_router.dart](/Users/andremacmini/Deliberry/customer-app/lib/app/router/app_router.dart)
   - redirect and guard logic for auth/onboarding routes
 
@@ -56,6 +60,8 @@ Document the real current auth, guest, and onboarding route flow in the customer
 
 - Authoritative:
   - `CustomerSessionController.status`
+  - normalized callback detector in `customer_auth_adapter.dart`
+  - normalized callback completion result returned by provider adapters
   - router guard and redirect decisions in `AppRouter`
 - Derived:
   - which screen appears first after launch
@@ -65,10 +71,10 @@ Document the real current auth, guest, and onboarding route flow in the customer
 
 ## Known shallow / partial / local-only limits
 
-- Session truth is local-memory only through `MemoryCustomerSessionStore`.
 - Phone auth and OTP are local/demo-safe flows, not backend verification.
-- Onboarding completion changes local session state only.
-- Social sign-in actions are intentionally unavailable.
+- Onboarding completion changes local session state first, then clears the remote `needs_onboarding` flag best-effort.
+- Kakao and Zalo now share one callback detector and one session adoption owner, but provider launch remains adapter-local.
+- Final auth UI copy cleanup is not part of this callback architecture refactor.
 
 ## Common edit mistakes
 

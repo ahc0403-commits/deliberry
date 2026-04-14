@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'app/app.dart';
+import 'core/session/customer_auth_adapter.dart';
 import 'core/session/customer_session_controller.dart';
 import 'core/session/web_auth_callback_location.dart';
 import 'core/supabase/supabase_client.dart';
@@ -11,7 +12,8 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await CustomerSupabaseClient.ensureInitialized();
   await CustomerSessionController.instance.restore();
-  final startupWebCallback = kIsWeb ? _extractWebAuthCallback(Uri.base) : null;
+  final startupWebCallback =
+      kIsWeb ? detectCustomerAuthCallback(Uri.base) : null;
 
   // On native platforms, attach the deep-link listener BEFORE runApp so that
   // a warm-start URI event is never lost to a race with widget mounting.
@@ -35,38 +37,17 @@ Future<void> main() async {
         !CustomerSessionController.instance.hasAuthenticatedSession) {
       await clearHandledWebAuthCallbackLocation(Uri.base);
       // Keep first paint responsive on callback return.
-      CustomerSessionController.instance.handleAuthCallback(startupWebCallback);
+      CustomerSessionController.instance
+          .handleAuthCallback(startupWebCallback.normalizedUri);
     }
     return;
   }
 
   // Handle cold-start deep link (app was not running when the link arrived).
   if (nativeInitialLink != null) {
-    debugPrint('[main] deeplink:initial host=${nativeInitialLink.host} path=${nativeInitialLink.path}');
+    debugPrint(
+        '[main] deeplink:initial host=${nativeInitialLink.host} path=${nativeInitialLink.path}');
     await CustomerSessionController.instance
         .handleAuthCallback(nativeInitialLink);
   }
-}
-
-Uri? _extractWebAuthCallback(Uri uri) {
-  if (!(uri.scheme == 'http' || uri.scheme == 'https')) {
-    return null;
-  }
-
-  final query = <String, String>{...uri.queryParameters};
-  final fragment = uri.fragment;
-  final fragmentQueryIndex = fragment.indexOf('?');
-  if (fragmentQueryIndex >= 0 && fragmentQueryIndex < fragment.length - 1) {
-    final fragmentQuery = Uri.splitQueryString(
-      fragment.substring(fragmentQueryIndex + 1),
-    );
-    query.addAll(fragmentQuery);
-  }
-
-  return query.containsKey('code') ||
-          query.containsKey('error') ||
-          query.containsKey('error_description') ||
-          query.containsKey('provider')
-      ? uri.replace(queryParameters: query)
-      : null;
 }
