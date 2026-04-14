@@ -135,6 +135,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         return 'Add a delivery address before placing your order.';
       case 'minimum_order_not_met':
         return 'Minimum order is \$${formatCentavos(CustomerRuntimeController.minimumOrderCentavos)} before checkout.';
+      case 'store_menu_unavailable':
+        return 'This store menu is unavailable right now. Please try another store.';
+      case 'cart_line_items_unavailable':
+        return 'Some cart items are no longer available in the live menu. Please add them again.';
       default:
         return 'Unable to place order right now. Please review checkout details.';
     }
@@ -150,9 +154,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         final selectedAddress = runtime.deliveryAddress;
         final store = runtime.selectedStore;
         final cartItems = runtime.cartItems;
+        final blocker = runtime.lastRuntimeBlocker;
+        final menuUnavailable =
+            store != null && runtime.isStoreMenuUnavailable(store.id);
+        final cartHasUnavailableItems =
+            runtime.selectedStoreCartHasUnavailableItems();
         final isPlaceOrderEnabled = !_isSubmitting &&
             selectedAddress != null &&
-            runtime.meetsMinimumOrder;
+            runtime.meetsMinimumOrder &&
+            !menuUnavailable &&
+            !cartHasUnavailableItems;
 
         return Scaffold(
           backgroundColor: AppTheme.backgroundGrey,
@@ -167,8 +178,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           body: cartItems.isEmpty
               ? EmptyState(
                   icon: Icons.shopping_bag_outlined,
-                  title: 'Nothing to check out yet',
-                  subtitle: 'Add items to your cart before placing an order.',
+                  title: blocker == 'cart_line_items_unavailable'
+                      ? 'Cart updated for live menu'
+                      : 'Nothing to check out yet',
+                  subtitle: blocker == 'store_menu_unavailable'
+                      ? 'This store menu is unavailable right now. Please choose another store.'
+                      : blocker == 'cart_line_items_unavailable'
+                          ? 'Some items were removed because they are not available in the live menu anymore.'
+                          : 'Add items to your cart before placing an order.',
                   actionLabel: 'Back to Home',
                   onAction: () =>
                       Navigator.of(context).pushNamed(RouteNames.home),
@@ -180,6 +197,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       message: 'Payment processing is placeholder only. '
                           'No real charges will be made.',
                     ),
+                    if (menuUnavailable || cartHasUnavailableItems) ...[
+                      const SizedBox(height: 16),
+                      _InfoNoticeCard(
+                        message: menuUnavailable
+                            ? 'This store does not have a live orderable menu right now, so placing an order is temporarily disabled.'
+                            : 'Some items in this cart are no longer available in the live menu. Please return to the store and add items again.',
+                      ),
+                    ],
                     const SizedBox(height: 16),
                     _SectionCard(
                       title: 'Delivery Address',
@@ -538,7 +563,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           bottomNavigationBar: cartItems.isEmpty
               ? null
               : BottomCTABar(
-                  label: _isSubmitting ? 'Placing Order...' : 'Place Order',
+                  label: _isSubmitting
+                      ? 'Placing Order...'
+                      : menuUnavailable || cartHasUnavailableItems
+                          ? 'Menu Unavailable'
+                          : 'Place Order',
                   trailingText: '\$${formatCentavos(runtime.cartTotal)}',
                   onPressed: isPlaceOrderEnabled ? _placeOrder : null,
                 ),

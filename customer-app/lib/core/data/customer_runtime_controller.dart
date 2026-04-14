@@ -15,6 +15,7 @@ import 'supabase_customer_runtime_gateway.dart';
 enum CartAddOutcome {
   added,
   replacedStore,
+  unavailable,
 }
 
 class CustomerOrderRecord {
@@ -193,6 +194,69 @@ class CustomerRuntimeController extends ChangeNotifier {
   bool get usesPersistedStoreData => _usesPersistedStoreData;
   bool get hasPersistedRuntimeLoaded => _persistedRuntimeLoaded;
 
+  bool isStoreMenuUnavailable(String storeId) {
+    if (!_usesPersistedStoreData) {
+      return false;
+    }
+    final persistedMenu = _menuItemsByStore[storeId];
+    return persistedMenu == null || persistedMenu.isEmpty;
+  }
+
+  bool storeHasOrderablePersistedMenu(String storeId) =>
+      !isStoreMenuUnavailable(storeId);
+
+  bool selectedStoreCartHasUnavailableItems() {
+    final storeId = _selectedStoreId;
+    if (!_usesPersistedStoreData || storeId == null || _cartItems.isEmpty) {
+      return false;
+    }
+
+    final persistedMenu = _menuItemsByStore[storeId];
+    if (persistedMenu == null || persistedMenu.isEmpty) {
+      return true;
+    }
+
+    final persistedMenuIds = persistedMenu.map((item) => item.id).toSet();
+    return _cartItems
+        .any((item) => !persistedMenuIds.contains(item.menuItem.id));
+  }
+
+  String? _sanitizeCartAgainstPersistedMenu() {
+    if (!_usesPersistedStoreData || _cartItems.isEmpty) {
+      return null;
+    }
+
+    final storeId = _selectedStoreId;
+    if (storeId == null) {
+      _cartItems = [];
+      _promoCode = null;
+      _promoDiscount = 0;
+      return 'cart_line_items_unavailable';
+    }
+
+    final persistedMenu = _menuItemsByStore[storeId];
+    if (persistedMenu == null || persistedMenu.isEmpty) {
+      _cartItems = [];
+      _promoCode = null;
+      _promoDiscount = 0;
+      return 'store_menu_unavailable';
+    }
+
+    final persistedMenuIds = persistedMenu.map((item) => item.id).toSet();
+    final hasUnavailableItems = _cartItems.any(
+      (item) => !persistedMenuIds.contains(item.menuItem.id),
+    );
+
+    if (!hasUnavailableItems) {
+      return null;
+    }
+
+    _cartItems = [];
+    _promoCode = null;
+    _promoDiscount = 0;
+    return 'cart_line_items_unavailable';
+  }
+
   Future<CustomerOrderReview?> readOrderReview(String orderId) async {
     return _gateway.readOrderReview(orderId);
   }
@@ -292,6 +356,10 @@ class CustomerRuntimeController extends ChangeNotifier {
 
   List<MockMenuItem> menuItemsForStore(String storeId) {
     openStore(storeId, notify: false);
+    if (_usesPersistedStoreData) {
+      return List<MockMenuItem>.from(_menuItemsByStore[storeId] ?? const []);
+    }
+
     final persisted = _menuItemsByStore[storeId];
     if (persisted != null && persisted.isNotEmpty) {
       return List<MockMenuItem>.from(persisted);
@@ -325,6 +393,24 @@ class CustomerRuntimeController extends ChangeNotifier {
     required String storeId,
     required MockMenuItem item,
   }) {
+    if (isStoreMenuUnavailable(storeId)) {
+      _lastRuntimeBlocker = 'store_menu_unavailable';
+      notifyListeners();
+      return CartAddOutcome.unavailable;
+    }
+
+    if (_usesPersistedStoreData) {
+      final persistedMenuIds =
+          (_menuItemsByStore[storeId] ?? const <MockMenuItem>[])
+              .map((menuItem) => menuItem.id)
+              .toSet();
+      if (!persistedMenuIds.contains(item.id)) {
+        _lastRuntimeBlocker = 'cart_line_items_unavailable';
+        notifyListeners();
+        return CartAddOutcome.unavailable;
+      }
+    }
+
     var outcome = CartAddOutcome.added;
     if (_selectedStoreId != null &&
         _selectedStoreId != storeId &&
@@ -433,6 +519,16 @@ class CustomerRuntimeController extends ChangeNotifier {
     final address = deliveryAddress;
     if (store == null || _cartItems.isEmpty || address == null) {
       _lastRuntimeBlocker = 'checkout_input_missing';
+      notifyListeners();
+      return null;
+    }
+    if (isStoreMenuUnavailable(store.id)) {
+      _lastRuntimeBlocker = 'store_menu_unavailable';
+      notifyListeners();
+      return null;
+    }
+    if (selectedStoreCartHasUnavailableItems()) {
+      _lastRuntimeBlocker = 'cart_line_items_unavailable';
       notifyListeners();
       return null;
     }
@@ -754,12 +850,12 @@ class CustomerRuntimeController extends ChangeNotifier {
         return;
       }
 
-        final storeRows = await client
-            .from('stores')
-            .select(
+      final storeRows = await client
+          .from('stores')
+          .select(
               'id, name, cuisine_type, rating, review_count, avg_prep_time, delivery_radius, status')
-            .eq('accepting_orders', true)
-            .order('rating', ascending: false);
+          .eq('accepting_orders', true)
+          .order('rating', ascending: false);
 
       final persistedStores = List<Map<String, dynamic>>.from(storeRows)
           .asMap()
@@ -801,12 +897,13 @@ class CustomerRuntimeController extends ChangeNotifier {
         _activeOrderRecords = const <CustomerOrderRecord>[];
         _pastOrderRecords = const <CustomerOrderRecord>[];
       }
-      _persistedRuntimeLoaded = true;
-      _lastRuntimeBlocker = null;
       if (_selectedStoreId != null &&
           !_stores.any((store) => store.id == _selectedStoreId)) {
         _selectedStoreId = _stores.isEmpty ? null : _stores.first.id;
       }
+      final cartSanitizationBlocker = _sanitizeCartAgainstPersistedMenu();
+      _persistedRuntimeLoaded = true;
+      _lastRuntimeBlocker = cartSanitizationBlocker;
       notifyListeners();
     } catch (error) {
       _lastRuntimeBlocker = error.toString();

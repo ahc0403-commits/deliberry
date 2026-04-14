@@ -37,6 +37,12 @@ class _CartScreenState extends State<CartScreen> {
       builder: (context, _) {
         final items = runtime.cartItems;
         final store = runtime.selectedStore;
+        final blocker = runtime.lastRuntimeBlocker;
+        final menuUnavailable =
+            store != null && runtime.isStoreMenuUnavailable(store.id);
+        final cartHasUnavailableItems =
+            runtime.selectedStoreCartHasUnavailableItems();
+        final checkoutBlocked = menuUnavailable || cartHasUnavailableItems;
 
         if (runtime.hasPromoApplied &&
             _promoController.text != runtime.promoCode) {
@@ -63,8 +69,14 @@ class _CartScreenState extends State<CartScreen> {
           body: items.isEmpty
               ? EmptyState(
                   icon: Icons.shopping_cart_outlined,
-                  title: 'Your cart is empty',
-                  subtitle: 'Add items from a restaurant to get started',
+                  title: blocker == 'cart_line_items_unavailable'
+                      ? 'Your cart was refreshed'
+                      : 'Your cart is empty',
+                  subtitle: blocker == 'store_menu_unavailable'
+                      ? 'This store menu is unavailable right now. Please choose another store.'
+                      : blocker == 'cart_line_items_unavailable'
+                          ? 'Some items were removed because they are not available in the live menu anymore.'
+                          : 'Add items from a restaurant to get started',
                   actionLabel: 'Browse Restaurants',
                   onAction: () =>
                       Navigator.of(context).pushNamed(RouteNames.home),
@@ -92,6 +104,14 @@ class _CartScreenState extends State<CartScreen> {
                               ),
                     ),
                     const SizedBox(height: 12),
+                    if (checkoutBlocked) ...[
+                      _CartWarningCard(
+                        message: menuUnavailable
+                            ? 'This store menu is unavailable right now, so checkout is temporarily disabled.'
+                            : 'Some items in this cart are no longer available in the live menu. Please add them again from the store menu.',
+                      ),
+                      const SizedBox(height: 12),
+                    ],
                     Container(
                       decoration: BoxDecoration(
                         color: Colors.white,
@@ -183,13 +203,56 @@ class _CartScreenState extends State<CartScreen> {
           bottomNavigationBar: items.isEmpty
               ? null
               : BottomCTABar(
-                  label: 'Checkout',
+                  label: checkoutBlocked ? 'Menu Unavailable' : 'Checkout',
                   trailingText: '\$${formatCentavos(runtime.cartTotal)}',
-                  onPressed: () =>
-                      Navigator.of(context).pushNamed(RouteNames.checkout),
+                  onPressed: checkoutBlocked
+                      ? null
+                      : () => Navigator.of(context).pushNamed(
+                            RouteNames.checkout,
+                          ),
                 ),
         );
       },
+    );
+  }
+}
+
+class _CartWarningCard extends StatelessWidget {
+  const _CartWarningCard({
+    required this.message,
+  });
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppTheme.secondaryColor.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.borderColor),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.info_outline_rounded,
+            size: 20,
+            color: AppTheme.secondaryColor,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                fontSize: 13,
+                color: AppTheme.textSecondary,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
