@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../app/router/route_names.dart';
 import '../../../core/data/customer_runtime_controller.dart';
 import '../../../core/data/mock_data.dart';
+import '../../../core/session/customer_session_controller.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../common/presentation/widgets.dart';
 
@@ -30,10 +31,18 @@ class AddressesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final runtime = CustomerRuntimeController.instance;
+    final session = CustomerSessionController.instance;
 
     return ListenableBuilder(
-      listenable: runtime,
+      listenable: Listenable.merge([runtime, session]),
       builder: (context, _) {
+        if (session.isSignedIn && !runtime.hasPersistedRuntimeLoaded) {
+          return const Scaffold(
+            backgroundColor: AppTheme.backgroundGrey,
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
         final addresses = runtime.addresses;
 
         return PopScope(
