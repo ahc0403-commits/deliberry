@@ -142,7 +142,7 @@ class CustomerZaloAuthAdapter implements CustomerAuthAdapter {
       callbackState: state,
     );
     if (recoveredAttempt == null) {
-      throw StateError(
+      throw const CustomerIgnoredAuthCallback(
         'Customer Zalo auth callback is missing the matching auth attempt.',
       );
     }

@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../supabase/supabase_client.dart';
 import 'customer_auth_adapter.dart';
+import 'customer_auth_attempt_store.dart';
 import 'customer_multi_auth_adapter.dart';
 import 'customer_session_store.dart';
 
@@ -138,6 +139,9 @@ class CustomerSessionController extends ChangeNotifier {
     CustomerAuthProvider provider,
   ) async {
     _lastAuthError = null;
+    if (provider != CustomerAuthProvider.zalo) {
+      await CustomerAuthAttemptStore.clearAll();
+    }
     notifyListeners();
     return _authAdapter.beginSignIn(provider);
   }

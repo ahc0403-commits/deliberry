@@ -544,7 +544,61 @@ async function issueSupabaseSession(
     );
   }
 
-  return json;
+  const nestedSession =
+    json["session"] != null &&
+    typeof json["session"] === "object" &&
+    !Array.isArray(json["session"])
+      ? (json["session"] as Record<string, unknown>)
+      : null;
+  let finalSession: {
+    access_token?: string;
+    refresh_token?: string;
+    expires_in?: number;
+  };
+
+  if (nestedSession != null) {
+    finalSession = {
+      access_token:
+        typeof nestedSession["access_token"] === "string"
+          ? nestedSession["access_token"]
+          : undefined,
+      refresh_token:
+        typeof nestedSession["refresh_token"] === "string"
+          ? nestedSession["refresh_token"]
+          : undefined,
+      expires_in:
+        typeof nestedSession["expires_in"] === "number"
+          ? nestedSession["expires_in"]
+          : undefined,
+    };
+  } else {
+    finalSession = {
+      access_token:
+        typeof json["access_token"] === "string"
+          ? json["access_token"]
+          : undefined,
+      refresh_token:
+        typeof json["refresh_token"] === "string"
+          ? json["refresh_token"]
+          : undefined,
+      expires_in:
+        typeof json["expires_in"] === "number" ? json["expires_in"] : undefined,
+    };
+  }
+
+  if (!finalSession.refresh_token) {
+    throw new Error(
+      `supabase_session_missing_refresh_token:${JSON.stringify({
+        top_level_keys: Object.keys(json),
+        has_nested_session: nestedSession != null,
+        nested_session_keys: nestedSession != null
+          ? Object.keys(nestedSession)
+          : [],
+      })}`,
+    );
+  }
+
+  return finalSession;
 }
 
 async function handleExchange(

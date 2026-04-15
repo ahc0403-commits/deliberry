@@ -7,9 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// Currently a no-op stub — will be wired to the real RPC once the
 /// backend integration is live.
 class ExternalSalesService {
-  ExternalSalesService(this._client);
-
-  final SupabaseClient _client;
+  ExternalSalesService(SupabaseClient client);
 
   Future<void> recordCompleted({
     required String restaurantId,

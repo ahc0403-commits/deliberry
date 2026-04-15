@@ -107,6 +107,11 @@ class CustomerAuthAttemptStore {
     await _storage.delete(key: _consumedCallbackKey);
   }
 
+  static Future<void> clearAll() async {
+    await _storage.delete(key: _storageKey);
+    await _storage.delete(key: _consumedCallbackKey);
+  }
+
   static Future<void> clear() async {
     await _storage.delete(key: _storageKey);
   }
