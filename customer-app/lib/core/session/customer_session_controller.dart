@@ -358,4 +358,19 @@ class CustomerSessionController extends ChangeNotifier {
 
     debugPrint('[CustomerSession] actor_profile_bootstrap user=${user.id}');
   }
+
+  @visibleForTesting
+  void debugSetTestState({
+    required CustomerAuthStatus status,
+    CustomerAuthIdentity? identity,
+    String? phoneNumber,
+    bool hydrated = true,
+  }) {
+    _status = status;
+    _identity = identity;
+    _phoneNumber = phoneNumber;
+    _hydrated = hydrated;
+    _lastAuthError = null;
+    notifyListeners();
+  }
 }

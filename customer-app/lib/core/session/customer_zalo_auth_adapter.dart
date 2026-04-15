@@ -234,9 +234,18 @@ class CustomerZaloAuthAdapter implements CustomerAuthAdapter {
     final displayName = (userMetadata?['display_name'] as String?)?.trim();
     final phoneNumber = user.phone;
     final providerName = (appMetadata['provider'] as String?)?.toLowerCase();
-    if (providerName != null &&
+    final userProviderName =
+        (userMetadata?['provider'] as String?)?.toLowerCase();
+    final appZaloUserId = (appMetadata['zalo_user_id'] as String?)?.trim();
+    final userZaloUserId = (userMetadata?['zalo_user_id'] as String?)?.trim();
+    final hasZaloIdentitySignal =
+        (appZaloUserId != null && appZaloUserId.isNotEmpty) ||
+            (userZaloUserId != null && userZaloUserId.isNotEmpty) ||
+            providerName == 'zalo' ||
+            userProviderName == 'zalo';
+    if (!hasZaloIdentitySignal &&
+        providerName != null &&
         providerName.isNotEmpty &&
-        providerName != 'zalo' &&
         providerName != 'phone') {
       throw StateError(
         'Customer Zalo auth restore resolved to an unsupported provider identity.',

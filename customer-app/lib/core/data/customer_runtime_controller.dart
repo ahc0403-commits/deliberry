@@ -110,15 +110,7 @@ class OrderMilestone {
 
 class CustomerRuntimeController extends ChangeNotifier {
   CustomerRuntimeController._() {
-    _recentSearches = List<String>.from(MockData.recentSearches);
-    _searchQuery = '';
-    _filterSelections = Map<String, int>.from(_defaultFilterSelections);
-    _cartItems = _cloneCartItems(MockData.cartItems);
-    _stores = List<MockStore>.from(MockData.stores);
-    _selectedStoreId = _cartItems.isEmpty ? null : _stores.first.id;
-    _addresses = const <MockAddress>[];
-    _activeOrderRecords = const <CustomerOrderRecord>[];
-    _pastOrderRecords = const <CustomerOrderRecord>[];
+    _resetInMemoryState();
     CustomerSessionController.instance.addListener(_handleSessionChanged);
     unawaited(refreshPersistedRuntime());
   }
@@ -166,10 +158,10 @@ class CustomerRuntimeController extends ChangeNotifier {
   late List<MockStore> _stores;
   Map<String, List<MockMenuItem>> _menuItemsByStore =
       <String, List<MockMenuItem>>{};
-  final CustomerRuntimeGateway _gateway =
-      const SupabaseCustomerRuntimeGateway();
+  CustomerRuntimeGateway _gateway = const SupabaseCustomerRuntimeGateway();
   final Set<String> _externalSalesSyncKeys = <String>{};
   bool _isHydratingPersistedRuntime = false;
+  bool _isPersistingAddress = false;
   bool _persistedRuntimeLoaded = false;
   bool _usesPersistedStoreData = false;
   String? _lastRuntimeBlocker;
@@ -193,6 +185,40 @@ class CustomerRuntimeController extends ChangeNotifier {
   String? get lastRuntimeBlocker => _lastRuntimeBlocker;
   bool get usesPersistedStoreData => _usesPersistedStoreData;
   bool get hasPersistedRuntimeLoaded => _persistedRuntimeLoaded;
+  bool get isPersistingAddress => _isPersistingAddress;
+
+  void _resetInMemoryState() {
+    _recentSearches = List<String>.from(MockData.recentSearches);
+    _searchQuery = '';
+    _filterSelections = Map<String, int>.from(_defaultFilterSelections);
+    _cartItems = _cloneCartItems(MockData.cartItems);
+    _stores = List<MockStore>.from(MockData.stores);
+    _selectedStoreId = _cartItems.isEmpty ? null : _stores.first.id;
+    _addresses = const <MockAddress>[];
+    _activeOrderRecords = const <CustomerOrderRecord>[];
+    _pastOrderRecords = const <CustomerOrderRecord>[];
+    _menuItemsByStore = <String, List<MockMenuItem>>{};
+    _promoCode = null;
+    _promoDiscount = 0;
+    _nextAddressId = 100;
+    _isHydratingPersistedRuntime = false;
+    _isPersistingAddress = false;
+    _persistedRuntimeLoaded = false;
+    _usesPersistedStoreData = false;
+    _lastRuntimeBlocker = null;
+    _externalSalesSyncKeys.clear();
+  }
+
+  @visibleForTesting
+  void debugSetGateway(CustomerRuntimeGateway gateway) {
+    _gateway = gateway;
+  }
+
+  @visibleForTesting
+  void debugResetForTest() {
+    _resetInMemoryState();
+    notifyListeners();
+  }
 
   bool isStoreMenuUnavailable(String storeId) {
     if (!_usesPersistedStoreData) {
@@ -740,7 +766,7 @@ class CustomerRuntimeController extends ChangeNotifier {
     return filtered;
   }
 
-  void addAddress(MockAddress address) {
+  Future<void> addAddress(MockAddress address) async {
     final id = 'addr-rt-${_nextAddressId++}';
     final isFirst = _addresses.isEmpty;
     final newAddress = MockAddress(
@@ -750,6 +776,10 @@ class CustomerRuntimeController extends ChangeNotifier {
       detail: address.detail,
       isDefault: isFirst || address.isDefault,
     );
+    if (CustomerSessionController.instance.hasSupabaseBackedSession) {
+      await _syncAddressSave(newAddress);
+      return;
+    }
     if (newAddress.isDefault) {
       _addresses = _addresses
           .map((a) => MockAddress(
@@ -763,14 +793,15 @@ class CustomerRuntimeController extends ChangeNotifier {
     }
     _addresses = [..._addresses, newAddress];
     notifyListeners();
-    if (CustomerSessionController.instance.hasSupabaseBackedSession) {
-      unawaited(_syncAddressSave(newAddress));
-    }
   }
 
-  void updateAddress(MockAddress updated) {
+  Future<void> updateAddress(MockAddress updated) async {
     final index = _addresses.indexWhere((a) => a.id == updated.id);
     if (index < 0) return;
+    if (CustomerSessionController.instance.hasSupabaseBackedSession) {
+      await _syncAddressSave(updated);
+      return;
+    }
     if (updated.isDefault) {
       _addresses = _addresses
           .map((a) => MockAddress(
@@ -784,18 +815,19 @@ class CustomerRuntimeController extends ChangeNotifier {
     }
     _addresses[index] = updated;
     notifyListeners();
-    if (CustomerSessionController.instance.hasSupabaseBackedSession) {
-      unawaited(_syncAddressSave(updated));
-    }
   }
 
-  void deleteAddress(String id) {
+  Future<void> deleteAddress(String id) async {
     final target = _addresses.firstWhere(
       (a) => a.id == id,
       orElse: () =>
           const MockAddress(id: '', label: '', street: '', detail: ''),
     );
     if (target.id.isEmpty) return;
+    if (CustomerSessionController.instance.hasSupabaseBackedSession) {
+      await _syncAddressDelete(id);
+      return;
+    }
     _addresses = _addresses.where((a) => a.id != id).toList();
     // If we removed the default, promote first remaining to default.
     if (target.isDefault && _addresses.isNotEmpty) {
@@ -809,12 +841,13 @@ class CustomerRuntimeController extends ChangeNotifier {
       );
     }
     notifyListeners();
-    if (CustomerSessionController.instance.hasSupabaseBackedSession) {
-      unawaited(_syncAddressDelete(id));
-    }
   }
 
-  void setDefaultAddress(String id) {
+  Future<void> setDefaultAddress(String id) async {
+    if (CustomerSessionController.instance.hasSupabaseBackedSession) {
+      await _syncSetDefaultAddress(id);
+      return;
+    }
     _addresses = _addresses
         .map((a) => MockAddress(
               id: a.id,
@@ -825,9 +858,6 @@ class CustomerRuntimeController extends ChangeNotifier {
             ))
         .toList();
     notifyListeners();
-    if (CustomerSessionController.instance.hasSupabaseBackedSession) {
-      unawaited(_syncSetDefaultAddress(id));
-    }
   }
 
   void _addRecentSearch(String term) {
@@ -939,6 +969,8 @@ class CustomerRuntimeController extends ChangeNotifier {
   }
 
   Future<void> _syncAddressSave(MockAddress address) async {
+    _isPersistingAddress = true;
+    notifyListeners();
     try {
       _addresses = await _gateway.saveAddress(address);
       _lastRuntimeBlocker = null;
@@ -947,21 +979,35 @@ class CustomerRuntimeController extends ChangeNotifier {
       _lastRuntimeBlocker = 'address_save_failed';
       debugPrint('[CustomerRuntime] address_save_failed: $error');
       notifyListeners();
+      rethrow;
+    } finally {
+      _isPersistingAddress = false;
+      notifyListeners();
     }
   }
 
   Future<void> _syncAddressDelete(String addressId) async {
+    _isPersistingAddress = true;
+    notifyListeners();
     try {
       _addresses = await _gateway.deleteAddress(addressId);
       notifyListeners();
-    } catch (_) {}
+    } finally {
+      _isPersistingAddress = false;
+      notifyListeners();
+    }
   }
 
   Future<void> _syncSetDefaultAddress(String addressId) async {
+    _isPersistingAddress = true;
+    notifyListeners();
     try {
       _addresses = await _gateway.setDefaultAddress(addressId);
       notifyListeners();
-    } catch (_) {}
+    } finally {
+      _isPersistingAddress = false;
+      notifyListeners();
+    }
   }
 
   MockStore _mapPersistedStore(Map<String, dynamic> row, int index) {

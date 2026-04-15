@@ -48,7 +48,7 @@ class CustomerSupabaseOAuthAdapter {
     };
 
     final redirectTo = kIsWeb
-        ? Uri.base.origin
+        ? null
         : CustomerAuthRedirectConfig.current.callbackUri.toString();
 
     await client.auth.signInWithOAuth(
@@ -58,9 +58,8 @@ class CustomerSupabaseOAuthAdapter {
 
     return CustomerAuthStartResult(
       provider: provider,
-      authorizationUri: kIsWeb
-          ? Uri.parse(redirectTo)
-          : CustomerAuthRedirectConfig.current.callbackUri,
+      authorizationUri:
+          kIsWeb ? null : CustomerAuthRedirectConfig.current.callbackUri,
     );
   }
 
@@ -95,7 +94,15 @@ class CustomerSupabaseOAuthAdapter {
       throw StateError('Customer Supabase runtime is unavailable.');
     }
 
-    final currentUser = client.auth.currentUser;
+    var currentUser = client.auth.currentUser;
+    final authorizationCode = callbackUri.queryParameters['code']?.trim();
+    if (currentUser == null &&
+        authorizationCode != null &&
+        authorizationCode.isNotEmpty) {
+      await client.auth.exchangeCodeForSession(authorizationCode);
+      currentUser = client.auth.currentUser;
+    }
+
     if (currentUser == null) {
       throw StateError(
         'Customer social auth callback did not create a usable Supabase session.',

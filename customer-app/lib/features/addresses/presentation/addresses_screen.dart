@@ -119,7 +119,11 @@ class AddressesScreen extends StatelessWidget {
                                   _confirmDelete(context, runtime, address),
                               onSetDefault: address.isDefault
                                   ? null
-                                  : () => runtime.setDefaultAddress(address.id),
+                                  : () => _handleSetDefault(
+                                        context,
+                                        runtime,
+                                        address.id,
+                                      ),
                             ),
                           );
                         }),
@@ -144,8 +148,8 @@ class AddressesScreen extends StatelessWidget {
       isScrollControlled: true,
       builder: (_) => _AddressFormSheet(
         title: 'Add New Address',
-        onSave: (label, street, detail) {
-          runtime.addAddress(MockAddress(
+        onSave: (label, street, detail) async {
+          await runtime.addAddress(MockAddress(
             id: '',
             label: label,
             street: street,
@@ -164,8 +168,8 @@ class AddressesScreen extends StatelessWidget {
       builder: (_) => _AddressFormSheet(
         title: 'Edit Address',
         address: address,
-        onSave: (label, street, detail) {
-          runtime.updateAddress(MockAddress(
+        onSave: (label, street, detail) async {
+          await runtime.updateAddress(MockAddress(
             id: address.id,
             label: label,
             street: street,
@@ -175,6 +179,23 @@ class AddressesScreen extends StatelessWidget {
         },
       ),
     );
+  }
+
+  Future<void> _handleSetDefault(
+    BuildContext context,
+    CustomerRuntimeController runtime,
+    String addressId,
+  ) async {
+    try {
+      await runtime.setDefaultAddress(addressId);
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('We could not update the default address. Try again.'),
+        ),
+      );
+    }
   }
 
   void _confirmDelete(BuildContext context, CustomerRuntimeController runtime,
@@ -190,9 +211,19 @@ class AddressesScreen extends StatelessWidget {
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(ctx);
-              runtime.deleteAddress(address.id);
+              try {
+                await runtime.deleteAddress(address.id);
+              } catch (_) {
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content:
+                        Text('We could not remove that address. Try again.'),
+                  ),
+                );
+              }
             },
             child: Text(
               'Delete',
@@ -443,7 +474,8 @@ class _AddressFormSheet extends StatefulWidget {
 
   final String title;
   final MockAddress? address;
-  final void Function(String label, String street, String detail) onSave;
+  final Future<void> Function(String label, String street, String detail)
+      onSave;
 
   @override
   State<_AddressFormSheet> createState() => _AddressFormSheetState();
@@ -453,6 +485,7 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
   late final TextEditingController _labelController;
   late final TextEditingController _streetController;
   late final TextEditingController _detailController;
+  bool _saving = false;
 
   @override
   void initState() {
@@ -472,7 +505,7 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
     super.dispose();
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     final label = _labelController.text.trim();
     final street = _streetController.text.trim();
     final detail = _detailController.text.trim();
@@ -482,8 +515,23 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
       );
       return;
     }
-    widget.onSave(label, street, detail);
-    Navigator.pop(context);
+    setState(() => _saving = true);
+    try {
+      await widget.onSave(label, street, detail);
+      if (!mounted) return;
+      Navigator.pop(context);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('We could not save that address. Try again.'),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _saving = false);
+      }
+    }
   }
 
   @override
@@ -509,7 +557,7 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
                   ),
                 ),
                 IconButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: _saving ? null : () => Navigator.pop(context),
                   icon: const Icon(Icons.close_rounded),
                 ),
               ],
@@ -517,6 +565,7 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
             const SizedBox(height: 20),
             TextField(
               controller: _labelController,
+              enabled: !_saving,
               decoration: const InputDecoration(
                 labelText: 'Label (Home, Work...)',
                 prefixIcon: Icon(Icons.label_outline),
@@ -525,6 +574,7 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
             const SizedBox(height: 12),
             TextField(
               controller: _streetController,
+              enabled: !_saving,
               decoration: const InputDecoration(
                 labelText: 'Street address',
                 prefixIcon: Icon(Icons.location_on_outlined),
@@ -533,6 +583,7 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
             const SizedBox(height: 12),
             TextField(
               controller: _detailController,
+              enabled: !_saving,
               decoration: const InputDecoration(
                 labelText: 'Apt, floor, notes',
                 prefixIcon: Icon(Icons.apartment_outlined),
@@ -540,8 +591,14 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
             ),
             const SizedBox(height: 24),
             FilledButton(
-              onPressed: _submit,
-              child: const Text('Save Address'),
+              onPressed: _saving ? null : _submit,
+              child: _saving
+                  ? const SizedBox(
+                      height: 18,
+                      width: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Save Address'),
             ),
             const SizedBox(height: 8),
           ],
