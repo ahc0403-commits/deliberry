@@ -68,6 +68,8 @@ class SupabaseCustomerRuntimeGateway implements CustomerRuntimeGateway {
       throw StateError('Customer Supabase session is unavailable.');
     }
 
+    await _ensureCustomerActorProfile(client, user);
+
     final response = await client
         .from('customer_addresses')
         .select('id, label, street, detail, is_default')
@@ -385,6 +387,29 @@ class SupabaseCustomerRuntimeGateway implements CustomerRuntimeGateway {
         ? 'Customer ${fallbackPhone.substring(fallbackPhone.length - 4)}'
         : 'Customer';
     return maskedPhone;
+  }
+
+  Future<void> _ensureCustomerActorProfile(
+    SupabaseClient client,
+    User user,
+  ) async {
+    final customerName = await _resolveStoredDisplayName(
+      client,
+      user,
+      _resolveCustomerName(
+        user,
+        user.phone ?? CustomerSessionController.instance.phoneNumber ?? '',
+      ),
+    );
+
+    await client.from('actor_profiles').upsert({
+      'id': user.id,
+      'actor_type': 'customer',
+      'display_name': customerName,
+      'phone_number':
+          user.phone ?? CustomerSessionController.instance.phoneNumber,
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+    });
   }
 
   CustomerOrderRecord _mapPersistedOrderRecord(Map<String, dynamic> row) {
@@ -719,6 +744,8 @@ class SupabaseCustomerRuntimeGateway implements CustomerRuntimeGateway {
       throw StateError('Customer Supabase session is unavailable.');
     }
 
+    await _ensureCustomerActorProfile(client, user);
+
     final addressId = address.id.isEmpty
         ? 'addr-${DateTime.now().toUtc().microsecondsSinceEpoch}'
         : address.id;
@@ -733,19 +760,16 @@ class SupabaseCustomerRuntimeGateway implements CustomerRuntimeGateway {
       'updated_at': DateTime.now().toUtc().toIso8601String(),
     });
 
-    // P2: Use atomic RPC to ensure exactly one default after save.
-    final response = await client.rpc(
-      'set_customer_default_address',
-      params: {
-        'p_actor_id': user.id,
-        'p_address_id': address.isDefault ? addressId : '',
-      },
-    );
-
-    // If the saved address is not default, re-read to get the canonical list.
     if (!address.isDefault) {
       return readAddresses(limit: _defaultAddressReadLimit);
     }
+
+    final response = await client.rpc(
+      'set_customer_default_address',
+      params: {
+        'p_address_id': addressId,
+      },
+    );
 
     return _mapAddressRows(List<dynamic>.from(response as List));
   }
@@ -753,16 +777,16 @@ class SupabaseCustomerRuntimeGateway implements CustomerRuntimeGateway {
   @override
   Future<List<MockAddress>> deleteAddress(String addressId) async {
     final client = await _requireClient();
-    final user = client?.auth.currentUser;
-    if (client == null || user == null) {
+    if (client == null || client.auth.currentUser == null) {
       throw StateError('Customer Supabase session is unavailable.');
     }
+
+    await _ensureCustomerActorProfile(client, client.auth.currentUser!);
 
     // P2: Atomic delete with default repair via DB RPC.
     final response = await client.rpc(
       'delete_customer_address_with_default_ensure',
       params: {
-        'p_actor_id': user.id,
         'p_address_id': addressId,
       },
     );
@@ -773,16 +797,16 @@ class SupabaseCustomerRuntimeGateway implements CustomerRuntimeGateway {
   @override
   Future<List<MockAddress>> setDefaultAddress(String addressId) async {
     final client = await _requireClient();
-    final user = client?.auth.currentUser;
-    if (client == null || user == null) {
+    if (client == null || client.auth.currentUser == null) {
       throw StateError('Customer Supabase session is unavailable.');
     }
+
+    await _ensureCustomerActorProfile(client, client.auth.currentUser!);
 
     // P2: Atomic default switch via DB RPC.
     final response = await client.rpc(
       'set_customer_default_address',
       params: {
-        'p_actor_id': user.id,
         'p_address_id': addressId,
       },
     );
@@ -940,8 +964,8 @@ class SupabaseCustomerRuntimeGateway implements CustomerRuntimeGateway {
 
       return PersistedCustomerOrder(
         id: returnedOrderId ?? 'order-unavailable',
-        orderNumber: (orderRow['order_number'] as String?) ??
-            _buildOrderNumber(now),
+        orderNumber:
+            (orderRow['order_number'] as String?) ?? _buildOrderNumber(now),
         status: (orderRow['status'] as String?) ?? 'pending',
         totalCentavos: (orderRow['total_centavos'] as num?)?.toInt() ??
             input.totalCentavos,

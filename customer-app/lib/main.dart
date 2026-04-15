@@ -35,10 +35,10 @@ Future<void> main() async {
   if (kIsWeb) {
     if (startupWebCallback != null &&
         !CustomerSessionController.instance.hasAuthenticatedSession) {
-      await clearHandledWebAuthCallbackLocation(Uri.base);
       // Keep first paint responsive on callback return.
-      CustomerSessionController.instance
+      await CustomerSessionController.instance
           .handleAuthCallback(startupWebCallback.normalizedUri);
+      await clearHandledWebAuthCallbackLocation(Uri.base);
     }
     return;
   }

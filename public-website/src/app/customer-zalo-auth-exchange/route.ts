@@ -155,11 +155,24 @@ function jsonResponse(
 }
 
 function requiredEnv(name: string) {
-  const value = process.env[name]?.trim() ?? "";
+  const rawValue = process.env[name] ?? "";
+  const value = normalizeEnvValue(rawValue);
   if (!value) {
     throw new Error(`missing_env:${name}`);
   }
+  if (rawValue.trim() != value) {
+    logAuthEvent("auth.exchange.env_normalized", "ERROR", {
+      env_name: name,
+    });
+  }
   return value;
+}
+
+function normalizeEnvValue(value: string) {
+  return value
+    .trim()
+    .replace(/(?:\\r|\\n)+$/g, "")
+    .trim();
 }
 
 function validateZaloRedirectAuthority(redirectUri: string) {

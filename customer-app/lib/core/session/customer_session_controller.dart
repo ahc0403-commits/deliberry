@@ -71,6 +71,17 @@ class CustomerSessionController extends ChangeNotifier {
       await _store.clear();
       snapshot = null;
     } else if (pendingCallback == null) {
+      final ambientAuthenticatedIdentity =
+          await _restoreAmbientSupabaseSession();
+      if (ambientAuthenticatedIdentity != null) {
+        debugPrint(
+          '[CustomerSession] restore:ambient actor=${ambientAuthenticatedIdentity.actorId} needsOnboarding=${ambientAuthenticatedIdentity.needsOnboarding}',
+        );
+        await _applyAuthenticatedIdentity(ambientAuthenticatedIdentity);
+        _hydrated = true;
+        notifyListeners();
+        return;
+      }
       await _authAdapter.signOut();
     } else {
       debugPrint(
@@ -88,6 +99,14 @@ class CustomerSessionController extends ChangeNotifier {
     _hydrated = true;
     debugPrint('[CustomerSession] restore:done status=${_status.name}');
     notifyListeners();
+  }
+
+  Future<CustomerAuthIdentity?> _restoreAmbientSupabaseSession() async {
+    if (!kIsWeb) {
+      return null;
+    }
+
+    return _authAdapter.restoreAuthenticatedIdentity();
   }
 
   Future<void> _persist() async {
@@ -270,6 +289,7 @@ class CustomerSessionController extends ChangeNotifier {
     CustomerAuthIdentity authenticatedIdentity, {
     bool persist = true,
   }) async {
+    await _bootstrapCustomerActorProfile(authenticatedIdentity);
     _identity = authenticatedIdentity;
     _phoneNumber = authenticatedIdentity.phoneNumber;
 
@@ -298,5 +318,40 @@ class CustomerSessionController extends ChangeNotifier {
     if (persist) {
       await _persist();
     }
+  }
+
+  Future<void> _bootstrapCustomerActorProfile(
+    CustomerAuthIdentity authenticatedIdentity,
+  ) async {
+    await CustomerSupabaseClient.ensureInitialized();
+    final client = CustomerSupabaseClient.maybeClient;
+    final user = client?.auth.currentUser;
+    if (client == null || user == null) {
+      throw StateError(
+        'Customer Supabase runtime is unavailable for actor profile bootstrap.',
+      );
+    }
+
+    final resolvedDisplayName = authenticatedIdentity.displayName?.trim();
+    final userDisplayName =
+        (user.userMetadata?['display_name'] as String?)?.trim();
+    final displayName = [
+      resolvedDisplayName,
+      userDisplayName,
+      'Customer',
+    ].firstWhere((value) => value != null && value.isNotEmpty);
+
+    final phoneNumber =
+        authenticatedIdentity.phoneNumber ?? user.phone ?? _phoneNumber;
+
+    await client.from('actor_profiles').upsert({
+      'id': user.id,
+      'actor_type': 'customer',
+      'display_name': displayName,
+      'phone_number': phoneNumber,
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+    });
+
+    debugPrint('[CustomerSession] actor_profile_bootstrap user=${user.id}');
   }
 }
