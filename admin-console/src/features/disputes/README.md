@@ -4,7 +4,7 @@ Status: Active
 Authority: Operational
 Surface: admin-console
 Domains: disputes, platform-oversight, query-read-model
-Last updated: 2026-03-16
+Last updated: 2026-04-15
 Retrieve when:
 - editing dispute oversight UI or case summary behavior
 - checking where admin dispute data comes from
@@ -12,8 +12,7 @@ Retrieve when:
 Related files:
 - admin-console/src/app/(platform)/disputes/page.tsx
 - admin-console/src/features/disputes/presentation/disputes-screen.tsx
-- admin-console/src/shared/data/admin-query-services.ts
-- admin-console/src/shared/data/admin-repository.ts
+- admin-console/src/shared/data/supabase-admin-runtime-repository.ts
 
 ## Purpose
 
@@ -26,17 +25,16 @@ Owns the admin platform-wide disputes oversight screen.
 
 ## Source of Truth
 
-- Read-model entry: `admin-console/src/shared/data/admin-query-services.ts`
-- Fixture-backed data owner: `admin-console/src/shared/data/admin-repository.ts`
+- Page-level read-model entry: `admin-console/src/app/(platform)/disputes/page.tsx`
+- Runtime data owner: `admin-console/src/shared/data/supabase-admin-runtime-repository.ts`
 
-The disputes screen is mostly a presentation layer over fixture-backed repository data.
+The disputes screen is mostly a presentation layer over persisted runtime repository data.
 
 ## Key Files to Read First
 
 - `admin-console/src/app/(platform)/disputes/page.tsx`
 - `admin-console/src/features/disputes/presentation/disputes-screen.tsx`
-- `admin-console/src/shared/data/admin-query-services.ts`
-- `admin-console/src/shared/data/admin-repository.ts`
+- `admin-console/src/shared/data/supabase-admin-runtime-repository.ts`
 
 ## Related Shared and Domain Files
 
@@ -53,14 +51,14 @@ The disputes screen is mostly a presentation layer over fixture-backed repositor
 
 ## Known Limitations
 
-- Disputes are fixture-backed and in-memory only.
-- Summary metrics are derived directly from the current fixture set.
+- Disputes are persisted and read from Supabase.
+- Summary metrics are derived directly from the current persisted read set.
 - `Assign`, `Review`, and `View` are display-level buttons with no real action path.
-- The platform shell does not currently gate this route by session or role.
+- The platform route is gated before the page renders, but dispute actions still do not mutate state.
 
 ## Safe Modification Guidance
 
-- Change dispute data shape in `admin-repository.ts` before changing the table or summary cards.
+- Change dispute data shape in `supabase-admin-runtime-repository.ts` before changing the table or summary cards.
 - Keep summary calculations aligned with the dispute fixture structure.
 - Treat any future assignment/review flow as new runtime work, not as a quick screen-only edit.
 

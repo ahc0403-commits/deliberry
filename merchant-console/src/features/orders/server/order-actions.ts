@@ -20,6 +20,7 @@ export async function updateMerchantOrderStatusAction(input: {
     | "in_transit"
     | "delivered"
     | "cancelled";
+  idempotencyKey: string;
 }): Promise<
   | {
       ok: true;
@@ -57,6 +58,7 @@ export async function updateMerchantOrderStatusAction(input: {
       storeId: input.storeId,
       orderId: input.orderId,
       status: input.status,
+      idempotencyKey: input.idempotencyKey,
       actorId: access.session.merchantId,
       actorType: access.session.actorType,
     });

@@ -7,8 +7,8 @@ Status: active
 Authority: operational (supporting artifact)
 Surface: cross-surface
 Domains: implementation-status, waves, progress
-Last updated: 2026-03-17
-Last verified: 2026-03-17
+Last updated: 2026-04-15
+Last verified: 2026-04-15
 Retrieve when:
 - checking what governance work is already complete vs pending
 - confirming whether a proposed task belongs to a current or future wave
@@ -17,7 +17,7 @@ Related files:
 - docs/governance/ENFORCEMENT_POINTS.md
 - docs/governance/RECONCILIATION_GAP_ANALYSIS.md
 
-Updated: 2026-03-17 (Fresh post-closure honesty cleanup complete — round-two runtime-visible audit gaps are closed)
+Updated: 2026-04-15 (April 2026 audit remediation batches 0-6 completed; closure verification recorded in `docs/governance/AUDIT_CLOSURE_VERIFICATION_2026-04.md`)
 
 ---
 

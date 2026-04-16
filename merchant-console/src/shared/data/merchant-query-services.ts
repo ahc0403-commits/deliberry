@@ -1,5 +1,7 @@
 import { merchantRepository } from "./merchant-repository";
 
+// Legacy fixture-backed read layer. Do not treat this as the live owner for
+// routes already migrated to runtime services.
 export class MerchantQueryServices {
   getDashboardData(storeId: string) {
     return merchantRepository.getDashboardData(storeId);

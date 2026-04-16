@@ -6,7 +6,7 @@ const appFeatures: { icon: ReactNode; title: string; desc: string }[] = [
   { icon: <UtensilsCrossed size={24} />, title: "200+ restaurants", desc: "From traditional Argentine dishes to global cuisine, all at your fingertips." },
   { icon: <MapPin size={24} />, title: "Order status updates", desc: "Follow your order through preparation, pickup, and delivery-ready milestones in the app." },
   { icon: <Star size={24} />, title: "Favourites & reorder", desc: "Save your favourite orders and reorder in one tap. Your history is always there." },
-  { icon: <CreditCard size={24} />, title: "Checkout-ready payment selection", desc: "Choose your preferred payment method during checkout while live payment verification is still being prepared." },
+  { icon: <CreditCard size={24} />, title: "Checkout-ready payment selection", desc: "Choose your preferred payment method during checkout while payment verification remains outside the current product scope." },
   { icon: <Gift size={24} />, title: "Exclusive deals", desc: "App-only promotions, free delivery days, and partner discounts just for you." },
   { icon: <Headphones size={24} />, title: "Help paths in the app", desc: "Find support guidance, order follow-up, and contact details without leaving your account flow." },
 ];

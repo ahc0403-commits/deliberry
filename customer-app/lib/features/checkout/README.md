@@ -4,8 +4,8 @@ Status: active
 Authority: operational
 Surface: customer-app
 Domains: checkout, order-submission, address-handoff
-Last updated: 2026-03-17
-Last verified: 2026-03-17
+Last updated: 2026-04-15
+Last verified: 2026-04-15
 Retrieve when:
 - editing checkout submission, payment selection, or address/order handoff
 - changing the transition from cart to order status
@@ -16,7 +16,7 @@ Related files:
 
 ## Purpose
 
-Own the final local order confirmation step from cart snapshot to created order record.
+Own the final order-confirmation step from cart snapshot to authenticated persisted order creation.
 
 ## Primary routes/screens
 
@@ -24,7 +24,8 @@ Own the final local order confirmation step from cart snapshot to created order 
 
 ## Source of truth
 
-- Cart snapshot, selected address, and local order creation live in [customer_runtime_controller.dart](/Users/andremacmini/Deliberry/customer-app/lib/core/data/customer_runtime_controller.dart)
+- Cart snapshot, selected address, and order submission orchestration live in [customer_runtime_controller.dart](/Users/andremacmini/Deliberry/customer-app/lib/core/data/customer_runtime_controller.dart)
+- Persisted order creation for signed-in customers flows through [supabase_customer_runtime_gateway.dart](/Users/andremacmini/Deliberry/customer-app/lib/core/data/supabase_customer_runtime_gateway.dart)
 - Checkout route ownership lives in [app_router.dart](/Users/andremacmini/Deliberry/customer-app/lib/app/router/app_router.dart)
 - Address management feeding checkout lives in [addresses_screen.dart](/Users/andremacmini/Deliberry/customer-app/lib/features/addresses/presentation/addresses_screen.dart)
 
@@ -53,13 +54,14 @@ Own the final local order confirmation step from cart snapshot to created order 
 ## Known limitations / partial-support truth
 
 - Payment is intentionally placeholder-only by product rule.
-- Guest users are now redirected to [auth_screen.dart](/Users/andremacmini/Deliberry/customer-app/lib/features/auth/presentation/auth_screen.dart) before local order submission can proceed; carts stay intact across that handoff.
-- `_placeOrder()` still uses a short artificial submit delay for local feedback after the guest/auth gate passes and before calling `submitOrder`.
-- Order creation is local-session only. There is no backend persistence or payment verification.
+- Guest users are redirected to [auth_screen.dart](/Users/andremacmini/Deliberry/customer-app/lib/features/auth/presentation/auth_screen.dart) before order submission can proceed; carts stay intact across that handoff.
+- `_placeOrder()` still uses a short artificial submit delay for local feedback before calling `submitOrder`.
+- Order creation is persisted for authenticated customers.
+- Payment verification remains intentionally unimplemented.
 
 ## Safe modification guidance
 
-- Keep order creation in [customer_runtime_controller.dart](/Users/andremacmini/Deliberry/customer-app/lib/core/data/customer_runtime_controller.dart), not inside the widget tree.
+- Keep order submission orchestration in [customer_runtime_controller.dart](/Users/andremacmini/Deliberry/customer-app/lib/core/data/customer_runtime_controller.dart), not inside the widget tree.
 - If you change checkout submission fields, verify the same data can still be read coherently by orders list, order detail, and order status.
 - Treat address, notes, payment selection, and summary as one handoff bundle. Do not update one in isolation without checking submission behavior.
 

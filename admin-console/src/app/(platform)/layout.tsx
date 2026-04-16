@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { signOutAdminAction } from "../../features/auth/server/auth-actions";
 import { getAdminNavGroups, isAdminRole } from "../../shared/auth/admin-access";
 import { readAdminRole, readAdminSession } from "../../shared/auth/admin-session";
-import { adminQueryServices } from "../../shared/data/admin-query-services";
+import { supabaseAdminRuntimeRepository } from "../../shared/data/supabase-admin-runtime-repository";
 
 export default async function PlatformLayout({
   children,
@@ -23,9 +23,14 @@ export default async function PlatformLayout({
   }
 
   const navGroups = getAdminNavGroups(role);
-  const usersCount = adminQueryServices.getUsersData().users.length;
-  const ordersCount = adminQueryServices.getOrdersData().orders.length;
-  const disputesCount = adminQueryServices.getDisputesData().disputes.length;
+  const [{ users }, { orders }, { disputes }] = await Promise.all([
+    supabaseAdminRuntimeRepository.getUsersData(),
+    supabaseAdminRuntimeRepository.getOrdersData(),
+    supabaseAdminRuntimeRepository.getDisputesData(),
+  ]);
+  const usersCount = users.length;
+  const ordersCount = orders.length;
+  const disputesCount = disputes.length;
 
   return (
     <div className="platform-layout">

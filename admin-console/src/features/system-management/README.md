@@ -13,10 +13,11 @@ Related files:
 - admin-console/src/features/system-management/presentation/system-management-screen.tsx
 - admin-console/src/shared/data/admin-query-services.ts
 - admin-console/src/shared/data/admin-repository.ts
+- admin-console/src/shared/data/supabase-admin-runtime-repository.ts
 
 ## Purpose
 
-Owns the platform system-management route and its fixture-backed operational control panels.
+Owns the platform system-management route and its mixed operational oversight surface: fixture-backed service-health and feature-flag panels plus a live read-only audit-log view.
 
 ## Primary Routes and Screens
 
@@ -26,10 +27,11 @@ Owns the platform system-management route and its fixture-backed operational con
 ## Source of Truth
 
 - Route ownership lives in `admin-console/src/app/(platform)/system-management/page.tsx`
-- Read-path truth flows through `admin-console/src/shared/data/admin-query-services.ts`
-- Repository truth lives in `admin-console/src/shared/data/admin-repository.ts`
+- Fixture-backed read-path truth for health and feature flags flows through `admin-console/src/shared/data/admin-query-services.ts`
+- Live audit-log read-path truth flows through `admin-console/src/shared/data/supabase-admin-runtime-repository.ts`
+- Fixture repository truth for non-runtime-backed panels still lives in `admin-console/src/shared/data/admin-repository.ts`
 
-The route is access-enforced. System-management values are fixture-backed and action controls are local UI only.
+The route is access-enforced. Health and flag panels remain fixture-backed, while recent audit entries are read from the governed runtime store. Action controls remain local UI only.
 
 ## Key Files to Read First
 
@@ -37,6 +39,7 @@ The route is access-enforced. System-management values are fixture-backed and ac
 - `admin-console/src/features/system-management/presentation/system-management-screen.tsx`
 - `admin-console/src/shared/data/admin-query-services.ts`
 - `admin-console/src/shared/data/admin-repository.ts`
+- `admin-console/src/shared/data/supabase-admin-runtime-repository.ts`
 
 ## Related Shared and Domain Files
 
@@ -51,7 +54,8 @@ The route is access-enforced. System-management values are fixture-backed and ac
 
 ## Known Limitations
 
-- System-management values are fixture-backed.
+- Service-health and feature-flag values are still fixture-backed.
+- Audit visibility is read-only and limited to recent entries.
 - Toggles and action buttons are local UI affordances.
 - There is no live platform configuration backend.
 
@@ -59,10 +63,11 @@ The route is access-enforced. System-management values are fixture-backed and ac
 
 - Start at the route page to confirm platform ownership.
 - Change control-panel composition and local controls in `system-management-screen.tsx`.
-- Change data shape in query/repository files.
+- Change fixture snapshot data in query/repository files.
+- Change audit read behavior in `supabase-admin-runtime-repository.ts`.
 
 ## What Not to Change Casually
 
 - Do not represent local controls as live infrastructure mutations.
-- Do not bypass `adminQueryServices`.
+- Do not route audit visibility back through in-memory `adminQueryServices`.
 - Do not change platform access assumptions without checking admin auth docs first.

@@ -4,7 +4,7 @@ Status: Active
 Authority: Operational
 Surface: admin-console
 Domains: orders, platform-oversight, query-read-model
-Last updated: 2026-03-28
+Last updated: 2026-04-16
 Retrieve when:
 - changing admin orders route behavior, table filtering, or detail interactions
 - debugging whether an orders issue is caused by fixture data or local UI state
@@ -12,7 +12,7 @@ Retrieve when:
 Related files:
 - admin-console/src/app/(platform)/orders/page.tsx
 - admin-console/src/features/orders/presentation/orders-screen.tsx
-- admin-console/src/shared/data/admin-query-services.ts
+- admin-console/src/shared/data/supabase-admin-runtime-repository.ts
 
 ## Purpose
 
@@ -28,15 +28,15 @@ Describe the current admin orders journey from platform route entry into persist
 
 - `/orders` -> render `AdminOrdersPage`
 - page renders `AdminOrdersScreen`
-- `adminQueryServices.getOrdersData()` reads the persisted orders bundle
+- `supabaseAdminRuntimeRepository.getOrdersData()` reads the persisted orders bundle
 - user switches among local tabs: `all`, `active`, `delivered`, `disputed`
 - user opens and closes the local detail panel through `selectedOrder`
-- action buttons remain display-only in the detail panel
+- action buttons remain display-only in the detail panel because admin order mutation scope is deferred in the current runtime
 
 ## Source-of-Truth Files Involved
 
-- `admin-console/src/shared/data/admin-query-services.ts`
-- `admin-console/src/shared/data/admin-repository.ts`
+- `admin-console/src/app/(platform)/orders/page.tsx`
+- `admin-console/src/shared/data/supabase-admin-runtime-repository.ts`
 - `admin-console/src/features/orders/presentation/orders-screen.tsx`
 
 ## Key Dependent Screens and Files
@@ -49,7 +49,7 @@ Describe the current admin orders journey from platform route entry into persist
 
 - Authoritative:
   - repository-returned orders data
-  - query-service read path for orders
+  - runtime-repository read path for orders
 - Derived:
   - tab counts
   - filtered rows
@@ -59,7 +59,7 @@ Describe the current admin orders journey from platform route entry into persist
 ## Known Shallow, Partial, Fixture-Backed, or Local-Only Limits
 
 - Orders are persisted and read from Supabase.
-- No platform order action writes state back anywhere.
+- No platform order action writes state back anywhere; admin order mutation remains deferred by current governance scope.
 - `activeTab` and `selectedOrder` are local React state only.
 - The platform route is session- and role-enforced before the page renders.
 

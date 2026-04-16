@@ -4,7 +4,7 @@ Status: Active
 Authority: Operational
 Surface: admin-console
 Domains: disputes, platform-oversight, query-read-model
-Last updated: 2026-03-28
+Last updated: 2026-04-16
 Retrieve when:
 - changing admin disputes route behavior, summary metrics, or action labels
 - debugging whether a disputes issue is in repository data or derived screen logic
@@ -12,7 +12,7 @@ Retrieve when:
 Related files:
 - admin-console/src/app/(platform)/disputes/page.tsx
 - admin-console/src/features/disputes/presentation/disputes-screen.tsx
-- admin-console/src/shared/data/admin-query-services.ts
+- admin-console/src/shared/data/supabase-admin-runtime-repository.ts
 
 ## Purpose
 
@@ -28,14 +28,15 @@ Describe the current admin disputes journey from platform route entry into persi
 
 - `/disputes` -> render `AdminDisputesPage`
 - page renders `AdminDisputesScreen`
-- `adminQueryServices.getDisputesData()` reads the persisted disputes bundle
+- `supabaseAdminRuntimeRepository.getDisputesData()` reads the persisted disputes bundle
 - screen derives summary counts and total dispute value from the current dispute list
 - table renders action labels `Assign`, `Review`, or `View` based on dispute status
+- those action labels remain non-mutating because admin dispute workflow is deferred in the current runtime
 
 ## Source-of-Truth Files Involved
 
-- `admin-console/src/shared/data/admin-query-services.ts`
-- `admin-console/src/shared/data/admin-repository.ts`
+- `admin-console/src/app/(platform)/disputes/page.tsx`
+- `admin-console/src/shared/data/supabase-admin-runtime-repository.ts`
 - `admin-console/src/features/disputes/presentation/disputes-screen.tsx`
 
 ## Key Dependent Screens and Files
@@ -48,7 +49,7 @@ Describe the current admin disputes journey from platform route entry into persi
 
 - Authoritative:
   - repository-returned disputes data
-  - query-service read path for disputes
+  - runtime-repository read path for disputes
 - Derived:
   - total/open/escalated counts
   - total dispute value
@@ -57,7 +58,7 @@ Describe the current admin disputes journey from platform route entry into persi
 ## Known Shallow, Partial, Fixture-Backed, or Local-Only Limits
 
 - Disputes are persisted and read from Supabase.
-- No assign, review, or case-update path exists.
+- No assign, review, or case-update path exists; admin dispute mutation remains deferred by current governance scope.
 - Summary metrics are derived on render from the current persisted dispute set.
 - The platform route is session- and role-enforced before the page renders.
 

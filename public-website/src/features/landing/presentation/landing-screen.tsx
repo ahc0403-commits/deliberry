@@ -6,14 +6,14 @@ const features: { icon: ReactNode; title: string; desc: string }[] = [
   { icon: <Zap size={24} />, title: "30-minute delivery", desc: "From order placed to food at your door. We optimize every route so your meal arrives hot and on time." },
   { icon: <UtensilsCrossed size={24} />, title: "200+ restaurants", desc: "From traditional Argentine cuisine to global flavours. Your favourite spots, all in one place." },
   { icon: <MapPin size={24} />, title: "Clear order updates", desc: "Stay informed with in-app order progress updates from confirmation through delivery." },
-  { icon: <CreditCard size={24} />, title: "Flexible checkout options", desc: "Choose your preferred payment method during checkout while live payment processing remains limited." },
+  { icon: <CreditCard size={24} />, title: "Flexible checkout options", desc: "Choose your preferred payment method during checkout while payment verification remains out of scope in the current product." },
   { icon: <Star size={24} />, title: "Rated 4.5 / 5", desc: "Tens of thousands of happy customers trust Deliberry for their daily meals across Buenos Aires." },
   { icon: <Handshake size={24} />, title: "Merchant partnership", desc: "We grow with our restaurant partners, giving them tools and reach they wouldn't have alone." },
 ];
 
 const reviews = [
   { text: "Deliberry changed how I eat lunch. The app is incredibly fast and the delivery is always on time. My go-to for everything.", name: "María G.", meta: "Customer since 2025", initials: "MG" },
-  { text: "I've tried every delivery app out there. Deliberry has the best restaurant selection and the tracking actually works.", name: "Carlos R.", meta: "Buenos Aires", initials: "CR" },
+  { text: "I've tried every delivery app out there. Deliberry has the best restaurant selection and the order updates stay easy to follow.", name: "Carlos R.", meta: "Buenos Aires", initials: "CR" },
   { text: "Amazing experience from start to finish. The food arrived hot, the driver was polite, and the app is super clean.", name: "Sofía L.", meta: "Customer since 2025", initials: "SL" },
 ];
 

@@ -88,7 +88,7 @@ export function PublicPrivacyScreen() {
               <h3>Account information</h3>
               <p>When you create an account, we collect your name, email address, phone number, and any profile details you provide.</p>
               <h3>Order and transaction data</h3>
-              <p>We collect information about the orders you place, including items ordered, restaurant, delivery address, payment method selection, and transaction amounts. We do not store full card numbers, and live payment processing may depend on the current checkout phase and provider availability.</p>
+              <p>We collect information about the orders you place, including items ordered, restaurant, delivery address, payment method selection, and transaction amounts. We do not store full card numbers, and payment method selection does not imply live payment verification in the current product phase.</p>
               <h3>Location data</h3>
               <p>With your permission, we collect your device location to show nearby restaurants and support order progress updates. You can disable location access in your device settings at any time.</p>
               <h3>Usage and device data</h3>

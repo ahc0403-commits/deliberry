@@ -38,6 +38,7 @@ References: CONSTITUTION.md
 - [ ] All new monetary values use integer centavos (not float)
 - [ ] No `parseFloat` or floating-point arithmetic on money values
 - [ ] Currency references use `'ARS'` as primary (not `'VND'`)
+- [ ] Run `scripts/check-governed-currency-literals.sh` and confirm no governed write path uses `VND` or undocumented `USD`
 - [ ] Money display uses `formatMoney()` utility — no inline currency formatting
 - [ ] Settlement, refund, and commission amounts use centavo representation
 
@@ -84,6 +85,7 @@ References: CONSTITUTION.md
 - [ ] No hardcoded credentials, API keys, or secrets in code or docs
 - [ ] No cross-surface session sharing
 - [ ] No real payment/money movement without finance and legal review
+- [ ] UI and marketing copy do not imply real-time order tracking or live payment verification where those capabilities are excluded or placeholder-only
 
 ## 9. Naming Conventions
 

@@ -4,7 +4,7 @@ Status: Active
 Authority: Operational
 Surface: customer-app
 Domains: addresses, delivery-address, account-child-route
-Last updated: 2026-03-17
+Last updated: 2026-04-15
 Retrieve when:
 - editing saved-address behavior or the address form sheet
 - checking whether address truth lives in the screen or the runtime controller
@@ -45,15 +45,16 @@ Owns the saved-addresses route and its add, edit, delete, and default-address UI
 
 ## Known Limitations
 
-- Addresses are local-session only.
+- Signed-in address changes persist through the Supabase customer runtime gateway, but signed-out fallback behavior is still runtime-local.
 - Validation is minimal and UI-driven.
-- There is no geocoding, normalization, or backend persistence.
+- There is still no geocoding or address normalization.
 
 ## Safe Modification Guidance
 
 - Change address mutation logic in `customer_runtime_controller.dart` first.
 - Then update form or list presentation in `addresses_screen.dart`.
 - Re-check checkout delivery-address display after address behavior changes.
+- If persistence behavior changes, re-check `customer-app/lib/core/data/supabase_customer_runtime_gateway.dart` and the customer address RPCs.
 
 ## What Not to Change Casually
 

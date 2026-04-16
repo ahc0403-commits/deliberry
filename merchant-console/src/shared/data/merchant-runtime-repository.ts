@@ -45,6 +45,7 @@ export interface MerchantRuntimeRepository {
     storeId: string;
     orderId: string;
     status: string;
+    idempotencyKey: string;
     actorId: string;
     actorType: "merchant_owner" | "merchant_staff";
     traceId?: string;

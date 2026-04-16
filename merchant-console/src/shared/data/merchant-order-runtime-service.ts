@@ -226,6 +226,7 @@ export async function updateMerchantOrderRuntimeStatus(input: {
   storeId: string;
   orderId: string;
   status: MerchantOrder["status"];
+  idempotencyKey: string;
   actorId: string;
   actorType: "merchant_owner" | "merchant_staff";
 }): Promise<{ order: MerchantOrder; source: "persisted" }> {

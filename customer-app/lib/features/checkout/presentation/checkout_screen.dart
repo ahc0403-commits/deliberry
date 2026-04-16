@@ -139,6 +139,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         return 'This store menu is unavailable right now. Please try another store.';
       case 'cart_line_items_unavailable':
         return 'Some cart items are no longer available in the live menu. Please add them again.';
+      case 'persisted_order_submit_in_progress':
+        return 'This order request is still finishing. Please wait a moment and try again.';
+      case 'persisted_order_request_changed':
+        return 'Checkout details changed during retry. Review them once and place the order again.';
+      case 'persisted_order_request_invalid':
+        return 'This order request could not be validated. Please try checkout again.';
       default:
         return 'Unable to place order right now. Please review checkout details.';
     }

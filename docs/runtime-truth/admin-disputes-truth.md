@@ -4,13 +4,13 @@ Status: Active
 Authority: Operational
 Surface: admin-console
 Domains: disputes, platform-oversight, query-read-model
-Last updated: 2026-03-28
+Last updated: 2026-04-16
 Retrieve when:
 - changing admin dispute reads, summary behavior, or action language
 - checking whether dispute actions mutate real state
 - debugging whether a dispute screen issue is data-shape or UI-only
 Related files:
-- admin-console/src/shared/data/admin-query-services.ts
+- admin-console/src/app/(platform)/disputes/page.tsx
 - admin-console/src/shared/data/supabase-admin-runtime-repository.ts
 - admin-console/src/features/disputes/presentation/disputes-screen.tsx
 
@@ -20,7 +20,7 @@ Identify where admin dispute data actually comes from and what the current scree
 
 ## Real Source-of-Truth Locations
 
-- Disputes read-model entry: `admin-console/src/shared/data/admin-query-services.ts`
+- Page-level read-model entry: `admin-console/src/app/(platform)/disputes/page.tsx`
 - Disputes runtime repository: `admin-console/src/shared/data/supabase-admin-runtime-repository.ts`
 
 ## What State Is Owned There
@@ -36,7 +36,7 @@ Identify where admin dispute data actually comes from and what the current scree
 ## What Is Authoritative vs Derived
 
 - Authoritative:
-  - read result returned by `adminQueryServices.getDisputesData()`
+  - read result returned by `supabaseAdminRuntimeRepository.getDisputesData()`
   - persisted dispute data returned by `supabaseAdminRuntimeRepository.getDisputesData()`
 - Derived:
   - total/open/escalated counts
@@ -47,7 +47,7 @@ Identify where admin dispute data actually comes from and what the current scree
 ## What Is Still Shallow, Partial, Fixture-Backed, or Local-Only
 
 - Disputes are persisted and read from Supabase.
-- There is no assignment, review, or case-mutation path.
+- There is no live assignment, review, or case-mutation path; admin dispute mutation scope is deferred in the current runtime.
 - Summary metrics are recalculated directly from the current persisted read set on render.
 - The platform route is session- and role-gated before the screen renders, but the dispute actions themselves are still read-only.
 
@@ -59,9 +59,9 @@ Identify where admin dispute data actually comes from and what the current scree
 
 ## Safe Modification Guidance
 
-- Change dispute data shape in `admin-repository.ts` before changing summary or table assumptions.
+- Change dispute data shape in `supabase-admin-runtime-repository.ts` before changing summary or table assumptions.
 - Keep derived summary logic aligned with the dispute fixture structure.
-- Do not imply assign/review persistence without a real write path.
+- Do not imply assign/review persistence unless the deferred admin dispute workflow is explicitly implemented later.
 
 ## Related Filemaps
 

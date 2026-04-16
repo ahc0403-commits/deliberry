@@ -36,6 +36,7 @@ class _MenuBrowsingScreenState extends State<MenuBrowsingScreen> {
       builder: (context, _) {
         final store = runtime.resolveStore(widget.storeId);
         final menuItems = runtime.menuItemsForStore(store.id);
+        final menuUnavailable = runtime.isStoreMenuUnavailable(store.id);
         final categories =
             menuItems.map((item) => item.category).toSet().toList();
         final selectedIndex = categories.isEmpty
@@ -115,39 +116,66 @@ class _MenuBrowsingScreenState extends State<MenuBrowsingScreen> {
                     : 'No items added yet',
               ),
               const SizedBox(height: 16),
-              MenuSectionList(
-                categories: const [],
-                selectedIndex: 0,
-                onSelected: (_) {},
-                headerTitle: selectedCategory,
-                headerCount: filteredItems.length,
-                includeHeaderCount: true,
-                items: filteredItems,
-                emptyTitle: 'No items here',
-                emptySubtitle: 'This category has no items right now',
-                onAddItem: (item) {
-                  final outcome = runtime.addMenuItem(
-                    storeId: store.id,
-                    item: item,
-                  );
-                  _showMessage(
-                    outcome == CartAddOutcome.replacedStore
-                        ? 'Started a new cart for ${store.name}.'
-                        : '${item.name} added to cart.',
-                  );
-                },
-              ),
+              if (menuUnavailable)
+                EmptyState(
+                  icon: Icons.menu_book_outlined,
+                  title: 'Menu unavailable right now',
+                  subtitle:
+                      'This store does not have a live orderable menu yet. Please try another store.',
+                  actionLabel: 'Browse Restaurants',
+                  onAction: () =>
+                      Navigator.of(context).pushNamed(RouteNames.home),
+                )
+              else
+                MenuSectionList(
+                  categories: const [],
+                  selectedIndex: 0,
+                  onSelected: (_) {},
+                  headerTitle: selectedCategory,
+                  headerCount: filteredItems.length,
+                  includeHeaderCount: true,
+                  items: filteredItems,
+                  emptyTitle: 'No items here',
+                  emptySubtitle: 'This category has no items right now',
+                  onAddItem: (item) {
+                    final outcome = runtime.addMenuItem(
+                      storeId: store.id,
+                      item: item,
+                    );
+                    if (outcome == CartAddOutcome.unavailable) {
+                      _showMessage(
+                        'This store menu is unavailable right now. Please try another store.',
+                      );
+                      return;
+                    }
+                    _showMessage(
+                      outcome == CartAddOutcome.replacedStore
+                          ? 'Started a new cart for ${store.name}.'
+                          : '${item.name} added to cart.',
+                    );
+                  },
+                ),
             ],
           ),
           bottomNavigationBar: BottomCTABar(
-            label: runtime.cartItemCount > 0 ? 'View Cart' : 'Start Order',
+            label: runtime.cartItemCount > 0
+                ? 'View Cart'
+                : menuUnavailable
+                    ? 'Menu Unavailable'
+                    : 'Start Order',
             sublabel: runtime.cartItemCount > 0
                 ? '${runtime.cartItemCount} items'
-                : store.name,
+                : menuUnavailable
+                    ? 'Try another store'
+                    : store.name,
             trailingText: runtime.cartItemCount > 0
                 ? '\$${formatCentavos(runtime.cartTotal)}'
                 : null,
-            onPressed: () => Navigator.of(context).pushNamed(RouteNames.cart),
+            onPressed: runtime.cartItemCount > 0
+                ? () => Navigator.of(context).pushNamed(RouteNames.cart)
+                : menuUnavailable
+                    ? null
+                    : () => Navigator.of(context).pushNamed(RouteNames.cart),
           ),
         );
       },

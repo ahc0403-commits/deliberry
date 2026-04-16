@@ -4,8 +4,8 @@ Status: active
 Authority: operational
 Surface: customer-app
 Domains: addresses, delivery-address, checkout-context
-Last updated: 2026-03-16
-Last verified: 2026-03-16
+Last updated: 2026-04-15
+Last verified: 2026-04-15
 Retrieve when:
 - changing address add/edit/delete/default behavior
 - debugging why checkout or order records show the wrong delivery address
@@ -16,20 +16,29 @@ Related files:
 
 ## Purpose
 
-Document where delivery-address truth lives and where address behavior is still only local-session support.
+Document where delivery-address truth lives and how signed-in address behavior now bridges runtime state with persisted customer address storage.
 
 ## Real source-of-truth location(s)
 
-- Authoritative mutable owner: [customer_runtime_controller.dart](/Users/andremacmini/Deliberry/customer-app/lib/core/data/customer_runtime_controller.dart)
+- Authoritative runtime owner: [customer_runtime_controller.dart](/Users/andremacmini/Deliberry/customer-app/lib/core/data/customer_runtime_controller.dart)
   - `_addresses`
-  - `_nextAddressId`
+  - `addAddress`
+  - `updateAddress`
+  - `deleteAddress`
+  - `setDefaultAddress`
+- Persisted signed-in gateway: [supabase_customer_runtime_gateway.dart](/Users/andremacmini/Deliberry/customer-app/lib/core/data/supabase_customer_runtime_gateway.dart)
+  - `readAddresses`
+  - `saveAddress`
+  - `deleteAddress`
+  - `setDefaultAddress`
 - Presentation/editor: [addresses_screen.dart](/Users/andremacmini/Deliberry/customer-app/lib/features/addresses/presentation/addresses_screen.dart)
 
 ## What state is owned there
 
-- saved addresses for the current session
-- default-address selection
-- runtime-generated ids for newly added addresses
+- current runtime address list used by the UI
+- signed-in persisted customer addresses in Supabase
+- default-address selection and repair behavior
+- runtime-generated ids for newly added local fallback addresses
 
 ## What screens depend on it
 
@@ -42,11 +51,8 @@ Document where delivery-address truth lives and where address behavior is still 
 
 - Authoritative:
   - `_addresses`
-  - address mutation methods:
-    - `addAddress`
-    - `updateAddress`
-    - `deleteAddress`
-    - `setDefaultAddress`
+  - address mutation methods in `CustomerRuntimeController`
+  - signed-in address persistence in `SupabaseCustomerRuntimeGateway`
 - Derived:
   - `addresses`
   - `deliveryAddress`
@@ -55,9 +61,10 @@ Document where delivery-address truth lives and where address behavior is still 
 
 ## What is still shallow / partial / local-only
 
-- Addresses are durable only within the running surface session.
-- No disk persistence, backend persistence, geocoding, or address normalization exists.
-- Validation is minimal and form-driven in the UI layer.
+- Signed-in users get backend persistence through Supabase-backed address reads and writes.
+- Signed-out fallback behavior is still runtime-local.
+- There is still no geocoding or address normalization.
+- Validation remains minimal and form-driven in the UI layer.
 
 ## Known risks
 
@@ -72,7 +79,7 @@ Document where delivery-address truth lives and where address behavior is still 
   - addresses list UI
   - checkout delivery card
   - order submission path
-- Preserve the rule that address fixtures seed runtime state once, then runtime owns it.
+- Preserve the rule that runtime state stays the single UI owner even when signed-in writes are synchronized to Supabase.
 
 ## Related filemaps
 

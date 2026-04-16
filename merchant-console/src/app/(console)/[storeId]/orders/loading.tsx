@@ -4,7 +4,7 @@ export default function MerchantOrdersLoading() {
   return (
     <MerchantLoadingState
       title="Orders"
-      subtitle="Loading the live order queue for this store."
+      subtitle="Loading the current order queue for this store."
     />
   );
 }

@@ -1,5 +1,7 @@
 import { adminRepository } from "./admin-repository";
 
+// Legacy fixture-backed read layer. Do not treat this as the live owner for
+// routes already migrated to Supabase runtime repositories.
 export class AdminQueryServices {
   getDashboardData() { return adminRepository.getDashboardData(); }
   getUsersData() { return adminRepository.getUsersData(); }

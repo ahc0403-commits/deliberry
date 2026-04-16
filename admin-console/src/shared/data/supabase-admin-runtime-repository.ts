@@ -135,6 +135,35 @@ type SupportTicketRow = {
     | null;
 };
 
+export type AuditLogEntry = {
+  id: string;
+  actorId: string;
+  actorType: string;
+  actorName: string;
+  action: string;
+  resourceType: string;
+  resourceId: string;
+  timestampUtc: string;
+};
+
+type AuditLogRow = {
+  id: string;
+  actor_id: string;
+  actor_type: string;
+  action: string;
+  resource_type: string;
+  resource_id: string;
+  timestamp_utc: string;
+  actor_profiles:
+    | {
+        display_name: string | null;
+      }
+    | {
+        display_name: string | null;
+      }[]
+    | null;
+};
+
 function countByUserId(rows: Array<{ customer_actor_id: string | null }>) {
   const counts = new Map<string, number>();
   for (const row of rows) {
@@ -421,6 +450,47 @@ export class SupabaseAdminRuntimeRepository {
     );
 
     return { tickets };
+  }
+
+  async getAuditLogEntries(limit = 12): Promise<AuditLogEntry[]> {
+    const supabase = createAdminServiceSupabaseClient();
+    const { data, error } = await supabase
+      .from("audit_logs")
+      .select(`
+        id,
+        actor_id,
+        actor_type,
+        action,
+        resource_type,
+        resource_id,
+        timestamp_utc,
+        actor_profiles!audit_logs_actor_id_fkey (
+          display_name
+        )
+      `)
+      .order("timestamp_utc", { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return ((data ?? []) as AuditLogRow[]).map((row) => {
+      const actor = Array.isArray(row.actor_profiles)
+        ? row.actor_profiles[0]
+        : row.actor_profiles;
+
+      return {
+        id: row.id,
+        actorId: row.actor_id,
+        actorType: row.actor_type,
+        actorName: actor?.display_name?.trim() || "Unknown actor",
+        action: row.action,
+        resourceType: row.resource_type,
+        resourceId: row.resource_id,
+        timestampUtc: row.timestamp_utc,
+      };
+    });
   }
 }
 

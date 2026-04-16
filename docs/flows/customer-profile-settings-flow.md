@@ -4,8 +4,8 @@ Status: active
 Authority: operational
 Surface: customer-app
 Domains: profile, settings, account-children
-Last updated: 2026-03-16
-Last verified: 2026-03-16
+Last updated: 2026-04-15
+Last verified: 2026-04-15
 Retrieve when:
 - changing account child-route behavior from profile
 - debugging profile/settings/account navigation and sign-out behavior
@@ -71,7 +71,7 @@ Document the authenticated account hub flow from the shell-owned profile tab int
 - Profile identity is now phone-session-derived when available, but richer account fields are still not persisted.
 - Settings toggles are local widget state, not persisted runtime truth.
 - Several settings and profile actions remain honest unavailable actions rather than fully wired features.
-- Reviews are reachable, but review data/submission remain mock-backed and now require real order-linked context before the write preview appears.
+- Reviews are reachable and persisted for signed-in customers, but they still require real order-linked context and retain preview fallback behavior when the route is opened incorrectly.
 
 ## Common edit mistakes
 

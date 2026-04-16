@@ -1,7 +1,30 @@
 import { Cog, ShieldCheck, Sparkles, ToggleLeft, Wrench } from "lucide-react";
 import { adminQueryServices } from "../../../shared/data/admin-query-services";
+import type { AuditLogEntry } from "../../../shared/data/supabase-admin-runtime-repository";
 
-export function AdminSystemManagementScreen() {
+type AdminSystemManagementScreenProps = {
+  auditEntries: AuditLogEntry[];
+};
+
+function formatAuditTimestamp(timestampUtc: string) {
+  return new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "UTC",
+  }).format(new Date(timestampUtc));
+}
+
+function formatAuditAction(action: string) {
+  return action
+    .split("_")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+export function AdminSystemManagementScreen({
+  auditEntries,
+}: AdminSystemManagementScreenProps) {
   const { health, featureFlags } = adminQueryServices.getSystemManagementData();
   const healthyCount = health.filter((service) => service.status === "healthy").length;
   const enabledFlags = featureFlags.filter((flag) => flag.enabled).length;
@@ -108,6 +131,56 @@ export function AdminSystemManagementScreen() {
               </div>
             </div>
           ))}
+        </div>
+      </section>
+
+      <section className="oversight-panel">
+        <div className="oversight-panel-header">
+          <div>
+            <h2 className="oversight-panel-title">Recent Audit Activity</h2>
+            <p className="oversight-panel-subtitle">
+              Recent immutable audit records are read from the governed runtime store so platform reviewers can inspect the latest protected mutations without enabling direct writes from this route.
+            </p>
+          </div>
+          <span className="table-inline-note">Read-only audit log</span>
+        </div>
+        <div className="oversight-stack">
+          {auditEntries.map((entry) => (
+            <div key={entry.id} className="oversight-record">
+              <div className="oversight-record-main">
+                <div className="oversight-record-title">
+                  {formatAuditAction(entry.action)}
+                </div>
+                <div className="oversight-record-subtitle">
+                  {entry.actorName} ({entry.actorType}) touched{" "}
+                  {entry.resourceType} {entry.resourceId}.
+                </div>
+                <div className="oversight-record-meta">
+                  <span className="oversight-micro-chip">
+                    Actor {entry.actorId}
+                  </span>
+                  <span className="oversight-micro-chip">
+                    Resource {entry.resourceType}
+                  </span>
+                  <span className="oversight-micro-chip">
+                    UTC {formatAuditTimestamp(entry.timestampUtc)}
+                  </span>
+                </div>
+              </div>
+              <span className="btn-preview">Immutable record</span>
+            </div>
+          ))}
+          {auditEntries.length === 0 ? (
+            <div className="oversight-record">
+              <div className="oversight-record-main">
+                <div className="oversight-record-title">No audit entries yet</div>
+                <div className="oversight-record-subtitle">
+                  Audit storage is available, but this environment has not produced a governed mutation record yet.
+                </div>
+              </div>
+              <span className="btn-preview">Empty audit store</span>
+            </div>
+          ) : null}
         </div>
       </section>
     </div>

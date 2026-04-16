@@ -4,7 +4,7 @@ Status: Active
 Authority: Operational
 Surface: admin-console
 Domains: orders, platform-oversight, query-read-model
-Last updated: 2026-03-16
+Last updated: 2026-04-15
 Retrieve when:
 - editing platform-wide order oversight UI
 - checking where admin order data comes from
@@ -12,8 +12,7 @@ Retrieve when:
 Related files:
 - admin-console/src/app/(platform)/orders/page.tsx
 - admin-console/src/features/orders/presentation/orders-screen.tsx
-- admin-console/src/shared/data/admin-query-services.ts
-- admin-console/src/shared/data/admin-repository.ts
+- admin-console/src/shared/data/supabase-admin-runtime-repository.ts
 
 ## Purpose
 
@@ -26,17 +25,16 @@ Owns the admin platform-wide order oversight screen.
 
 ## Source of Truth
 
-- Read-model entry: `admin-console/src/shared/data/admin-query-services.ts`
-- Fixture-backed data owner: `admin-console/src/shared/data/admin-repository.ts`
+- Page-level read-model entry: `admin-console/src/app/(platform)/orders/page.tsx`
+- Runtime data owner: `admin-console/src/shared/data/supabase-admin-runtime-repository.ts`
 
-This source of truth is split: order data is read through the query service and in-memory repository, while selected tab and selected order are local screen state.
+This source of truth is split: order data is read through the runtime repository, while selected tab and selected order are local screen state.
 
 ## Key Files to Read First
 
 - `admin-console/src/app/(platform)/orders/page.tsx`
 - `admin-console/src/features/orders/presentation/orders-screen.tsx`
-- `admin-console/src/shared/data/admin-query-services.ts`
-- `admin-console/src/shared/data/admin-repository.ts`
+- `admin-console/src/shared/data/supabase-admin-runtime-repository.ts`
 
 ## Related Shared and Domain Files
 
@@ -53,19 +51,19 @@ This source of truth is split: order data is read through the query service and 
 
 ## Known Limitations
 
-- Orders are fixture-backed and in-memory only.
+- Orders are persisted and read from Supabase.
 - `activeTab` and `selectedOrder` live only inside the screen.
 - `Open Dispute`, `Review Cancellation`, and `View Full History` are display-level buttons with no write path.
-- The platform shell does not currently gate this route by session or role.
+- The platform route is gated before the page renders, but the order actions themselves remain read-only.
 
 ## Safe Modification Guidance
 
-- Change order data shape in `admin-repository.ts` before changing screen assumptions.
+- Change order data shape in `supabase-admin-runtime-repository.ts` before changing screen assumptions.
 - Keep screen-local selection/filter state in the screen unless a broader runtime plan is introduced.
-- Treat route guarding as separate from orders rendering; there is no real enforcement here yet.
+- Treat route guarding as separate from orders rendering; actions are still non-mutating even though read access is enforced.
 
 ## What Not to Change Casually
 
-- Do not treat the query service as a live backend boundary.
+- Do not treat legacy query services as the live backend boundary for this route.
 - Do not imply platform actions are persisted without adding a real mutation path.
 - Do not import repo-level `shared/*` directly from feature code.

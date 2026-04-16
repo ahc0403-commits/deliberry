@@ -2,7 +2,8 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { ensureMerchantStoreScope } from "../../../features/auth/server/access";
-import { merchantQueryServices } from "../../../shared/data/merchant-query-services";
+import { getMerchantOrdersRuntimeData } from "../../../shared/data/merchant-order-runtime-service";
+import { getMerchantReviewsRuntimeData } from "../../../shared/data/merchant-review-runtime-service";
 
 type StoreLayoutProps = {
   children: ReactNode;
@@ -15,8 +16,12 @@ export default async function StoreScopedLayout({
 }: StoreLayoutProps) {
   const { storeId } = await params;
   await ensureMerchantStoreScope(storeId);
-  const { orders, store } = merchantQueryServices.getOrdersData(storeId);
-  const { reviews } = merchantQueryServices.getReviewsData(storeId);
+  const [{ data: ordersData }, { data: reviewsData }] = await Promise.all([
+    getMerchantOrdersRuntimeData(storeId),
+    getMerchantReviewsRuntimeData(storeId),
+  ]);
+  const { orders, store } = ordersData;
+  const { reviews } = reviewsData;
   const activeOrderCount = orders.filter((order) =>
     ["pending", "confirmed", "preparing", "ready", "in_transit"].includes(order.status),
   ).length;

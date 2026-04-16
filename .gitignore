@@ -31,3 +31,5 @@ merchant-console/.omc/
 supabase/.temp/
 merchant-console/.omc/
 *.tsbuildinfo
+.vercel
+.env*.local

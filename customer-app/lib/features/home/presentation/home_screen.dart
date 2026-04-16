@@ -95,7 +95,7 @@ class HomeScreen extends StatelessWidget {
                         eyebrow: 'Customer journey',
                         title: 'Find your next order fast',
                         subtitle: activeOrders > 0
-                            ? 'You have $activeOrders active order${activeOrders == 1 ? '' : 's'} and can jump back into tracking any time.'
+                            ? 'You have $activeOrders active order${activeOrders == 1 ? '' : 's'} and can jump back into order status any time.'
                             : 'Browse featured spots, jump into search, and move from discovery to cart without losing context.',
                         icon: Icons.ramen_dining_rounded,
                         badge: address == null

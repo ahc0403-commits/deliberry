@@ -55,11 +55,10 @@ DRAFT → PENDING → CONFIRMED → PREPARING → READY → IN_TRANSIT → DELIV
 | `pending` | `confirmed` | `merchant_owner`, `merchant_staff` | Merchant accepts |
 | `pending` | `cancelled` | `customer`, `merchant_owner`, `system` | Customer cancels, merchant rejects, or timeout |
 | `confirmed` | `preparing` | `merchant_owner`, `merchant_staff` | Merchant starts prep |
-| `confirmed` | `cancelled` | `merchant_owner`, `operations_admin` | Merchant cancels (stock issue, etc.) |
+| `confirmed` | `cancelled` | `merchant_owner` | Merchant cancels (stock issue, etc.) |
 | `preparing` | `ready` | `merchant_owner`, `merchant_staff` | Preparation complete |
-| `preparing` | `cancelled` | `merchant_owner`, `operations_admin` | Emergency cancellation |
+| `preparing` | `cancelled` | `merchant_owner` | Emergency cancellation |
 | `ready` | `in_transit` | `rider`, `system` | Rider picks up order |
-| `ready` | `cancelled` | `operations_admin` | No rider available (last resort) |
 | `in_transit` | `delivered` | `rider`, `system` | Delivery confirmed |
 | `delivered` | `disputed` | `customer` | Customer opens dispute within dispute window |
 
@@ -78,7 +77,6 @@ DRAFT → PENDING → CONFIRMED → PREPARING → READY → IN_TRANSIT → DELIV
 - Customer MAY cancel when status is `draft`, `pending`, or `confirmed`.
 - Customer MUST NOT cancel when status is `preparing`, `ready`, `in_transit`, or `delivered`.
 - Merchant MAY cancel when status is `pending`, `confirmed`, or `preparing`.
-- Admin (`operations_admin`, `platform_admin`) MAY cancel from any pre-delivery state.
 - System MAY cancel on timeout (configurable per transition).
 
 ### 1.6 Status Alias (Migration)
@@ -169,6 +167,12 @@ MUST be renamed to `processing` and `paid` respectively.
 
 ## 4. Dispute Flow
 
+Current scope note:
+
+- Customer dispute initiation remains the only current runtime mutation obligation in this flow.
+- Admin-console currently provides persisted dispute visibility, not live dispute progression writes.
+- Any future admin dispute-resolution workflow requires a separate implementation decision and audit path before it becomes a current runtime obligation.
+
 ### 4.1 Canonical State Machine
 
 ```
@@ -191,6 +195,7 @@ OPEN → INVESTIGATING → RESOLVED
 - Dispute resolution MUST record the resolution type and reasoning.
 - Disputes MUST NOT be deleted (immutable record).
 - Dispute resolution MAY trigger a payment refund (links to Payment Flow).
+- Admin-side dispute progression is deferred in the current runtime and MUST NOT be implied as a live admin-console mutation path until separately implemented.
 
 ---
 
@@ -218,6 +223,8 @@ OPEN → IN_PROGRESS → AWAITING_REPLY → RESOLVED → CLOSED
 - All order mutations MUST be idempotent. Each mutation request MUST include an `idempotency_key`.
 - If a mutation with the same `idempotency_key` is received twice, the second request MUST return the result of the first without re-executing.
 - `idempotency_key` MUST be a client-generated UUID.
+- Current enforced runtime scope: `create_customer_order` and `update_order_status_with_audit`.
+- Reusing an `idempotency_key` with a different order-mutation payload is a contract violation and MUST be rejected.
 
 ### 6.2 Compensation / Rollback Policy
 

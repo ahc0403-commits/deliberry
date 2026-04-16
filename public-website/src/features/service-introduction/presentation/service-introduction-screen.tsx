@@ -6,7 +6,7 @@ const valueProps: { icon: ReactNode; title: string; desc: string }[] = [
   { icon: <Zap size={24} />, title: "Speed you can count on", desc: "Our routing technology and dedicated courier network means your food arrives in around 28 minutes on average. Not 45. Not \"soon\"." },
   { icon: <Thermometer size={24} />, title: "Fresh, hot, intact", desc: "Insulated packaging, careful handling, and short routes mean your food arrives exactly as the restaurant intended it." },
   { icon: <Smartphone size={24} />, title: "One tap away", desc: "Open the app, find your restaurant, build your cart. Our checkout takes under a minute. No fuss, no friction." },
-  { icon: <Lock size={24} />, title: "Checkout-ready payment choice", desc: "Choose how you want to pay at checkout while live payment verification remains limited in the current product." },
+  { icon: <Lock size={24} />, title: "Checkout-ready payment choice", desc: "Choose how you want to pay at checkout while payment verification remains out of scope in the current product." },
   { icon: <Headphones size={24} />, title: "Human support when needed", desc: "If something goes wrong, Deliberry provides support guidance and contact paths without hiding you behind automated loops." },
   { icon: <Star size={24} />, title: "Quality you can trust", desc: "Every restaurant on Deliberry is reviewed and onboarded by our team. We only list partners who meet our quality standards." },
 ];

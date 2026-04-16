@@ -60,8 +60,8 @@ class OrderStatusScreen extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
             child: FeatureHeroCard(
-              eyebrow: 'Order tracking',
-              title: 'Follow your live order progress',
+              eyebrow: 'Order status',
+              title: 'Follow your order status updates',
               subtitle:
                   'This view reflects the persisted order state and milestone updates for the selected order.',
               icon: Icons.route_rounded,

@@ -256,7 +256,7 @@ export const mockSupportTickets: SupportTicket[] = [
   { id: "t-2", ticketNumber: "TKT-1891", customerName: "Pablo Vega", subject: "Store hours not updating", category: "merchant_complaint", priority: "medium", status: "in_progress", createdAt: "2026-03-16T15:30:00Z", assignee: "Agent Rosa" },
   { id: "t-3", ticketNumber: "TKT-1890", customerName: "Carlos Rodriguez", subject: "Refund not received", category: "payment", priority: "high", status: "in_progress", createdAt: "2026-03-16T13:30:00Z", assignee: "Agent Marco" },
   { id: "t-4", ticketNumber: "TKT-1889", customerName: "Sofia Lopez", subject: "Account email change request", category: "account", priority: "low", status: "awaiting_reply", createdAt: "2026-03-15T17:30:00Z", assignee: "Agent Rosa" },
-  { id: "t-5", ticketNumber: "TKT-1888", customerName: "Ana Bermudez", subject: "Order tracking not working", category: "order_issue", priority: "medium", status: "resolved", createdAt: "2026-03-14T17:30:00Z", assignee: "Agent Marco" },
+  { id: "t-5", ticketNumber: "TKT-1888", customerName: "Ana Bermudez", subject: "Order status updates unclear", category: "order_issue", priority: "medium", status: "resolved", createdAt: "2026-03-14T17:30:00Z", assignee: "Agent Marco" },
   { id: "t-6", ticketNumber: "TKT-1887", customerName: "Diego Martinez", subject: "How to leave a review", category: "general", priority: "low", status: "closed", createdAt: "2026-03-13T17:30:00Z", assignee: "Agent Rosa" },
 ];
 
@@ -287,7 +287,7 @@ export const mockCampaigns: MarketingCampaign[] = [
 
 export const mockAnnouncements: PlatformAnnouncement[] = [
   { id: "a-1", title: "Platform maintenance scheduled for March 20", audience: "all", status: "published", publishedAt: "2026-03-13T15:00:00Z", author: "System" },
-  { id: "a-2", title: "New delivery tracking feature available", audience: "customers", status: "published", publishedAt: "2026-03-10T15:00:00Z", author: "Product Team" },
+  { id: "a-2", title: "Improved order status updates available", audience: "customers", status: "published", publishedAt: "2026-03-10T15:00:00Z", author: "Product Team" },
   { id: "a-3", title: "Updated commission structure effective April 1", audience: "merchants", status: "scheduled", scheduledAt: "2026-03-25T03:00:00Z", author: "Finance Team" },
   { id: "a-4", title: "Holiday operating hours reminder", audience: "merchants", status: "draft", author: "Operations" },
   { id: "a-5", title: "Q1 performance report summary", audience: "internal", status: "draft", author: "Analytics" },

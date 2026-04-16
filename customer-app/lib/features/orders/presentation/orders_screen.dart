@@ -71,8 +71,8 @@ class _OrdersListScreenState extends State<OrdersListScreen>
                       ? 'Keep an eye on what is in motion'
                       : 'Everything you order lands here',
                   subtitle: runtime.activeOrders.isNotEmpty
-                      ? 'Open active orders for tracking, then use history to reorder from the same session.'
-                      : 'Track active orders in one tab and revisit completed ones in history.',
+                      ? 'Open active orders for status updates, then use history to reorder from the same session.'
+                      : 'Keep active orders in one tab and revisit completed ones in history.',
                   icon: Icons.delivery_dining_rounded,
                   badge:
                       '${runtime.activeOrders.length} active · ${runtime.pastOrders.length} past',
@@ -86,7 +86,7 @@ class _OrdersListScreenState extends State<OrdersListScreen>
                       orders: runtime.activeOrders,
                       emptyTitle: 'No active orders',
                       emptySubtitle:
-                          'Order something delicious and track it here.',
+                          'Order something delicious and follow its status here.',
                       emptyIcon: Icons.delivery_dining_outlined,
                       onTap: (order) => Navigator.pushNamed(
                         context,

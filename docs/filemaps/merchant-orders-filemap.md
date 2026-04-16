@@ -4,7 +4,7 @@ Status: Active
 Authority: Operational
 Surface: merchant-console
 Domains: orders, store-scope, query-read-model
-Last updated: 2026-03-16
+Last updated: 2026-04-15
 Retrieve when:
 - changing merchant order data reads or table/detail behavior
 - debugging store-scoped order rendering
@@ -12,11 +12,11 @@ Retrieve when:
 Related files:
 - merchant-console/src/app/(console)/[storeId]/orders/page.tsx
 - merchant-console/src/features/orders/presentation/orders-screen.tsx
-- merchant-console/src/shared/data/merchant-query-services.ts
+- merchant-console/src/shared/data/merchant-order-runtime-service.ts
 
 ## Purpose
 
-Shows the narrow file cluster for merchant orders rendering, store-scope enforcement, and fixture-backed order reads.
+Shows the narrow file cluster for merchant orders rendering, store-scope enforcement, and runtime-backed order reads.
 
 ## When To Retrieve This Filemap
 
@@ -33,33 +33,31 @@ Shows the narrow file cluster for merchant orders rendering, store-scope enforce
 
 - `merchant-console/src/features/orders/presentation/orders-screen.tsx`
 - `merchant-console/src/features/auth/server/access.ts`
-- `merchant-console/src/shared/data/merchant-query-services.ts`
-- `merchant-console/src/shared/data/merchant-repository.ts`
-- `merchant-console/src/shared/data/merchant-mock-data.ts`
+- `merchant-console/src/shared/data/merchant-order-runtime-service.ts`
+- `merchant-console/src/shared/data/product-telemetry-service.ts`
 
 ## Source-of-Truth Files
 
 - `merchant-console/src/features/auth/server/access.ts`
 - `merchant-console/src/app/(console)/[storeId]/layout.tsx`
-- `merchant-console/src/shared/data/merchant-query-services.ts`
-- `merchant-console/src/shared/data/merchant-repository.ts`
+- `merchant-console/src/shared/data/merchant-order-runtime-service.ts`
 
-This source of truth is split: route/store ownership is enforced by access helpers and the store-scoped layout, while order content is read from the query service and in-memory repository.
+This source of truth is split: route/store ownership is enforced by access helpers and the store-scoped layout, while order content is read from the runtime service.
 
 ## Files Often Mistaken as Source of Truth but Are Not
 
 - `merchant-console/src/features/orders/presentation/orders-screen.tsx`
 - `merchant-console/src/app/(console)/layout.tsx`
 - `merchant-console/src/shared/domain.ts`
+- `merchant-console/src/shared/data/merchant-query-services.ts`
 
-The screen owns local UI state like active tab and selected order, but not authoritative order data or store access policy.
+The screen owns local UI state like active tab and selected order, but not authoritative order data or store access policy. `merchant-query-services.ts` remains a legacy fixture path, not the live orders owner.
 
 ## High-Risk Edit Points
 
 - `ensureMerchantStoreScope` and redirect logic in `merchant-console/src/features/auth/server/access.ts`
 - Store ID boundary in `merchant-console/src/app/(console)/[storeId]/layout.tsx`
-- `getOrdersData` in `merchant-console/src/shared/data/merchant-query-services.ts`
-- `getOrdersData` and `mockOrders` dependencies in `merchant-console/src/shared/data/merchant-repository.ts`
+- `getMerchantOrdersRuntimeData` in `merchant-console/src/shared/data/merchant-order-runtime-service.ts`
 - Local action buttons and overlay state in `merchant-console/src/features/orders/presentation/orders-screen.tsx`
 
 ## Related Governance Docs
@@ -78,6 +76,6 @@ The screen owns local UI state like active tab and selected order, but not autho
 ## Safe Edit Sequence
 
 1. Confirm the store-scoped route boundary in the page and layout files.
-2. Confirm data-read ownership in `merchant-query-services.ts` and `merchant-repository.ts`.
+2. Confirm data-read ownership in `merchant-order-runtime-service.ts`.
 3. Update `orders-screen.tsx` after the data and route assumptions are clear.
 4. If actions become real later, add a real write path before changing action labels or states.

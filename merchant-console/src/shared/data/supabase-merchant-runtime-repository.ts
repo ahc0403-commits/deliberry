@@ -376,6 +376,7 @@ export class SupabaseMerchantRuntimeRepository implements MerchantRuntimeReposit
     storeId: string;
     orderId: string;
     status: string;
+    idempotencyKey: string;
     actorId: string;
     actorType: "merchant_owner" | "merchant_staff";
     traceId?: string;
@@ -389,6 +390,7 @@ export class SupabaseMerchantRuntimeRepository implements MerchantRuntimeReposit
         p_order_id: input.orderId,
         p_store_id: input.storeId,
         p_next_status: nextStatus,
+        p_idempotency_key: input.idempotencyKey,
       },
     );
 

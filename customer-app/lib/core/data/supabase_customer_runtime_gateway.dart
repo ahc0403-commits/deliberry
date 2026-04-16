@@ -941,6 +941,7 @@ class SupabaseCustomerRuntimeGateway implements CustomerRuntimeGateway {
               .toList(),
           'p_promo_code': input.promoCode,
           'p_estimated_delivery_at': input.estimatedDeliveryAtUtc,
+          'p_idempotency_key': input.idempotencyKey,
         },
       );
       final orderRow = Map<String, dynamic>.from(rpcResponse as Map);

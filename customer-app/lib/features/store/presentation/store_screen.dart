@@ -36,6 +36,13 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
     final outcome = runtime.addMenuItem(storeId: storeId, item: item);
     if (!mounted) return;
 
+    if (outcome == CartAddOutcome.unavailable) {
+      _showMessage(
+        'This store menu is unavailable right now. Please try another store.',
+      );
+      return;
+    }
+
     final store = runtime.resolveStore(storeId);
     final replaced = outcome == CartAddOutcome.replacedStore;
     _showMessage(

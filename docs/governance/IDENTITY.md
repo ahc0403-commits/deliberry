@@ -13,6 +13,7 @@ Related files:
 - shared/constants/domain.constants.ts
 - docs/governance/CONSTITUTION.md
 - docs/08-auth-session-strategy.md
+- docs/governance/ADMIN_IDENTITY_RECONCILIATION_2026-04.md
 
 > This document defines the canonical actor taxonomy, entity taxonomy, identity boundaries,
 > and access control rules for the Deliberry platform.
@@ -34,16 +35,13 @@ defines the complete set of actor types.
 | `merchant_owner` | merchant-console | Credentials | Single store (or multi-store if authorized) | Store owner with full store management rights. |
 | `merchant_staff` | merchant-console | Credentials (delegated) | Single store, limited permissions | Store employee with scoped permissions. |
 | `rider` | (future surface) | Credentials/OTP | Assigned deliveries only | Delivery actor. Picks up and delivers orders. |
-| `support_admin` | admin-console | Credentials + MFA | Customer service, disputes, tickets | Handles support escalations. |
-| `finance_admin` | admin-console | Credentials + MFA | Settlements, refunds, financial reports | Manages financial operations. |
-| `operations_admin` | admin-console | Credentials + MFA | Orders, merchants, stores, catalog | Manages operational workflows. |
-| `marketing_admin` | admin-console | Credentials + MFA | Promotions, announcements, B2B | Manages marketing and partnerships. |
-| `platform_admin` | admin-console | Credentials + MFA | All admin capabilities | Superuser. Has all admin permissions. |
+| `admin` | admin-console | Credentials + MFA | Role-scoped admin capabilities | Canonical persisted admin actor type. Role is stored separately in `PERMISSION_ROLES`. |
 | `system` | Backend services | Service credentials | Internal operations | Automated processes (cron jobs, webhooks, event handlers). |
 
 ### Current Gaps
 
 - **`merchant_staff`**: Scoping mechanism (which permissions within a store) is not yet defined. The actor type is now present in `AUTH_ACTOR_TYPES` (Wave 1 remediation, 2026-03-17).
+- **Admin taxonomy reconciliation**: As of 2026-04-15, the canonical runtime model is `actor_type = admin` plus `role in PERMISSION_ROLES`. See `docs/governance/ADMIN_IDENTITY_RECONCILIATION_2026-04.md`.
 
 ---
 
@@ -55,12 +53,12 @@ defines the complete set of actor types.
 | `Session` | Per-surface auth | Surface runtime | Active login session. MUST NOT cross surface boundaries (R-073). |
 | `Store` | merchant-console | merchant-console + admin-console | Physical or virtual merchant location. |
 | `Merchant` | merchant-console | merchant-console + admin-console | Business entity that owns one or more stores. |
-| `Order` | customer-app (creation) | All surfaces (read), customer-app + merchant-console (mutation) | Purchase transaction. Immutable once terminal (R-030). |
+| `Order` | customer-app (creation) | All surfaces (read), customer-app + merchant-console (mutation) | Purchase transaction. Immutable once terminal (R-030). Admin-console order mutation authority is deferred in the current runtime. |
 | `OrderItem` | customer-app | Embedded in Order | Line item within an order. |
 | `Cart` | customer-app | customer-app | Pre-order basket. Ephemeral. |
 | `Payment` | customer-app (initiation) | Backend service | Financial transaction. Immutable once terminal (R-031). |
 | `Settlement` | admin-console | Backend service | Merchant payout record. Immutable (R-032). |
-| `Dispute` | customer-app (initiation) | admin-console (resolution) | Contested order or payment. |
+| `Dispute` | customer-app (initiation) | customer-app (initiation), admin-console (read visibility) | Contested order or payment. Admin-console dispute mutation workflow is deferred in the current runtime. |
 | `SupportTicket` | customer-app / merchant-console | admin-console | Customer or merchant support request. |
 | `Announcement` | admin-console | admin-console | Platform-wide notification or message. |
 | `CatalogCategory` | admin-console | admin-console | Product categorization hierarchy. |
@@ -93,6 +91,7 @@ defines the complete set of actor types.
 
 ### 3.4 Admin Scoping
 
+- Admin actors use the persisted actor type `admin`.
 - Admin actors MUST have an explicit role from `PERMISSION_ROLES` (R-022).
 - Role checks MUST be enforced server-side. Client-side checks are UI hints only (R-021).
 - `platform_admin` has implicit access to all admin capabilities.
@@ -109,14 +108,21 @@ defines the complete set of actor types.
 | `merchant_owner` | read store, confirm, prepare, ready | read store | read store | - | manage own | respond | create, respond | - | - |
 | `merchant_staff` | read store, confirm, prepare, ready | read store | - | - | read own | respond | create | - | - |
 | `rider` | read assigned, pick up, deliver | - | - | read own | - | - | - | - | - |
-| `support_admin` | read all, escalate | read all | read all | read all | read all | manage | manage | read | - |
-| `finance_admin` | read all | read all, refund | manage | - | read all | read financial | - | - | - |
-| `operations_admin` | read all, override status | read all | read all | read all | manage all | manage | manage | manage | - |
-| `marketing_admin` | - | - | - | - | read all | - | - | read | manage |
-| `platform_admin` | all | all | all | all | all | all | all | all | all |
+| `admin (support_admin)` | read all | read all | read all | read all | read all | read all | manage | read | - |
+| `admin (finance_admin)` | read all | read all, refund | manage | - | read all | read financial | - | - | - |
+| `admin (operations_admin)` | read all | read all | read all | read all | manage all | read all | manage | manage | - |
+| `admin (marketing_admin)` | - | - | - | - | read all | - | - | read | manage |
+| `admin (platform_admin)` | all | all | all | all | all | all | all | all | all |
 | `system` | transition (via events) | capture, settle | process | - | - | auto-escalate | auto-assign | - | expire |
 
 Legend: `-` = no access, `browse` = read public info, `read` = read full detail, `manage` = CRUD, `all` = unrestricted
+
+Current scope note:
+
+- admin read visibility in orders and disputes is runtime-real
+- admin order override/cancel writes are deferred
+- admin dispute progression writes are deferred
+- actor-action tables must not imply a live admin-console mutation path where none exists
 
 ---
 

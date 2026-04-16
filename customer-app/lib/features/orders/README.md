@@ -4,8 +4,8 @@ Status: active
 Authority: operational
 Surface: customer-app
 Domains: orders, detail, status, reorder
-Last updated: 2026-03-16
-Last verified: 2026-03-16
+Last updated: 2026-04-15
+Last verified: 2026-04-15
 Retrieve when:
 - editing order list/detail/status continuity
 - changing reorder behavior or order-id route handling
@@ -17,7 +17,7 @@ Related files:
 
 ## Purpose
 
-Own local-session order history, order follow-up routes, and reorder handoff back into cart.
+Own persisted customer order history, order follow-up routes, and reorder handoff back into cart.
 
 ## Primary routes/screens
 
@@ -27,7 +27,8 @@ Own local-session order history, order follow-up routes, and reorder handoff bac
 
 ## Source of truth
 
-- Active/past order records, order lookup, and reorder live in [customer_runtime_controller.dart](/Users/andremacmini/Deliberry/customer-app/lib/core/data/customer_runtime_controller.dart)
+- Runtime order list, order lookup, and reorder orchestration live in [customer_runtime_controller.dart](/Users/andremacmini/Deliberry/customer-app/lib/core/data/customer_runtime_controller.dart)
+- Persisted order reads and creation flow through [supabase_customer_runtime_gateway.dart](/Users/andremacmini/Deliberry/customer-app/lib/core/data/supabase_customer_runtime_gateway.dart)
 - Route ownership and auth gating live in [app_router.dart](/Users/andremacmini/Deliberry/customer-app/lib/app/router/app_router.dart)
 - Canonical route names live in [route_names.dart](/Users/andremacmini/Deliberry/customer-app/lib/app/router/route_names.dart)
 
@@ -55,9 +56,9 @@ Own local-session order history, order follow-up routes, and reorder handoff bac
 
 ## Known limitations / partial-support truth
 
-- Order records are local-session truth only.
+- Order records are persisted for authenticated customers and then mirrored into runtime state for the UI.
 - `OrderStatusScreen` is route-real but intentionally shows a static timeline, not realtime tracking.
-- Reorder is flow-connected through runtime truth, but still rebuilds from local/mock order data.
+- Reorder is flow-connected through runtime truth, but it still reconstructs the cart from the current runtime order model instead of a new live fulfillment system.
 
 ## Safe modification guidance
 

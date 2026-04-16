@@ -4,7 +4,7 @@ Status: Active
 Authority: Operational
 Surface: merchant-console
 Domains: orders, store-scope, query-read-model
-Last updated: 2026-03-28
+Last updated: 2026-04-15
 Retrieve when:
 - changing merchant orders route behavior, table filtering, or detail interactions
 - debugging whether order rendering problems come from routing, data reads, or local UI state
@@ -12,7 +12,7 @@ Retrieve when:
 Related files:
 - merchant-console/src/app/(console)/[storeId]/orders/page.tsx
 - merchant-console/src/features/orders/presentation/orders-screen.tsx
-- merchant-console/src/shared/data/merchant-query-services.ts
+- merchant-console/src/shared/data/merchant-order-runtime-service.ts
 
 ## Purpose
 
@@ -29,7 +29,7 @@ Describe the current merchant orders journey from store-scoped route entry into 
 - `/${storeId}/orders` -> page resolves `storeId`
 - `merchant-console/src/app/(console)/[storeId]/layout.tsx` runs `ensureMerchantStoreScope(storeId)`
 - page renders `MerchantOrdersScreen(storeId)`
-- `merchantQueryServices.getOrdersData(storeId)` reads the persisted orders bundle
+- `getMerchantOrdersRuntimeData(storeId)` reads the persisted orders bundle
 - user switches between local tabs: `active`, `completed`, `cancelled`
 - user opens and closes a local detail overlay through `selectedOrder`
 
@@ -37,7 +37,7 @@ Describe the current merchant orders journey from store-scoped route entry into 
 
 - `merchant-console/src/features/auth/server/access.ts`
 - `merchant-console/src/app/(console)/[storeId]/layout.tsx`
-- `merchant-console/src/shared/data/merchant-query-services.ts`
+- `merchant-console/src/shared/data/merchant-order-runtime-service.ts`
 - `merchant-console/src/shared/data/supabase-merchant-runtime-repository.ts`
 - `merchant-console/src/features/orders/presentation/orders-screen.tsx`
 
@@ -70,6 +70,7 @@ Describe the current merchant orders journey from store-scoped route entry into 
 - Editing the screen as if it owns order truth instead of reading from the repository layer.
 - Treating action buttons as operational without adding a real write path.
 - Changing order route behavior without checking store-scope enforcement in the layout and access helpers.
+- Reintroducing `merchantQueryServices` as the live orders owner after this route has already migrated.
 
 ## Related Filemaps
 

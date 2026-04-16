@@ -495,7 +495,7 @@ begin
     'pending',
     p_payment_method,
     v_total_centavos,
-    'USD',
+    'ARS',
     v_subtotal_centavos,
     v_delivery_fee_centavos,
     v_service_fee_centavos,
@@ -506,6 +506,29 @@ begin
   )
   returning *
   into v_order;
+
+  insert into public.audit_logs (
+    id,
+    actor_id,
+    actor_type,
+    action,
+    resource_type,
+    resource_id,
+    timestamp_utc,
+    before_state,
+    after_state
+  )
+  values (
+    gen_random_uuid()::text,
+    v_actor_id,
+    'customer',
+    'customer_order_created',
+    'Order',
+    v_order.id,
+    timezone('utc', now()),
+    null,
+    to_jsonb(v_order)
+  );
 
   return v_order;
 end;

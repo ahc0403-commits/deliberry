@@ -4,8 +4,8 @@ Status: active
 Authority: operational
 Surface: customer-app
 Domains: checkout, orders, status, reorder
-Last updated: 2026-03-28
-Last verified: 2026-03-28
+Last updated: 2026-04-15
+Last verified: 2026-04-15
 Retrieve when:
 - changing checkout submission or downstream order reading
 - debugging cart -> checkout -> order status -> orders continuity
@@ -76,7 +76,7 @@ Document the transactional flow from an existing cart into persisted order creat
 - Payment is placeholder-only.
 - Order creation is persisted for authenticated customers.
 - Order status is not realtime.
-- Reviews are flow-connected but still mock-backed.
+- Reviews are flow-connected and persisted for signed-in customers, but the screen still contains preview-style fallback behavior when order context is missing.
 
 ## Common edit mistakes
 

@@ -64,6 +64,7 @@ class CustomerOrderCreateLineItem {
 class CustomerOrderCreateInput {
   const CustomerOrderCreateInput({
     required this.traceId,
+    required this.idempotencyKey,
     required this.storeId,
     required this.storeName,
     required this.customerPhone,
@@ -81,6 +82,7 @@ class CustomerOrderCreateInput {
   });
 
   final String traceId;
+  final String idempotencyKey;
   final String storeId;
   final String storeName;
   final String customerPhone;

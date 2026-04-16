@@ -4,7 +4,7 @@ Status: Active
 Authority: Operational
 Surface: merchant-console
 Domains: auth, session, onboarding, access-boundary
-Last updated: 2026-03-17
+Last updated: 2026-04-15
 Retrieve when:
 - changing merchant login, onboarding, or sign-out behavior
 - debugging merchant auth redirects or unexpected session loss
@@ -53,10 +53,10 @@ Identify where merchant auth and onboarding access truth actually lives today.
 
 ## What Is Still Shallow, Partial, Fixture-Backed, or Local-Only
 
-- Auth is demo-safe only. There is no real credential verification.
-- Merchant identity is hardcoded in `signInMerchantAction`.
-- Onboarding completion is only a cookie flag, not a verified business workflow.
-- Session continuity is browser-cookie based only. Actor attribution is now written into the cookie, but there is still no backend session authority in this surface.
+- Auth remains demo-safe for sign-in credential flow.
+- Merchant identity is still seeded by `signInMerchantAction`.
+- Onboarding completion is still represented by a cookie flag, not a verified business workflow.
+- Session continuity now supports a Supabase authority branch in `merchant-session.ts`, even though cookie/session orchestration is still the dominant route-level owner.
 
 ## Known Risks
 

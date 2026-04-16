@@ -47,6 +47,17 @@ export function MerchantOrdersScreen({
   );
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionPending, setActionPending] = useState(false);
+  const [pendingStatusMutation, setPendingStatusMutation] = useState<{
+    orderId: string;
+    status:
+      | "confirmed"
+      | "preparing"
+      | "ready"
+      | "in_transit"
+      | "delivered"
+      | "cancelled";
+    key: string;
+  } | null>(null);
   const [hasMore, setHasMore] = useState(initialHasMore);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
@@ -75,14 +86,27 @@ export function MerchantOrdersScreen({
     if (!selectedOrder) {
       return;
     }
+    const idempotencyKey =
+      pendingStatusMutation &&
+      pendingStatusMutation.orderId === selectedOrder.id &&
+      pendingStatusMutation.status === nextStatus
+        ? pendingStatusMutation.key
+        : crypto.randomUUID();
+
     setActionError(null);
     setActionPending(true);
+    setPendingStatusMutation({
+      orderId: selectedOrder.id,
+      status: nextStatus,
+      key: idempotencyKey,
+    });
 
     startTransition(async () => {
       const result = await updateMerchantOrderStatusAction({
         storeId,
         orderId: selectedOrder.id,
         status: nextStatus,
+        idempotencyKey,
       });
 
       if (!result.ok) {
@@ -98,6 +122,7 @@ export function MerchantOrdersScreen({
         ),
       );
       setSelectedOrderId(result.order.id);
+      setPendingStatusMutation(null);
       setActionPending(false);
     });
   }
@@ -414,10 +439,12 @@ export function MerchantOrdersScreen({
             ) : selectedOrder.status === "confirmed" ? (
               <div className="order-detail-footer">
                 <button className="btn btn-primary" onClick={() => handleOrderStatusUpdate("preparing")} disabled={actionPending}>Start Preparing</button>
+                <button className="btn btn-danger" onClick={() => handleOrderStatusUpdate("cancelled")} disabled={actionPending}>Cancel Order</button>
               </div>
             ) : selectedOrder.status === "preparing" ? (
               <div className="order-detail-footer">
                 <button className="btn btn-primary" onClick={() => handleOrderStatusUpdate("ready")} disabled={actionPending}>Mark Ready</button>
+                <button className="btn btn-danger" onClick={() => handleOrderStatusUpdate("cancelled")} disabled={actionPending}>Cancel Order</button>
               </div>
             ) : selectedOrder.status === "ready" ? (
               <div className="order-detail-footer">

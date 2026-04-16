@@ -4,15 +4,14 @@ Status: Active
 Authority: Operational
 Surface: merchant-console
 Domains: settings, merchant-preferences, account-controls
-Last updated: 2026-03-17
+Last updated: 2026-04-15
 Retrieve when:
 - editing the merchant settings route
 - checking whether a settings change is local UI only or store-scoped read data
 Related files:
 - merchant-console/src/app/(console)/[storeId]/settings/page.tsx
 - merchant-console/src/features/settings/presentation/settings-screen.tsx
-- merchant-console/src/shared/data/merchant-query-services.ts
-- merchant-console/src/shared/data/merchant-repository.ts
+- merchant-console/src/shared/data/merchant-settings-runtime-service.ts
 
 ## Purpose
 
@@ -26,17 +25,16 @@ Owns the store-scoped settings route and its account, notification, and preferen
 ## Source of Truth
 
 - Route store scope comes from `merchant-console/src/app/(console)/[storeId]/settings/page.tsx`
-- Read-path truth for store context flows through `merchant-console/src/shared/data/merchant-query-services.ts`
+- Read and write runtime truth for settings flows through `merchant-console/src/shared/data/merchant-settings-runtime-service.ts`
 - Most toggle and form behavior stays local to `settings-screen.tsx`
 
-This route is store-scoped, but most settings controls are local/demo-safe UI state.
+This route is store-scoped. Runtime settings data is persisted, while some individual screen interactions still remain local UI state.
 
 ## Key Files to Read First
 
 - `merchant-console/src/app/(console)/[storeId]/settings/page.tsx`
 - `merchant-console/src/features/settings/presentation/settings-screen.tsx`
-- `merchant-console/src/shared/data/merchant-query-services.ts`
-- `merchant-console/src/shared/data/merchant-repository.ts`
+- `merchant-console/src/shared/data/merchant-settings-runtime-service.ts`
 
 ## Related Shared and Domain Files
 
@@ -51,15 +49,15 @@ This route is store-scoped, but most settings controls are local/demo-safe UI st
 
 ## Known Limitations
 
-- Settings controls are mostly local UI state only.
-- There is no live merchant account settings backend.
-- Store context is real, but preference persistence is not.
+- Settings data is persisted through the runtime service.
+- Some toggle and form behavior is still local UI state layered over that persisted record.
+- There is still no broad merchant account platform backend beyond the scoped settings runtime path.
 
 ## Safe Modification Guidance
 
 - Start at the route page to confirm storeId handoff.
 - Change settings composition and local control behavior in `settings-screen.tsx`.
-- Change store read context in query/repository files only if the route needs different store-backed data.
+- Change store read or write behavior in `merchant-settings-runtime-service.ts` if the route needs different persisted data.
 
 ## What Not to Change Casually
 

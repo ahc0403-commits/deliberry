@@ -51,6 +51,10 @@ deliberry/
 | `public-website` | Landing, service intro, merchant onboarding info, support/FAQ, privacy, terms, refund policy, app download | Any authenticated flows, any console behavior |
 | `shared` | Types, constants, models, contracts, validation schemas, pure utilities, architecture docs | UI, routing, session state, permission runtime, feature orchestration, business logic |
 
+Exception note:
+
+- the temporary exception at `docs/governance/exceptions/2026-04-15-R-001-R-073-public-auth-exchange.md` allows only the narrow stateless customer Zalo auth exchange route in `public-website`
+
 ---
 
 ## 3. Surface-Local Adapter Pattern

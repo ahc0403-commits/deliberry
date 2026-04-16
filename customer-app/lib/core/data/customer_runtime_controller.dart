@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -160,6 +161,8 @@ class CustomerRuntimeController extends ChangeNotifier {
       <String, List<MockMenuItem>>{};
   CustomerRuntimeGateway _gateway = const SupabaseCustomerRuntimeGateway();
   final Set<String> _externalSalesSyncKeys = <String>{};
+  String? _pendingOrderIdempotencyKey;
+  String? _pendingOrderIdempotencyFingerprint;
   bool _isHydratingPersistedRuntime = false;
   bool _isPersistingAddress = false;
   bool _persistedRuntimeLoaded = false;
@@ -200,6 +203,8 @@ class CustomerRuntimeController extends ChangeNotifier {
     _menuItemsByStore = <String, List<MockMenuItem>>{};
     _promoCode = null;
     _promoDiscount = 0;
+    _pendingOrderIdempotencyKey = null;
+    _pendingOrderIdempotencyFingerprint = null;
     _nextAddressId = 100;
     _isHydratingPersistedRuntime = false;
     _isPersistingAddress = false;
@@ -570,11 +575,22 @@ class CustomerRuntimeController extends ChangeNotifier {
       2 => 'digital_wallet',
       _ => 'card',
     };
+    final idempotencyFingerprint = _buildOrderIdempotencyFingerprint(
+      storeId: store.id,
+      paymentMethod: paymentMethod,
+      deliveryAddress:
+          '${address.street}${address.detail.isEmpty ? '' : ', ${address.detail}'}',
+      instructions: instructions,
+      promoCode: _promoCode,
+      lineItems: _cartItems,
+    );
+    final idempotencyKey = _nextOrderIdempotencyKey(idempotencyFingerprint);
     PersistedCustomerOrder? created;
     try {
       created = await _gateway.createOrder(
         CustomerOrderCreateInput(
           traceId: 'cust-${now.microsecondsSinceEpoch}',
+          idempotencyKey: idempotencyKey,
           storeId: store.id,
           storeName: store.name,
           customerPhone: CustomerSessionController.instance.phoneNumber ??
@@ -620,6 +636,7 @@ class CustomerRuntimeController extends ChangeNotifier {
     _cartItems = [];
     _promoCode = null;
     _promoDiscount = 0;
+    _clearPendingOrderIdempotency();
     _lastRuntimeBlocker = null;
     await refreshPersistedRuntime();
     notifyListeners();
@@ -628,6 +645,17 @@ class CustomerRuntimeController extends ChangeNotifier {
 
   String _mapOrderCreateErrorToBlocker(Object error) {
     final message = error.toString().toLowerCase();
+    if (message.contains('idempotent mutation is already in progress')) {
+      return 'persisted_order_submit_in_progress';
+    }
+    if (message.contains(
+        'idempotency key was already used for a different order request')) {
+      return 'persisted_order_request_changed';
+    }
+    if (message.contains('idempotency key is required') ||
+        message.contains('idempotency key must be a valid uuid')) {
+      return 'persisted_order_request_invalid';
+    }
     if (message.contains('authenticated session is required')) {
       return 'authenticated_customer_session_required';
     }
@@ -642,6 +670,59 @@ class CustomerRuntimeController extends ChangeNotifier {
       return 'store_menu_unavailable';
     }
     return 'persisted_order_create_failed';
+  }
+
+  String _buildOrderIdempotencyFingerprint({
+    required String storeId,
+    required String paymentMethod,
+    required String deliveryAddress,
+    required String instructions,
+    required String? promoCode,
+    required List<MockCartItem> lineItems,
+  }) {
+    final itemFingerprint = lineItems
+        .map(
+          (item) =>
+              '${item.menuItem.id}:${item.quantity}:${item.modifiers.join('|')}',
+        )
+        .join(';');
+    return [
+      storeId,
+      paymentMethod,
+      deliveryAddress.trim(),
+      instructions.trim(),
+      promoCode ?? '',
+      itemFingerprint,
+    ].join('::');
+  }
+
+  String _nextOrderIdempotencyKey(String fingerprint) {
+    if (_pendingOrderIdempotencyKey != null &&
+        _pendingOrderIdempotencyFingerprint == fingerprint) {
+      return _pendingOrderIdempotencyKey!;
+    }
+    final nextKey = _generateUuidV4();
+    _pendingOrderIdempotencyKey = nextKey;
+    _pendingOrderIdempotencyFingerprint = fingerprint;
+    return nextKey;
+  }
+
+  void _clearPendingOrderIdempotency() {
+    _pendingOrderIdempotencyKey = null;
+    _pendingOrderIdempotencyFingerprint = null;
+  }
+
+  static String _generateUuidV4() {
+    final random = Random.secure();
+    final bytes = List<int>.generate(16, (_) => random.nextInt(256));
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    String hex(int value) => value.toRadixString(16).padLeft(2, '0');
+    return '${hex(bytes[0])}${hex(bytes[1])}${hex(bytes[2])}${hex(bytes[3])}-'
+        '${hex(bytes[4])}${hex(bytes[5])}-'
+        '${hex(bytes[6])}${hex(bytes[7])}-'
+        '${hex(bytes[8])}${hex(bytes[9])}-'
+        '${hex(bytes[10])}${hex(bytes[11])}${hex(bytes[12])}${hex(bytes[13])}${hex(bytes[14])}${hex(bytes[15])}';
   }
 
   bool reorder(String orderId) {

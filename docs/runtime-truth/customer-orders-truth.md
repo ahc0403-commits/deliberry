@@ -4,8 +4,8 @@ Status: active
 Authority: operational
 Surface: customer-app
 Domains: orders, order-records, reorder, status
-Last updated: 2026-03-28
-Last verified: 2026-03-28
+Last updated: 2026-04-16
+Last verified: 2026-04-16
 Retrieve when:
 - changing order creation, lookup, detail rendering, or reorder behavior
 - debugging order-id continuity across list, detail, status, and reviews
@@ -58,7 +58,7 @@ Document where order truth lives after checkout and how list/detail/status scree
 - Order creation and order reads are persisted for authenticated customers.
 - Order status progression is not live and not event-driven.
 - Order records are still normalized into screen-facing view models inside `CustomerRuntimeController`.
-- Reviews read order identity coherently, but review save is still local preview behavior only.
+- Reviews read order identity coherently and persist through the Supabase-backed runtime path when valid order-linked context is present.
 - `/reviews` now expects a valid order-linked context; without one, the screen degrades to an honest preview state and sends the user back to `/orders`.
 
 ## Known risks
@@ -75,6 +75,7 @@ Document where order truth lives after checkout and how list/detail/status scree
   - detail/status route reads
   - reorder into cart
   - reviews entry from order detail
+- Preserve the persisted review submission path through `submitOrderReview` and the gateway RPC owner.
 - Preserve one `orderId` path across router and screen constructors.
 
 ## Related filemaps

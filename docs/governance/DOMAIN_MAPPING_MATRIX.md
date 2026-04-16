@@ -8,8 +8,8 @@ Status: active
 Authority: advisory (supporting artifact)
 Surface: cross-surface
 Domains: domain-mapping, status, ownership, flow
-Last updated: 2026-03-14
-Last verified: 2026-03-16
+Last updated: 2026-04-15
+Last verified: 2026-04-15
 Retrieve when:
 - mapping one business domain across surfaces, contracts, and governance rules
 - checking domain-specific placement, flow, and risk in one place
@@ -34,8 +34,8 @@ Related files:
 | **Date Handling** | Required timestamps: `created_at`, `updated_at`, `confirmed_at`, `preparing_at`, `ready_at`, `picked_up_at`, `delivered_at`, `cancelled_at`, `disputed_at`, `scheduled_at`. All UTC. |
 | **Constitution Risks** | R-030 (no delete), R-040–043 (status enum compliance), R-050–053 (UTC timestamps), R-060 (audit trail). |
 | **Decay Risks** | #1 Status Enum Pollution (ACTIVE), #3 Local Time Persistence (AT RISK), #10 Audit Trail Absence (ACTIVE). |
-| **Current Status** | PLACEHOLDER_UI — Route structure and mock data exist. No real backend. |
-| **Required Changes** | Add `draft`, `in_transit`, `disputed` to canonical enum. Rename `ready_for_delivery` → `ready`. Align merchant/admin mock data. Add order state machine validation. |
+| **Current Status** | PARTIAL_RUNTIME — Customer order creation persists through Supabase RPC, merchant order-status updates persist with audit, and admin plus merchant order views read from live runtime repositories. Rider assignment, settlement linkage, and broader order-domain coverage remain incomplete. |
+| **Required Changes** | Keep idempotency enforced for governed order mutations. Extend live order-domain coverage only through approved surfaces and audited mutation paths. |
 
 ---
 
@@ -88,14 +88,14 @@ Related files:
 
 | Dimension | Details |
 |---|---|
-| **Identity Map** | Actors: `platform_admin`, `operations_admin`, `finance_admin`, `marketing_admin`, `support_admin`. Entities: `User` (admin), `FeatureFlag`, `AuditLog`. |
+| **Identity Map** | Actors: `admin` with role in `platform_admin | operations_admin | finance_admin | marketing_admin | support_admin`. Entities: `User` (admin), `FeatureFlag`, `AuditLog`. |
 | **Structure Placement** | Admin surface: `admin-console/src/`. Permission roles: `shared/constants/domain.constants.ts` (PERMISSION_ROLES). Auth: `admin-console/src/shared/services/`. |
 | **Core Flow** | Admin login → role-based dashboard → domain-specific management. No state machine (CRUD operations). |
 | **Date Handling** | Standard `created_at`, `updated_at` on all admin entities. Audit logs: `timestamp_utc`. |
 | **Constitution Risks** | R-021 (server-side RBAC), R-022 (role enumeration), R-060–062 (audit trail), R-071 (feature flag governance). |
 | **Decay Risks** | #6 Permission Bypass (AT RISK), #10 Audit Trail Absence (ACTIVE). |
-| **Current Status** | PLACEHOLDER_UI — Admin shell, routes, and mock data exist. No real auth/RBAC. |
-| **Required Changes** | Implement server-side role enforcement. Build audit log infrastructure. Document feature flag governance. |
+| **Current Status** | PARTIAL_RUNTIME — Admin shell and persisted runtime reads exist, audit visibility exists in system-management, and canonical runtime identity is `actor_type = admin` plus role. Full live auth and server-side RBAC coverage remain incomplete. |
+| **Required Changes** | Continue server-side role enforcement hardening, expand audited governed mutations, and keep feature flag governance documented. |
 
 ---
 
@@ -134,10 +134,10 @@ Related files:
 | Dimension | Details |
 |---|---|
 | **Identity Map** | Actors: `customer` (creates tickets), `merchant_owner`/`merchant_staff` (creates tickets), `support_admin` (manages), `operations_admin` (escalates). Entities: `SupportTicket`, `Dispute`. |
-| **Structure Placement** | Admin: `admin-console/src/features/customer-service/`, `admin-console/src/features/disputes/`. Customer: `customer-app/lib/features/orders/` (dispute initiation). Public: `public-website/src/app/(public)/support/`. |
+| **Structure Placement** | Admin: `admin-console/src/features/customer-service/`, `admin-console/src/features/disputes/`. Customer: `customer-app/lib/features/orders/` (dispute initiation). Public: `public-website/src/app/(marketing)/support/`. |
 | **Core Flow** | Tickets: `open → in_progress → awaiting_reply → resolved → closed`. Disputes: `open → investigating → resolved` or `open → escalated → resolved`. See FLOW.md Sections 4–5. |
 | **Date Handling** | `created_at`, `updated_at`, `resolved_at`, `closed_at`, `escalated_at`. All UTC. |
 | **Constitution Risks** | R-020 (actor attribution on all ticket actions), R-060 (audit trail for dispute resolution). |
 | **Decay Risks** | #10 Audit Trail Absence (ACTIVE — dispute resolution has no audit trail). |
-| **Current Status** | PLACEHOLDER_UI — Support and dispute routes exist. No real ticketing. |
-| **Required Changes** | Define support ticket contract. Implement dispute-to-refund flow linkage. Build audit trail for dispute resolution. |
+| **Current Status** | PARTIAL_RUNTIME — Support and dispute-facing routes exist, admin disputes read through live runtime data, and order records can carry dispute-oriented status. Dedicated support-ticket workflow, refund linkage, and full dispute-mutation audit coverage remain incomplete. |
+| **Required Changes** | Define support-ticket contract, implement dispute-to-refund linkage, and expand audited dispute-resolution mutation coverage. |

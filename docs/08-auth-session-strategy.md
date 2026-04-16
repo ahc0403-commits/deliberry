@@ -12,6 +12,7 @@ Retrieve when:
 Related files:
 - docs/02-surface-ownership.md
 - docs/03-navigation-ia.md
+- docs/governance/exceptions/2026-04-15-R-001-R-073-public-auth-exchange.md
 - customer-app/lib/core/session/customer_session_controller.dart
 - merchant-console/src/shared/auth/merchant-session.ts
 - admin-console/src/shared/auth/admin-session.ts
@@ -234,6 +235,8 @@ This means the callback chain is:
 - no authenticated merchant/admin/customer console behavior belongs there
 - merchant onboarding and inquiry remain public entry only
 - `public-website` hosts the customer Zalo auth exchange endpoint at `/customer-zalo-auth-exchange` (GET redirect + POST token exchange) — this is a stateless API route, not authenticated console behavior
+- this route is currently governed by the temporary exception record at `docs/governance/exceptions/2026-04-15-R-001-R-073-public-auth-exchange.md`
+- this exception does not authorize any broader authenticated customer surface ownership inside `public-website`
 
 ## Shared Boundary Rule
 
