@@ -2534,6 +2534,15 @@ img {
   .grid-2 {
     grid-template-columns: 1fr;
   }
+
+  .merchant-data-table th {
+    white-space: normal;
+  }
+
+  .merchant-data-table th,
+  .merchant-data-table td {
+    padding-inline: var(--space-3);
+  }
 }
 
 @media (max-width: 768px) {
