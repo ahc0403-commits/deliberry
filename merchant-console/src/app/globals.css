@@ -635,6 +635,7 @@ img {
   flex: 1;
   display: flex;
   min-height: 0;
+  min-width: 0;
 }
 
 /* ============================================================
@@ -645,6 +646,7 @@ img {
   display: flex;
   flex: 1;
   min-height: 0;
+  min-width: 0;
 }
 
 .store-sidebar {
@@ -654,6 +656,7 @@ img {
   display: flex;
   flex-direction: column;
   min-height: calc(100vh - var(--header-height));
+  min-width: 0;
   position: sticky;
   top: var(--header-height);
   overflow-y: auto;
@@ -758,6 +761,7 @@ img {
   overflow-y: auto;
   background: var(--color-surface-alt);
   min-height: calc(100vh - var(--header-height));
+  min-width: 0;
 }
 
 .merchant-surface {
@@ -2592,12 +2596,14 @@ img {
 
   .store-layout {
     flex-direction: column;
+    width: 100%;
   }
 
   .store-sidebar {
     width: 100%;
     min-height: auto;
     position: static;
+    overflow-x: hidden;
   }
 
   .store-nav {
@@ -2611,6 +2617,7 @@ img {
   }
 
   .store-main {
+    width: 100%;
     padding: var(--space-4);
     min-height: auto;
   }
