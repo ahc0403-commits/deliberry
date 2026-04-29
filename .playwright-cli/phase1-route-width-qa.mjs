@@ -160,7 +160,11 @@ async function enableFlutterSemantics(page) {
 
 async function assertNoGenericError(page, label) {
   const text = await page.locator("body").innerText({ timeout: 5000 }).catch(() => "");
-  assert(!/application error|something went wrong|internal server error|404|not found/i.test(text), label);
+  assert(
+    !/application error|something went wrong|internal server error|404|not found/i.test(text),
+    label,
+    text.slice(0, 1200),
+  );
 }
 
 async function assertNoHorizontalOverflow(page, label) {
@@ -299,9 +303,9 @@ async function runPublic(browser, viewport) {
   for (const route of ["/", "/download"]) {
     await page.goto(`${targets.public.baseUrl}${route}`, { waitUntil: "domcontentloaded" });
     await waitForSettled(page);
+    await screenshot(page, `public-${route === "/" ? "landing" : "download"}-${viewport.label}`);
     await assertNoGenericError(page, `public ${route} renders without generic error on ${viewport.label}`);
     await assertNoHorizontalOverflow(page, `public ${route} viewport fits on ${viewport.label}`);
-    await screenshot(page, `public-${route === "/" ? "landing" : "download"}-${viewport.label}`);
   }
 
   await context.close();
@@ -340,9 +344,9 @@ async function runCustomer(browser, viewport, sessionJson) {
   await page.goto(`${targets.customer.baseUrl}/#/store/menu`, { waitUntil: "domcontentloaded" });
   await waitForSettled(page);
   await page.waitForTimeout(2200);
+  await screenshot(page, `customer-store-menu-${viewport.label}`);
   await assertNoGenericError(page, `customer store menu renders without generic error on ${viewport.label}`);
   await assertNoHorizontalOverflow(page, `customer store menu viewport fits on ${viewport.label}`);
-  await screenshot(page, `customer-store-menu-${viewport.label}`);
 
   if (sessionJson) {
     const authContext = await browser.newContext({
@@ -358,9 +362,9 @@ async function runCustomer(browser, viewport, sessionJson) {
     await waitForSettled(authPage);
     await authPage.waitForTimeout(2200);
     await enableFlutterSemantics(authPage);
+    await screenshot(authPage, `customer-orders-${viewport.label}`);
     await assertNoGenericError(authPage, `customer orders renders without generic error on ${viewport.label}`);
     await assertNoHorizontalOverflow(authPage, `customer orders viewport fits on ${viewport.label}`);
-    await screenshot(authPage, `customer-orders-${viewport.label}`);
     await authContext.close();
   } else {
     note(`customer authenticated width QA skipped on ${viewport.label} because fixture credentials are absent`);
@@ -382,9 +386,9 @@ async function runMerchant(browser, viewport) {
   for (const route of ["/demo-store/dashboard", "/demo-store/orders"]) {
     await page.goto(`${targets.merchant.baseUrl}${route}`, { waitUntil: "domcontentloaded" });
     await waitForSettled(page);
+    await screenshot(page, `merchant-${route.split("/").pop()}-${viewport.label}`);
     await assertNoGenericError(page, `merchant ${route} renders without generic error on ${viewport.label}`);
     await assertNoHorizontalOverflow(page, `merchant ${route} viewport fits on ${viewport.label}`);
-    await screenshot(page, `merchant-${route.split("/").pop()}-${viewport.label}`);
   }
 
   await context.close();
@@ -403,9 +407,9 @@ async function runAdmin(browser, viewport) {
   for (const route of ["/dashboard", "/orders"]) {
     await page.goto(`${targets.admin.baseUrl}${route}`, { waitUntil: "domcontentloaded" });
     await waitForSettled(page);
+    await screenshot(page, `admin-${route.replace("/", "")}-${viewport.label}`);
     await assertNoGenericError(page, `admin ${route} renders without generic error on ${viewport.label}`);
     await assertNoHorizontalOverflow(page, `admin ${route} viewport fits on ${viewport.label}`);
-    await screenshot(page, `admin-${route.replace("/", "")}-${viewport.label}`);
   }
 
   await context.close();
