@@ -523,11 +523,11 @@ async function runCustomer(browser) {
   );
   assert((await page.getByText(/Cash|Pay on delivery/i).count()) > 0, "customer deployed checkout route exposes the cash payment option");
   assert(
-    (await page.getByText(/VNPAY Card Test|Card .*Placeholder only/i).count()) > 0,
+    (await page.getByRole("button", { name: /VNPAY Card Test|Card .*Placeholder only/i }).count()) > 0,
     "customer deployed checkout route exposes the card payment placeholder",
   );
   assert(
-    (await page.getByText(/VNPAY Pay Test|Digital Wallet .*Placeholder only/i).count()) > 0,
+    (await page.getByRole("button", { name: /VNPAY Pay Test|Digital Wallet .*Placeholder only/i }).count()) > 0,
     "customer deployed checkout route exposes the wallet payment placeholder",
   );
   assert((await page.getByText(/Order Summary/i).count()) > 0, "customer deployed checkout route exposes the order summary section");
