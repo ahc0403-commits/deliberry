@@ -2567,6 +2567,38 @@ img {
 }
 
 @media (max-width: 900px) {
+  .console-header {
+    height: auto;
+  }
+
+  .console-header-inner {
+    padding: var(--space-3);
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: center;
+  }
+
+  .console-brand {
+    font-size: var(--text-base);
+  }
+
+  .console-header-center {
+    order: 3;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .console-header-actions {
+    margin-left: auto;
+  }
+
+  .console-store-badge {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+
   .store-layout {
     flex-direction: column;
     width: 100%;
