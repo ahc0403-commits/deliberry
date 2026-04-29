@@ -42,6 +42,8 @@ The customer-app production alias now points at deployment `deliberry-customer-d
 
 On 2026-04-29, the customer menu-route smoke assertion was updated to accept the currently deployed section label `Browse by section` in addition to the older `Menu categories` copy. This keeps the deployed browser gate aligned with the live customer UI while preserving the same read-only category-browsing intent.
 
+On 2026-04-29, the cart and checkout smoke assertions were also widened to accept the currently deployed CTA and placeholder labels (`Checkout`, `Card ... Placeholder only`, `Digital Wallet Placeholder only`) in addition to the earlier more specific copy. This keeps the deployed release gate focused on governed checkout structure rather than transient display copy.
+
 ## Test Coverage
 
 The deployed script covers:
