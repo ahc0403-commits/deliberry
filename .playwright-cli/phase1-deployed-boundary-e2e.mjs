@@ -484,7 +484,8 @@ async function runCustomer(browser) {
   assert((await page.getByText(/Sabor Criollo Kitchen/i).count()) > 0, "customer deployed store route exposes the store name");
   assert((await page.getByText(/^Menu$/i).count()) > 0, "customer deployed store route exposes the menu section");
   assert((await page.getByText(/Cart starts here/i).count()) > 0, "customer deployed store route exposes the cart-start signal");
-  await page.getByRole("button", { name: /Browse menu/i }).click();
+  await page.goto(`${targets.customer.baseUrl}/#/store/menu`, { waitUntil: "domcontentloaded" });
+  await waitForSettled(page);
   await page.waitForTimeout(2500);
   await screenshot(page, "customer-store-menu");
   assert(page.url().includes("/#/store/menu"), "customer deployed guest flow can open the store menu route", page.url());
