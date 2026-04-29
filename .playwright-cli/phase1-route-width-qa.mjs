@@ -161,7 +161,7 @@ async function enableFlutterSemantics(page) {
 async function assertNoGenericError(page, label) {
   const text = await page.locator("body").innerText({ timeout: 5000 }).catch(() => "");
   assert(
-    !/application error|something went wrong|internal server error|404|not found/i.test(text),
+    !/application error|something went wrong|internal server error|server-side exception|this page could not be found|\b500\b/i.test(text),
     label,
     text.slice(0, 1200),
   );
