@@ -193,6 +193,7 @@ Current result:
 - A production customer-auth closure blocker was confirmed on 2026-04-29: the linked project still reports `phone=false`, email sign-up is rate-limited, and direct password grant against the seeded customer email accounts returns `500 unexpected_failure: Database error querying schema`.
 - The deployed browser gate is now green on `main` through GitHub Actions run `25097914890`, which closes the full non-skip deployed boundary suite across public, customer, merchant, and admin surfaces.
 - The deployed gate workflow now uses the Node 24-capable GitHub Actions majors directly and explicitly carries the governed customer fixture credentials through repo secrets.
+- Rollback candidate inventory and official Vercel rollback command paths are now recorded in `docs/operations/rollback-drill-prep-2026-04-29.md`, but Gate 6 rollback-drill evidence remains open until a real governed drill is executed and logged.
 
 ## Phase 2 — Auth And Session Production Hardening
 
@@ -563,4 +564,4 @@ Execution progress:
 - Local role-boundary negative testing is complete.
 - Local real-auth API E2E testing is complete.
 - Deployed public-website route smoke and deployed admin anonymous guard smoke are complete.
-- The next executable slice is keeping the green deployed boundary baseline current while trimming the remaining workflow maintenance noise, especially artifact retention and future smoke-runtime split decisions.
+- The next executable slice is executing and recording a governed rollback drill, then closing the remaining release-readiness evidence gaps around device QA and rollback proof.
