@@ -1,12 +1,16 @@
 import { chromium } from "playwright";
 import { mkdirSync } from "node:fs";
-import { join } from "node:path";
+import { isAbsolute, join, resolve } from "node:path";
+
+const configuredOutputRoot = process.env.PLAYWRIGHT_OUTPUT_ROOT?.trim();
+const outputRoot = configuredOutputRoot
+  ? (isAbsolute(configuredOutputRoot)
+      ? configuredOutputRoot
+      : resolve(process.cwd(), configuredOutputRoot))
+  : join(process.cwd(), "..", "output", "playwright");
 
 const outputDir = join(
-  process.cwd(),
-  "..",
-  "output",
-  "playwright",
+  outputRoot,
   `phase1-route-width-${new Date().toISOString().replace(/[:.]/g, "-")}`,
 );
 
@@ -161,13 +165,18 @@ async function assertNoGenericError(page, label) {
 
 async function assertNoHorizontalOverflow(page, label) {
   const metrics = await page.evaluate(() => ({
-    scrollWidth: document.documentElement.scrollWidth,
+    documentScrollWidth: document.documentElement.scrollWidth,
+    scrollingElementScrollWidth:
+      document.scrollingElement?.scrollWidth ?? document.documentElement.scrollWidth,
     innerWidth: window.innerWidth,
-    bodyScrollWidth: document.body ? document.body.scrollWidth : 0,
+    clientWidth: document.documentElement.clientWidth,
   }));
 
-  const effectiveWidth = Math.max(metrics.innerWidth, 1);
-  const maxWidth = Math.max(metrics.scrollWidth, metrics.bodyScrollWidth);
+  const effectiveWidth = Math.max(metrics.innerWidth, metrics.clientWidth, 1);
+  const maxWidth = Math.max(
+    metrics.documentScrollWidth,
+    metrics.scrollingElementScrollWidth,
+  );
   assert(
     maxWidth <= effectiveWidth + 2,
     `${label} has no horizontal overflow`,
