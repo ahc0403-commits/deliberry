@@ -240,10 +240,30 @@ async function loginMerchant(page) {
   await page.fill("#email", credentials.merchantEmail);
   await page.fill("#password", credentials.merchantPassword);
   await Promise.all([
-    page.waitForURL(/\/demo-store\/dashboard|\/demo-store\/orders/, { timeout: 20000 }),
-    page.getByRole("button", { name: /Sign in to Merchant Console/i }).click(),
+    page.waitForURL(/\/onboarding|\/select-store|\/demo-store\/dashboard|\/demo-store\/orders/, {
+      timeout: 20000,
+    }),
+    page.getByRole("button", { name: /^Sign in$/i }).click(),
   ]);
   await waitForSettled(page);
+
+  if (page.url().includes("/onboarding")) {
+    await Promise.all([
+      page.waitForURL(/\/select-store|\/demo-store\/dashboard|\/demo-store\/orders/, {
+        timeout: 20000,
+      }),
+      page.getByRole("button", { name: /Continue to store selection/i }).click(),
+    ]);
+    await waitForSettled(page);
+  }
+
+  if (page.url().includes("/select-store")) {
+    await Promise.all([
+      page.waitForURL(/\/demo-store\/dashboard|\/demo-store\/orders/, { timeout: 20000 }),
+      page.getByRole("button", { name: /demo-store/i }).first().click(),
+    ]);
+    await waitForSettled(page);
+  }
 }
 
 async function loginAdmin(page) {
