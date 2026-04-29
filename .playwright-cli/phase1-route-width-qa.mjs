@@ -168,13 +168,40 @@ async function assertNoGenericError(page, label) {
 }
 
 async function assertNoHorizontalOverflow(page, label) {
-  const metrics = await page.evaluate(() => ({
-    documentScrollWidth: document.documentElement.scrollWidth,
-    scrollingElementScrollWidth:
-      document.scrollingElement?.scrollWidth ?? document.documentElement.scrollWidth,
-    innerWidth: window.innerWidth,
-    clientWidth: document.documentElement.clientWidth,
-  }));
+  const metrics = await page.evaluate(() => {
+    const viewportWidth = window.innerWidth;
+    const offenders = [];
+
+    for (const el of Array.from(document.body.querySelectorAll("*"))) {
+      const rect = el.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) {
+        continue;
+      }
+      if (rect.right > viewportWidth + 2 || rect.left < -2) {
+        offenders.push({
+          tag: el.tagName,
+          className: typeof el.className === "string" ? el.className : "",
+          text: (el.textContent ?? "").trim().replace(/\s+/g, " ").slice(0, 120),
+          left: Math.round(rect.left),
+          right: Math.round(rect.right),
+          width: Math.round(rect.width),
+          height: Math.round(rect.height),
+        });
+      }
+      if (offenders.length >= 12) {
+        break;
+      }
+    }
+
+    return {
+      documentScrollWidth: document.documentElement.scrollWidth,
+      scrollingElementScrollWidth:
+        document.scrollingElement?.scrollWidth ?? document.documentElement.scrollWidth,
+      innerWidth: viewportWidth,
+      clientWidth: document.documentElement.clientWidth,
+      offenders,
+    };
+  });
 
   const effectiveWidth = Math.max(metrics.innerWidth, metrics.clientWidth, 1);
   const maxWidth = Math.max(
