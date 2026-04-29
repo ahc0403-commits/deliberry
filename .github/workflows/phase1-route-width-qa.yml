@@ -43,6 +43,7 @@ jobs:
       MERCHANT_PASSWORD: ${{ secrets.MERCHANT_E2E_PASSWORD }}
       ADMIN_EMAIL: ${{ secrets.ADMIN_E2E_EMAIL }}
       ADMIN_PASSWORD: ${{ secrets.ADMIN_E2E_PASSWORD }}
+      PLAYWRIGHT_OUTPUT_ROOT: output/playwright
     steps:
       - name: Checkout
         uses: actions/checkout@v6

@@ -1,12 +1,16 @@
 import { chromium } from "playwright";
 import { mkdirSync } from "node:fs";
-import { join } from "node:path";
+import { isAbsolute, join, resolve } from "node:path";
+
+const configuredOutputRoot = process.env.PLAYWRIGHT_OUTPUT_ROOT?.trim();
+const outputRoot = configuredOutputRoot
+  ? (isAbsolute(configuredOutputRoot)
+      ? configuredOutputRoot
+      : resolve(process.cwd(), configuredOutputRoot))
+  : join(process.cwd(), "..", "output", "playwright");
 
 const outputDir = join(
-  process.cwd(),
-  "..",
-  "output",
-  "playwright",
+  outputRoot,
   `phase1-deployed-boundary-${new Date().toISOString().replace(/[:.]/g, "-")}`,
 );
 

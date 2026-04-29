@@ -51,6 +51,7 @@ jobs:
       MERCHANT_PASSWORD: ${{ secrets.MERCHANT_E2E_PASSWORD }}
       ADMIN_EMAIL: ${{ secrets.ADMIN_E2E_EMAIL }}
       ADMIN_PASSWORD: ${{ secrets.ADMIN_E2E_PASSWORD }}
+      PLAYWRIGHT_OUTPUT_ROOT: output/playwright
       ALLOW_DEPLOYMENT_PROTECTION_SKIP: ${{ inputs.allow_protection_skip == 'true' && '1' || '' }}
     steps:
       - name: Checkout
