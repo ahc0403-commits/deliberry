@@ -171,6 +171,29 @@ async function assertNoHorizontalOverflow(page, label) {
   const metrics = await page.evaluate(() => {
     const viewportWidth = window.innerWidth;
     const offenders = [];
+    const selectorMetrics = {};
+
+    const debugSelectors = [
+      ".console-layout",
+      ".console-header",
+      ".console-header-inner",
+      ".console-header-center",
+      ".console-store-badge",
+      ".console-body",
+      ".store-layout",
+      ".store-sidebar",
+      ".store-sidebar-header",
+      ".store-nav",
+      ".store-main",
+      ".merchant-surface",
+      ".merchant-hero",
+      ".merchant-summary-band",
+      ".merchant-cluster-card",
+      ".merchant-cluster-card-header",
+      ".merchant-tab-bar",
+      ".data-table-wrapper",
+      ".merchant-data-table",
+    ];
 
     for (const el of Array.from(document.body.querySelectorAll("*"))) {
       const rect = el.getBoundingClientRect();
@@ -193,13 +216,34 @@ async function assertNoHorizontalOverflow(page, label) {
       }
     }
 
+    for (const selector of debugSelectors) {
+      const el = document.querySelector(selector);
+      if (!el) {
+        continue;
+      }
+      const rect = el.getBoundingClientRect();
+      selectorMetrics[selector] = {
+        left: Math.round(rect.left),
+        right: Math.round(rect.right),
+        width: Math.round(rect.width),
+        height: Math.round(rect.height),
+        overflowX: window.getComputedStyle(el).overflowX,
+      };
+    }
+
     return {
       documentScrollWidth: document.documentElement.scrollWidth,
       scrollingElementScrollWidth:
         document.scrollingElement?.scrollWidth ?? document.documentElement.scrollWidth,
       innerWidth: viewportWidth,
       clientWidth: document.documentElement.clientWidth,
+      media: {
+        max900: window.matchMedia("(max-width: 900px)").matches,
+        max768: window.matchMedia("(max-width: 768px)").matches,
+      },
+      path: window.location.pathname,
       offenders,
+      selectorMetrics,
     };
   });
 
