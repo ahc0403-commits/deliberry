@@ -4,8 +4,8 @@ Status: active
 Authority: operational
 Surface: customer-app, merchant-console, admin-console, public-website
 Domains: deployed-smoke, browser-e2e, access-boundaries, release-gates
-Last updated: 2026-04-28
-Last verified: 2026-04-28
+Last updated: 2026-04-29
+Last verified: 2026-04-29
 
 ## Purpose
 
@@ -39,6 +39,8 @@ The latest non-skip deployed smoke test targeted the stable production aliases:
 - public-website: `https://go.deli-berry.com`
 
 The customer-app production alias now points at deployment `deliberry-customer-dv2klhiei-andres-projects-c63d3b09.vercel.app`, which includes the customer deep-link preservation fix from `customer-app/lib/app/app.dart`.
+
+The latest green GitHub Actions baseline is run `25096403811` on commit `ca4ce4b440b0401eea74b2b4a7f5026cdd9471d5`. That run closed the full non-skip deployed boundary suite across the public, customer, merchant, and admin production aliases.
 
 ## Test Coverage
 
@@ -83,9 +85,17 @@ If deployment URL secrets are absent, the harness falls back to the latest recor
 
 The workflow is intentionally `workflow_dispatch` only. It is not attached to pull requests because the deployed test uses protected deployment and optional login secrets.
 
+The workflow now sets `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true` at the job level so the JavaScript-based Actions steps execute on the Node 24 runtime path ahead of the GitHub-hosted Node 20 removal. The job env also carries the governed customer browser fixture credentials directly from `CUSTOMER_E2E_EMAIL` and `CUSTOMER_E2E_PASSWORD`.
+
 The exact input contract and release-gate rule for skip mode are recorded in `docs/operations/phase-1-deployed-browser-e2e-secret-checklist-2026-04-28.md`.
 
 ## Commands Run
+
+```text
+GitHub Actions run 25096403811
+```
+
+Result on 2026-04-29: passed end-to-end on `main` with non-skip deployed browser boundary coverage enabled for public, customer, merchant, and admin surfaces.
 
 ```bash
 node --check .playwright-cli/phase1-deployed-boundary-e2e.mjs

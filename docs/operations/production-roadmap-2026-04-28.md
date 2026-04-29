@@ -4,7 +4,7 @@ Status: active
 Authority: operational
 Surface: customer-app, merchant-console, admin-console, public-website, shared, supabase
 Domains: production-readiness, release-planning, payment-governance, operations
-Last updated: 2026-04-28
+Last updated: 2026-04-29
 
 ## Purpose
 
@@ -191,6 +191,8 @@ Current result:
 - The deployed browser harness now also supports customer password-grant auth fixtures through `CUSTOMER_E2E_EMAIL` and `CUSTOMER_E2E_PASSWORD`, reducing replay friction once a governed customer browser test user exists.
 - A governed deployed customer browser fixture has now been provisioned, and the deployed customer authenticated smoke passes for session restore, `/#/orders`, order status, and order detail.
 - A production customer-auth closure blocker was confirmed on 2026-04-29: the linked project still reports `phone=false`, email sign-up is rate-limited, and direct password grant against the seeded customer email accounts returns `500 unexpected_failure: Database error querying schema`.
+- The deployed browser gate is now green on `main` through GitHub Actions run `25096403811`, which closes the full non-skip deployed boundary suite across public, customer, merchant, and admin surfaces.
+- The deployed gate workflow now opts JavaScript-based GitHub Actions into the Node 24 runtime path and explicitly carries the governed customer fixture credentials through repo secrets.
 
 ## Phase 2 — Auth And Session Production Hardening
 
@@ -561,4 +563,4 @@ Execution progress:
 - Local role-boundary negative testing is complete.
 - Local real-auth API E2E testing is complete.
 - Deployed public-website route smoke and deployed admin anonymous guard smoke are complete.
-- The next executable slice is stabilizing the deployed customer guest Orders interaction check and then rerunning the full non-skip customer, merchant, and admin deployed browser suite.
+- The next executable slice is locking the green deployed boundary run into the formal release checklist and trimming remaining workflow maintenance noise beyond the now-resolved Node 24 warning path.

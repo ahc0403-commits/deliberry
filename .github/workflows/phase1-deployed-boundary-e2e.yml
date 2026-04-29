@@ -34,6 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
       CUSTOMER_URL: ${{ inputs.customer_url || secrets.CUSTOMER_URL }}
       MERCHANT_URL: ${{ inputs.merchant_url || secrets.MERCHANT_URL }}
       ADMIN_URL: ${{ inputs.admin_url || secrets.ADMIN_URL }}
@@ -43,6 +44,8 @@ jobs:
       MERCHANT_VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.MERCHANT_VERCEL_AUTOMATION_BYPASS_SECRET }}
       ADMIN_VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.ADMIN_VERCEL_AUTOMATION_BYPASS_SECRET }}
       PUBLIC_VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.PUBLIC_VERCEL_AUTOMATION_BYPASS_SECRET }}
+      CUSTOMER_EMAIL: ${{ secrets.CUSTOMER_E2E_EMAIL }}
+      CUSTOMER_PASSWORD: ${{ secrets.CUSTOMER_E2E_PASSWORD }}
       MERCHANT_EMAIL: ${{ secrets.MERCHANT_E2E_EMAIL }}
       MERCHANT_PASSWORD: ${{ secrets.MERCHANT_E2E_PASSWORD }}
       ADMIN_EMAIL: ${{ secrets.ADMIN_E2E_EMAIL }}
@@ -79,5 +82,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: phase1-deployed-boundary-e2e
-          path: ../output/playwright/**
+          path: output/playwright/**
           if-no-files-found: ignore
