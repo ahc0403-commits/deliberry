@@ -473,8 +473,10 @@ async function runCustomer(browser) {
   await browseAsGuest.click();
   await page.waitForTimeout(2500);
   await screenshot(page, "customer-guest-home");
-  assert((await page.getByText(/Start with a craving/i).count()) > 0, "customer deployed guest home exposes category browsing");
-  assert((await page.getByText(/Featured for tonight/i).count()) > 0, "customer deployed guest home exposes popular stores");
+  assert((await page.getByRole("button", { name: /Search stores or cuisines/i }).count()) > 0, "customer deployed guest home exposes category browsing");
+  const categoryButtons = page.getByRole("button", { name: /Pizza|Burgers|Sushi|Healthy|Desserts|Coffee|Mexican|Asian/i });
+  assert((await categoryButtons.count()) >= 4, "customer deployed guest home exposes category chips");
+  assert((await page.getByRole("button", { name: /Featured for tonight|See all/i }).count()) > 0, "customer deployed guest home exposes popular stores");
   const featuredStoreCard = page.getByRole("button", { name: /Sabor Criollo Kitchen/i }).first();
   assert((await featuredStoreCard.count()) > 0, "customer deployed guest home exposes a tappable store card");
   await featuredStoreCard.click();
