@@ -540,6 +540,7 @@ async function runCustomer(browser) {
   await screenshot(page, "customer-guest-orders-guard");
 
   const authVisible =
+    page.url().includes("/#/auth/login") ||
     (await page.getByText(/Welcome back/i).count()) > 0 ||
     (await page.getByText(/Continue with Zalo/i).count()) > 0 ||
     (await page.getByText(/Sign in/i).count()) > 0;
