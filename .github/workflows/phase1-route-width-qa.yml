@@ -1,0 +1,78 @@
+name: Phase 1 Route Width QA
+
+on:
+  workflow_dispatch:
+    inputs:
+      customer_url:
+        description: "Optional customer-app deployment URL."
+        required: false
+        type: string
+      merchant_url:
+        description: "Optional merchant-console deployment URL."
+        required: false
+        type: string
+      admin_url:
+        description: "Optional admin-console deployment URL."
+        required: false
+        type: string
+      public_url:
+        description: "Optional public-website deployment URL."
+        required: false
+        type: string
+
+jobs:
+  route-width-qa:
+    name: Route width QA
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    env:
+      CUSTOMER_URL: ${{ inputs.customer_url || secrets.CUSTOMER_URL }}
+      MERCHANT_URL: ${{ inputs.merchant_url || secrets.MERCHANT_URL }}
+      ADMIN_URL: ${{ inputs.admin_url || secrets.ADMIN_URL }}
+      PUBLIC_URL: ${{ inputs.public_url || secrets.PUBLIC_URL }}
+      VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+      CUSTOMER_VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.CUSTOMER_VERCEL_AUTOMATION_BYPASS_SECRET }}
+      MERCHANT_VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.MERCHANT_VERCEL_AUTOMATION_BYPASS_SECRET }}
+      ADMIN_VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.ADMIN_VERCEL_AUTOMATION_BYPASS_SECRET }}
+      PUBLIC_VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.PUBLIC_VERCEL_AUTOMATION_BYPASS_SECRET }}
+      CUSTOMER_EMAIL: ${{ secrets.CUSTOMER_E2E_EMAIL }}
+      CUSTOMER_PASSWORD: ${{ secrets.CUSTOMER_E2E_PASSWORD }}
+      MERCHANT_EMAIL: ${{ secrets.MERCHANT_E2E_EMAIL }}
+      MERCHANT_PASSWORD: ${{ secrets.MERCHANT_E2E_PASSWORD }}
+      ADMIN_EMAIL: ${{ secrets.ADMIN_E2E_EMAIL }}
+      ADMIN_PASSWORD: ${{ secrets.ADMIN_E2E_PASSWORD }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: .playwright-cli/package-lock.json
+
+      - name: Install Playwright harness dependencies
+        run: npm --prefix .playwright-cli ci
+
+      - name: Install Chromium browser
+        run: npx --prefix .playwright-cli playwright install --with-deps chromium
+
+      - name: Check route-width QA script syntax
+        run: node --check .playwright-cli/phase1-route-width-qa.mjs
+
+      - name: Check route-width QA environment
+        run: scripts/check-phase1-deployed-boundary-env.sh
+
+      - name: Run route-width QA
+        run: scripts/run-phase1-route-width-qa.sh
+
+      - name: Upload Playwright artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: phase1-route-width-qa
+          path: output/playwright/**
+          if-no-files-found: ignore

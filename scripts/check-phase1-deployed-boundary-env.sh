@@ -19,6 +19,8 @@ merchant_url="${MERCHANT_URL:-$default_merchant_url}"
 admin_url="${ADMIN_URL:-$default_admin_url}"
 public_url="${PUBLIC_URL:-$default_public_url}"
 
+customer_email="${CUSTOMER_EMAIL:-${CUSTOMER_E2E_EMAIL:-}}"
+customer_password="${CUSTOMER_PASSWORD:-${CUSTOMER_E2E_PASSWORD:-}}"
 merchant_email="${MERCHANT_EMAIL:-${MERCHANT_E2E_EMAIL:-}}"
 merchant_password="${MERCHANT_PASSWORD:-${MERCHANT_E2E_PASSWORD:-}}"
 admin_email="${ADMIN_EMAIL:-${ADMIN_E2E_EMAIL:-}}"
@@ -43,6 +45,12 @@ if (( has_bypass_secret == 1 )); then
   echo "At least one Vercel automation bypass secret is present."
 else
   echo "No Vercel automation bypass secret is present."
+fi
+
+if [[ -n "$customer_email" && -n "$customer_password" ]]; then
+  echo "Customer authenticated smoke credentials are present."
+else
+  echo "Customer authenticated smoke credentials are absent."
 fi
 
 if [[ -n "$merchant_email" && -n "$merchant_password" ]]; then
