@@ -19,6 +19,7 @@ It is not a scope document. It is a release-evidence document.
 - `docs/operations/production-roadmap-2026-04-28.md`
 - `docs/operations/phase-1-deployed-browser-e2e-2026-04-28.md`
 - `docs/operations/phase-1-deployed-browser-e2e-secret-checklist-2026-04-28.md`
+- `docs/operations/rollback-drill-prep-2026-04-29.md`
 - `docs/06-guardrails.md`
 
 ## Current Baseline
@@ -75,6 +76,11 @@ It is not a scope document. It is a release-evidence document.
 - [x] Release-evidence artifact path is captured in workflow output.
 - [ ] Route-width QA and device QA are complete on real target devices/browsers.
 - [ ] Rollback drill evidence is attached.
+
+Rollback readiness note:
+
+- candidate inventory and official rollback command paths are now recorded in `docs/operations/rollback-drill-prep-2026-04-29.md`
+- Gate 6 remains open until a governed UI rollback, Edge Function rollback, and additive migration disablement drill are actually executed and logged
 
 ## Immediate Follow-Through
 
