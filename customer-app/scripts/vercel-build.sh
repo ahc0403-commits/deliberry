@@ -2,16 +2,32 @@
 
 set -euo pipefail
 
+normalize_env_value() {
+  local value="$1"
+  if [[ ${#value} -ge 2 ]]; then
+    local first_char="${value:0:1}"
+    local last_char="${value: -1}"
+    if [[ "$first_char" == '"' && "$last_char" == '"' ]]; then
+      value="${value:1:${#value}-2}"
+    elif [[ "$first_char" == "'" && "$last_char" == "'" ]]; then
+      value="${value:1:${#value}-2}"
+    fi
+  fi
+  printf '%s' "$value"
+}
+
 required_envs=(
   "SUPABASE_URL"
   "SUPABASE_ANON_KEY"
 )
 
 for key in "${required_envs[@]}"; do
-  if [ -z "${!key:-}" ]; then
+  normalized_value="$(normalize_env_value "${!key:-}")"
+  if [ -z "$normalized_value" ]; then
     echo "Missing required env: ${key}" >&2
     exit 1
   fi
+  printf -v "$key" '%s' "$normalized_value"
 done
 
 validate_absolute_http_uri() {
@@ -34,10 +50,10 @@ validate_absolute_http_uri() {
 }
 
 validate_redirect_authority() {
-  local auth_scheme="${AUTH_CALLBACK_SCHEME:-}"
-  local auth_host="${AUTH_CALLBACK_HOST:-}"
-  local auth_path="${AUTH_CALLBACK_PATH:-}"
-  local zalo_redirect="${ZALO_REDIRECT_URI:-}"
+  local auth_scheme="$(normalize_env_value "${AUTH_CALLBACK_SCHEME:-}")"
+  local auth_host="$(normalize_env_value "${AUTH_CALLBACK_HOST:-}")"
+  local auth_path="$(normalize_env_value "${AUTH_CALLBACK_PATH:-}")"
+  local zalo_redirect="$(normalize_env_value "${ZALO_REDIRECT_URI:-}")"
 
   if [[ -n "$auth_scheme" || -n "$auth_host" || -n "$auth_path" ]]; then
     if [[ -z "$auth_scheme" || -z "$auth_host" || -z "$auth_path" ]]; then
@@ -79,7 +95,7 @@ optional_envs=(
 )
 
 for key in "${optional_envs[@]}"; do
-  value="${!key:-}"
+  value="$(normalize_env_value "${!key:-}")"
   if [ -n "${value}" ]; then
     dart_defines+=("--dart-define=${key}=${value}")
   fi
