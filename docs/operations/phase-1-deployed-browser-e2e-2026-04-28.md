@@ -4,8 +4,8 @@ Status: active
 Authority: operational
 Surface: customer-app, merchant-console, admin-console, public-website
 Domains: deployed-smoke, browser-e2e, access-boundaries, release-gates
-Last updated: 2026-04-28
-Last verified: 2026-04-28
+Last updated: 2026-04-29
+Last verified: 2026-04-29
 
 ## Purpose
 
@@ -40,11 +40,7 @@ The latest non-skip deployed smoke test targeted the stable production aliases:
 
 The customer-app production alias now points at deployment `deliberry-customer-dv2klhiei-andres-projects-c63d3b09.vercel.app`, which includes the customer deep-link preservation fix from `customer-app/lib/app/app.dart`.
 
-On 2026-04-29, the customer menu-route smoke assertion was updated to accept the currently deployed section label `Browse by section` in addition to the older `Menu categories` copy. This keeps the deployed browser gate aligned with the live customer UI while preserving the same read-only category-browsing intent.
-
-On 2026-04-29, the cart and checkout smoke assertions were also widened to accept the currently deployed CTA and placeholder labels (`Checkout`, `Card ... Placeholder only`, `Digital Wallet Placeholder only`) in addition to the earlier more specific copy, and the checkout payment placeholders are now read from the payment-option buttons rather than looser page text. This keeps the deployed release gate focused on governed checkout structure rather than transient display copy.
-
-On 2026-04-29, the guest `/orders` guard assertion was updated to accept the current unauthenticated route-level fallback (`/#/auth/login`, `/#/entry`, or any redirect away from `/#/orders`) as valid evidence of the auth boundary, instead of relying only on rendered sign-in copy becoming accessible before the assertion runs.
+The latest green GitHub Actions baseline is run `25096403811` on commit `ca4ce4b440b0401eea74b2b4a7f5026cdd9471d5`. That run closed the full non-skip deployed boundary suite across the public, customer, merchant, and admin production aliases.
 
 ## Test Coverage
 
@@ -89,9 +85,17 @@ If deployment URL secrets are absent, the harness falls back to the latest recor
 
 The workflow is intentionally `workflow_dispatch` only. It is not attached to pull requests because the deployed test uses protected deployment and optional login secrets.
 
+The workflow now uses the Node 24-capable GitHub Actions majors directly: `actions/checkout@v6`, `actions/setup-node@v6`, and `actions/upload-artifact@v7`. It also carries the governed customer browser fixture credentials directly from `CUSTOMER_E2E_EMAIL` and `CUSTOMER_E2E_PASSWORD`.
+
 The exact input contract and release-gate rule for skip mode are recorded in `docs/operations/phase-1-deployed-browser-e2e-secret-checklist-2026-04-28.md`.
 
 ## Commands Run
+
+```text
+GitHub Actions run 25096403811
+```
+
+Result on 2026-04-29: passed end-to-end on `main` with non-skip deployed browser boundary coverage enabled for public, customer, merchant, and admin surfaces.
 
 ```bash
 node --check .playwright-cli/phase1-deployed-boundary-e2e.mjs
