@@ -1,0 +1,8 @@
+{
+  "name": "deliberry-playwright-cli",
+  "private": true,
+  "version": "0.1.0",
+  "devDependencies": {
+    "playwright": "^1.59.1"
+  }
+}
