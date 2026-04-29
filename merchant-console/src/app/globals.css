@@ -2628,11 +2628,16 @@ img {
 
   .store-layout {
     flex-direction: column;
+    flex: 1 1 auto;
+    align-self: stretch;
     width: 100%;
+    max-width: 100%;
+    overflow-x: clip;
   }
 
   .store-sidebar {
     width: 100%;
+    max-width: 100%;
     min-height: auto;
     position: static;
     overflow-x: hidden;
@@ -2650,6 +2655,7 @@ img {
 
   .store-main {
     width: 100%;
+    max-width: 100%;
     padding: var(--space-4);
     min-height: auto;
   }
@@ -2661,6 +2667,10 @@ img {
   .tab {
     flex: 0 0 auto;
     padding-inline: var(--space-4);
+  }
+
+  .console-body {
+    overflow-x: clip;
   }
 }
 
