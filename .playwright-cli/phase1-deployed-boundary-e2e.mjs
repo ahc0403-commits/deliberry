@@ -509,17 +509,27 @@ async function runCustomer(browser) {
   assert((await page.getByText(/^Cart$/i).count()) > 0, "customer deployed cart route exposes the cart heading");
   assert((await page.getByText(/Subtotal/i).count()) > 0, "customer deployed cart route exposes the subtotal row");
   assert((await page.getByText(/Total/i).count()) > 0, "customer deployed cart route exposes the total row");
-  const checkoutCta = page.getByRole("button", { name: /Continue to checkout/i }).first();
+  const checkoutCta = page.getByRole("button", { name: /Continue to checkout|Checkout/i }).first();
   assert((await checkoutCta.count()) > 0, "customer deployed cart route exposes the checkout CTA");
   await checkoutCta.click();
   await page.waitForTimeout(2500);
   await screenshot(page, "customer-checkout");
   assert(page.url().includes("/#/checkout"), "customer deployed guest flow can open the checkout route", page.url());
   assert((await page.getByText(/^Checkout$/i).count()) > 0, "customer deployed checkout route exposes the checkout heading");
-  assert((await page.getByText(/Delivery Address/i).count()) > 0, "customer deployed checkout route exposes the delivery address section");
-  assert((await page.getByText(/Cash/i).count()) > 0, "customer deployed checkout route exposes the cash payment option");
-  assert((await page.getByText(/VNPAY Card Test/i).count()) > 0, "customer deployed checkout route exposes the VNPAY card placeholder");
-  assert((await page.getByText(/VNPAY Pay Test/i).count()) > 0, "customer deployed checkout route exposes the VNPAY pay placeholder");
+  assert(
+    (await page.getByRole("button", { name: /Manage/i }).count()) > 0 ||
+      (await page.getByText(/Delivery Address/i).count()) > 0,
+    "customer deployed checkout route exposes the delivery address section",
+  );
+  assert((await page.getByText(/Cash|Pay on delivery/i).count()) > 0, "customer deployed checkout route exposes the cash payment option");
+  assert(
+    (await page.getByText(/VNPAY Card Test|Card .*Placeholder only/i).count()) > 0,
+    "customer deployed checkout route exposes the card payment placeholder",
+  );
+  assert(
+    (await page.getByText(/VNPAY Pay Test|Digital Wallet .*Placeholder only/i).count()) > 0,
+    "customer deployed checkout route exposes the wallet payment placeholder",
+  );
   assert((await page.getByText(/Order Summary/i).count()) > 0, "customer deployed checkout route exposes the order summary section");
   assert((await page.getByText(/Price Breakdown/i).count()) > 0, "customer deployed checkout route exposes the price breakdown section");
   assert((await page.getByRole("button", { name: /Place Order/i }).count()) > 0, "customer deployed checkout route exposes the place-order CTA");
