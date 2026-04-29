@@ -40,6 +40,8 @@ The latest non-skip deployed smoke test targeted the stable production aliases:
 
 The customer-app production alias now points at deployment `deliberry-customer-dv2klhiei-andres-projects-c63d3b09.vercel.app`, which includes the customer deep-link preservation fix from `customer-app/lib/app/app.dart`.
 
+On 2026-04-29, the customer menu-route smoke assertion was updated to accept the currently deployed section label `Browse by section` in addition to the older `Menu categories` copy. This keeps the deployed browser gate aligned with the live customer UI while preserving the same read-only category-browsing intent.
+
 ## Test Coverage
 
 The deployed script covers:
