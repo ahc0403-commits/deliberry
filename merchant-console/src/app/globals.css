@@ -2539,9 +2539,26 @@ img {
     white-space: normal;
   }
 
+  .merchant-data-table {
+    table-layout: fixed;
+  }
+
   .merchant-data-table th,
   .merchant-data-table td {
     padding-inline: var(--space-3);
+  }
+
+  .merchant-data-table th:nth-child(3),
+  .merchant-data-table td:nth-child(3),
+  .merchant-data-table th:nth-child(7),
+  .merchant-data-table td:nth-child(7) {
+    display: none;
+  }
+
+  .merchant-data-table td:last-child .btn {
+    min-width: 0;
+    justify-content: center;
+    width: 100%;
   }
 }
 
