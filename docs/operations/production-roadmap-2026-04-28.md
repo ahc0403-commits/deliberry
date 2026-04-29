@@ -191,7 +191,7 @@ Current result:
 - The deployed browser harness now also supports customer password-grant auth fixtures through `CUSTOMER_E2E_EMAIL` and `CUSTOMER_E2E_PASSWORD`, reducing replay friction once a governed customer browser test user exists.
 - A governed deployed customer browser fixture has now been provisioned, and the deployed customer authenticated smoke passes for session restore, `/#/orders`, order status, and order detail.
 - A production customer-auth closure blocker was confirmed on 2026-04-29: the linked project still reports `phone=false`, email sign-up is rate-limited, and direct password grant against the seeded customer email accounts returns `500 unexpected_failure: Database error querying schema`.
-- The deployed browser gate is now green on `main` through GitHub Actions run `25096403811`, which closes the full non-skip deployed boundary suite across public, customer, merchant, and admin surfaces.
+- The deployed browser gate is now green on `main` through GitHub Actions run `25097914890`, which closes the full non-skip deployed boundary suite across public, customer, merchant, and admin surfaces.
 - The deployed gate workflow now uses the Node 24-capable GitHub Actions majors directly and explicitly carries the governed customer fixture credentials through repo secrets.
 
 ## Phase 2 — Auth And Session Production Hardening

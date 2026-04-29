@@ -24,9 +24,9 @@ It is not a scope document. It is a release-evidence document.
 ## Current Baseline
 
 - Latest green deployed browser release-evidence run:
-  `GitHub Actions / Phase 1 Deployed Boundary E2E / 25096403811`
+  `GitHub Actions / Phase 1 Deployed Boundary E2E / 25097914890`
 - Baseline commit:
-  `ca4ce4b440b0401eea74b2b4a7f5026cdd9471d5`
+  `79e2e09d5ecfdce5d3d28f001c80158576335196`
 - Baseline mode:
   non-skip, protected Vercel aliases, authenticated customer/merchant/admin fixtures enabled
 
@@ -78,7 +78,7 @@ It is not a scope document. It is a release-evidence document.
 
 ## Immediate Follow-Through
 
-1. Keep `25096403811` as the current green deployed baseline until a newer non-skip run supersedes it.
+1. Keep `25097914890` as the current green deployed baseline until a newer non-skip run supersedes it.
 2. Re-run the deployed boundary workflow after any material auth, routing, or checkout-shell UI change.
 3. Track workflow hygiene separately:
    - artifact retention policy
