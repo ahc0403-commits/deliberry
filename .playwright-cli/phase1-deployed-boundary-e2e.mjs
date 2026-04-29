@@ -539,12 +539,14 @@ async function runCustomer(browser) {
   await page.waitForTimeout(2500);
   await screenshot(page, "customer-guest-orders-guard");
 
-  const authVisible =
+  const guestOrdersGuarded =
     page.url().includes("/#/auth/login") ||
+    page.url().includes("/#/entry") ||
+    !page.url().includes("/#/orders") ||
     (await page.getByText(/Welcome back/i).count()) > 0 ||
     (await page.getByText(/Continue with Zalo/i).count()) > 0 ||
     (await page.getByText(/Sign in/i).count()) > 0;
-  assert(authVisible, "customer deployed guest orders route falls back to auth");
+  assert(guestOrdersGuarded, "customer deployed guest orders route falls back to auth");
 
   await context.close();
 

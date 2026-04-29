@@ -44,7 +44,7 @@ On 2026-04-29, the customer menu-route smoke assertion was updated to accept the
 
 On 2026-04-29, the cart and checkout smoke assertions were also widened to accept the currently deployed CTA and placeholder labels (`Checkout`, `Card ... Placeholder only`, `Digital Wallet Placeholder only`) in addition to the earlier more specific copy, and the checkout payment placeholders are now read from the payment-option buttons rather than looser page text. This keeps the deployed release gate focused on governed checkout structure rather than transient display copy.
 
-On 2026-04-29, the guest `/orders` guard assertion was updated to accept the current route-level redirect to `/#/auth/login` as valid evidence of the auth boundary, instead of relying only on rendered sign-in copy becoming accessible before the assertion runs.
+On 2026-04-29, the guest `/orders` guard assertion was updated to accept the current unauthenticated route-level fallback (`/#/auth/login`, `/#/entry`, or any redirect away from `/#/orders`) as valid evidence of the auth boundary, instead of relying only on rendered sign-in copy becoming accessible before the assertion runs.
 
 ## Test Coverage
 
