@@ -109,7 +109,7 @@ Optional authenticated smoke secrets:
 Current operational note:
 
 - the Deliberry deployed E2E runner now uses surface-specific bypass secrets in GitHub Actions because the four Vercel projects no longer share a guaranteed common bypass key.
-- the current green release-evidence baseline is GitHub Actions run `25096403811` on `main`, executed without `ALLOW_DEPLOYMENT_PROTECTION_SKIP`
+- the current green release-evidence baseline is GitHub Actions run `25097914890` on `main`, executed without `ALLOW_DEPLOYMENT_PROTECTION_SKIP`
 
 ## Local Dry Run
 

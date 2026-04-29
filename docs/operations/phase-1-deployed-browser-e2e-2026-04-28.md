@@ -40,7 +40,7 @@ The latest non-skip deployed smoke test targeted the stable production aliases:
 
 The customer-app production alias now points at deployment `deliberry-customer-dv2klhiei-andres-projects-c63d3b09.vercel.app`, which includes the customer deep-link preservation fix from `customer-app/lib/app/app.dart`.
 
-The latest green GitHub Actions baseline is run `25096403811` on commit `ca4ce4b440b0401eea74b2b4a7f5026cdd9471d5`. That run closed the full non-skip deployed boundary suite across the public, customer, merchant, and admin production aliases.
+The latest green GitHub Actions baseline is run `25097914890` on commit `79e2e09d5ecfdce5d3d28f001c80158576335196`. That run closed the full non-skip deployed boundary suite across the public, customer, merchant, and admin production aliases after the release-gate baseline documentation and workflow action upgrades were merged to `main`.
 
 ## Test Coverage
 
@@ -92,10 +92,10 @@ The exact input contract and release-gate rule for skip mode are recorded in `do
 ## Commands Run
 
 ```text
-GitHub Actions run 25096403811
+GitHub Actions run 25097914890
 ```
 
-Result on 2026-04-29: passed end-to-end on `main` with non-skip deployed browser boundary coverage enabled for public, customer, merchant, and admin surfaces.
+Result on 2026-04-29: passed end-to-end on `main` with non-skip deployed browser boundary coverage enabled for public, customer, merchant, and admin surfaces after merging PR #13.
 
 ```bash
 node --check .playwright-cli/phase1-deployed-boundary-e2e.mjs
