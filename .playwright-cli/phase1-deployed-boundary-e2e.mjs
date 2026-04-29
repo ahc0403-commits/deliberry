@@ -491,7 +491,10 @@ async function runCustomer(browser) {
   await page.waitForTimeout(2500);
   await screenshot(page, "customer-store-menu");
   assert(page.url().includes("/#/store/menu"), "customer deployed guest flow can open the store menu route", page.url());
-  assert((await page.getByText(/Menu categories/i).count()) > 0, "customer deployed store menu route exposes category browsing");
+  assert(
+    (await page.getByText(/Browse by section|Menu categories/i).count()) > 0,
+    "customer deployed store menu route exposes category browsing",
+  );
   const unlabeledButtons = page.getByRole("button", { name: "" });
   assert((await unlabeledButtons.count()) >= 10, "customer deployed store menu route exposes add-item controls");
   await unlabeledButtons.nth(7).click();
