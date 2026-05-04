@@ -30,10 +30,10 @@ jobs:
         run: node --check docs/operations/phase-1-vnpay-sandbox-guardrail-smoke-2026-05-04.mjs
 
       - name: Check VNPAY guardrail environment
-        run: scripts/check-phase1-vnpay-guardrail-env.sh
+        run: bash scripts/check-phase1-vnpay-guardrail-env.sh
 
       - name: Run VNPAY sandbox guardrail smoke
-        run: scripts/run-phase1-vnpay-guardrail-smoke.sh
+        run: bash scripts/run-phase1-vnpay-guardrail-smoke.sh
 
       - name: Upload VNPAY guardrail artifacts
         if: always()
