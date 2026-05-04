@@ -1,0 +1,44 @@
+name: Phase 1 VNPAY Sandbox Guardrail Smoke
+
+on:
+  workflow_dispatch:
+
+jobs:
+  vnpay-sandbox-guardrail-smoke:
+    name: VNPAY sandbox guardrail smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      SUPABASE_URL: ${{ secrets.REMOTE_AUDIT_SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.REMOTE_AUDIT_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.REMOTE_AUDIT_SUPABASE_SERVICE_ROLE_KEY }}
+      VNPAY_SANDBOX_HASH_SECRET: ${{ secrets.VNPAY_SANDBOX_HASH_SECRET }}
+      VNPAY_SANDBOX_FIXED_AMOUNT_VND: "10000"
+      VNPAY_GUARDRAIL_OUTPUT_ROOT: output/vnpay-guardrail-smoke
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+
+      - name: Check VNPAY guardrail smoke script syntax
+        run: node --check docs/operations/phase-1-vnpay-sandbox-guardrail-smoke-2026-05-04.mjs
+
+      - name: Check VNPAY guardrail environment
+        run: scripts/check-phase1-vnpay-guardrail-env.sh
+
+      - name: Run VNPAY sandbox guardrail smoke
+        run: scripts/run-phase1-vnpay-guardrail-smoke.sh
+
+      - name: Upload VNPAY guardrail artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: phase1-vnpay-sandbox-guardrail-smoke
+          path: output/vnpay-guardrail-smoke/**
+          if-no-files-found: ignore

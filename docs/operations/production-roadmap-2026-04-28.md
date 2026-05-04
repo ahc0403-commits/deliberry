@@ -4,7 +4,7 @@ Status: active
 Authority: operational
 Surface: customer-app, merchant-console, admin-console, public-website, shared, supabase
 Domains: production-readiness, release-planning, payment-governance, operations
-Last updated: 2026-04-29
+Last updated: 2026-05-04
 
 ## Purpose
 
@@ -24,6 +24,27 @@ This document does not authorize implementation by itself. It defines the execut
 - `docs/operations/showable-product-closure-plan-2026-04-28.md`
 - `docs/operations/production-definition-freeze-2026-04-28.md`
 - `docs/operations/vnpay-sandbox-readiness.md`
+- `docs/operations/payment-go-live-guardrail-record-2026-05-04.md`
+- `docs/operations/payment-ipn-owned-state-transition-design-2026-05-04.md`
+- `docs/operations/payment-event-persistence-design-2026-05-04.md`
+- `docs/operations/payment-guardrail-revision-draft-2026-05-04.md`
+- `docs/operations/payment-server-side-credentials-plan-2026-05-04.md`
+- `docs/operations/payment-finance-legal-approval-record-template-2026-05-04.md`
+- `docs/operations/payment-vnpay-sit-evidence-template-2026-05-04.md`
+- `docs/operations/payment-production-rollout-checklist-2026-05-04.md`
+- `docs/operations/vnpay-sandbox-guardrail-smoke-2026-05-04.md`
+- `output/vnpay-guardrail-smoke/phase1-vnpay-guardrail-smoke-2026-05-04T05-56-17.237Z/summary.json`
+- `docs/operations/phase-1-route-width-qa-2026-04-29.md`
+- `docs/operations/phase-1-target-browser-qa-2026-05-04.md`
+- `docs/operations/physical-target-device-qa-execution-plan-2026-05-04.md`
+- `docs/operations/physical-target-device-qa-evidence-template-2026-05-04.md`
+- `docs/operations/rollback-drill-evidence-2026-05-04.md`
+- `docs/operations/edge-function-rollback-evidence-2026-05-04.md`
+- `docs/operations/additive-migration-disablement-evidence-2026-05-04.md`
+- `docs/operations/gate2-remote-audit-and-device-qa-blockers-2026-05-04.md`
+- `docs/operations/phase-1-remote-production-audit-evidence-2026-05-04.md`
+- `docs/operations/phase-1-merchant-audited-mutation-evidence-2026-05-04.md`
+- `docs/operations/phase-1-merchant-review-response-audit-evidence-2026-05-04.md`
 
 ## Current Position
 
@@ -105,6 +126,8 @@ Current result:
 - Payment verification remains excluded.
 - Card, VNPAY, and alternate pay methods remain sandbox-only or future-ready placeholders.
 - Return URL remains display-only.
+- Payment go-live shape is now fixed in `docs/operations/payment-go-live-guardrail-record-2026-05-04.md`; future work must keep IPN as the only payment-state transition owner.
+- Sandbox callback guardrails are now evidenced in `docs/operations/vnpay-sandbox-guardrail-smoke-2026-05-04.md`; mismatched reference, amount, currency, and duplicate replay now fail closed without enabling payment completion.
 - Production release gates, rollback policy, and incident severity ownership are defined in the Phase 0 artifact.
 
 Blocked by:
@@ -194,6 +217,22 @@ Current result:
 - The deployed browser gate is now green on `main` through GitHub Actions run `25097914890`, which closes the full non-skip deployed boundary suite across public, customer, merchant, and admin surfaces.
 - The deployed gate workflow now uses the Node 24-capable GitHub Actions majors directly and explicitly carries the governed customer fixture credentials through repo secrets.
 - Rollback candidate inventory and official Vercel rollback command paths are now recorded in `docs/operations/rollback-drill-prep-2026-04-29.md`, but Gate 6 rollback-drill evidence remains open until a real governed drill is executed and logged.
+- A separate route-width release-gate harness now exists through `.github/workflows/phase1-route-width-qa.yml`, `.playwright-cli/phase1-route-width-qa.mjs`, and `scripts/run-phase1-route-width-qa.sh`.
+- That route-width pass removed customer Flutter web false positives, stabilized merchant mobile/tablet auth-flow handling, and tightened admin width diagnostics.
+- The remaining open release-gate blocker from the latest route-width pass is a merchant shell-wrapper overflow on `/demo-store/orders` at tablet `768px`, where `.store-layout`, `.store-sidebar`, and `.store-main` measured `780px` while the orders content itself was already within bounds.
+- The merchant shell-overflow blocker has now been closed on the real merchant production alias, and governed target-browser evidence is now recorded in `docs/operations/phase-1-target-browser-qa-2026-05-04.md` using GitHub Actions route-width run `25296145098`.
+- The remaining QA gap at this point is physical target-device validation rather than governed browser-width evidence.
+- A governed public-website UI rollback drill has now been executed against the real production alias, restored back to the original production deployment, and followed by a green rerun of the full deployed browser boundary suite in GitHub Actions run `25296664792`.
+- A governed `generate-settlement` Edge Function rollback drill has now been executed on the linked Supabase project by deploying the older `0cfcf9c199dbca6ba6f26fa503387a02af13a4f7` source revision as version `5`, then restoring the current `57bfd1e5985d4153a2ad4978a1a78868eecdb71d` source revision as version `6`, with post-restore auth-boundary verification captured in `docs/operations/edge-function-rollback-evidence-2026-05-04.md`.
+- A governed additive settlement-schema disablement drill has now exercised the runtime-config path through `ENABLE_SETTLEMENT_RUNTIME`, and both deployed settlement callers (`generate-settlement` version `9` and `trigger-settlement` version `7`) now show the gate in downloaded production source.
+- Rollback evidence is now closed across UI deploy, Edge Function deploy, and additive migration disablement.
+- Remote production-grade auth and menu audit coverage is now closed against the linked Supabase project through `docs/operations/phase-1-remote-production-audit-evidence-2026-05-04.md`.
+- Merchant-side audited mutation evidence is now closed against the linked Supabase project for order status, store settings, and store profile through `docs/operations/phase-1-merchant-audited-mutation-evidence-2026-05-04.md`.
+- Admin dispute status transitions are now a governed audited mutation path with remote evidence recorded in `docs/operations/phase-1-admin-dispute-audit-evidence-2026-05-04.md`.
+- Admin customer-service status transitions are now a governed audited mutation path with remote evidence recorded in `docs/operations/phase-1-admin-support-audit-evidence-2026-05-04.md`.
+- Merchant review response now also has governed remote audit evidence through `docs/operations/phase-1-merchant-review-response-audit-evidence-2026-05-04.md`.
+- Admin settlement acknowledgment now has governed remote audit evidence through `docs/operations/phase-1-admin-settlement-audit-evidence-2026-05-04.md` for the approved `calculated -> received` acknowledgment slice.
+- Current remaining release-gate blocker on this workstation is physical target-device QA rather than remote runtime audit access.
 
 ## Phase 2 — Auth And Session Production Hardening
 
@@ -258,6 +297,17 @@ Target duration: 2-3 weeks.
 Goal:
 
 Introduce live VNPAY payment verification only after governance explicitly approves payment verification.
+
+Reference guardrail:
+
+- `docs/operations/payment-go-live-guardrail-record-2026-05-04.md`
+- `docs/operations/payment-ipn-owned-state-transition-design-2026-05-04.md`
+- `docs/operations/payment-event-persistence-design-2026-05-04.md`
+- `docs/operations/payment-guardrail-revision-draft-2026-05-04.md`
+- `docs/operations/payment-server-side-credentials-plan-2026-05-04.md`
+- `docs/operations/payment-finance-legal-approval-record-template-2026-05-04.md`
+- `docs/operations/payment-vnpay-sit-evidence-template-2026-05-04.md`
+- `docs/operations/payment-production-rollout-checklist-2026-05-04.md`
 
 Work:
 
@@ -327,7 +377,7 @@ Work:
 - Harden users, merchants, stores, orders, disputes, customer service, settlements, finance, marketing, announcements, catalog, B2B, analytics, reporting, and system management boundaries.
 - Add confirmation and audit logs for governance-sensitive actions.
 - Ensure finance and settlement screens distinguish read-only oversight, manual reconciliation, and approved mutations.
-- Define support ticket lifecycle and dispute escalation ownership.
+- Define the remaining finance-sensitive governance mutations.
 - Add permission-aware UI hints without relying on UI as the only enforcement layer.
 
 Exit criteria:
@@ -339,7 +389,7 @@ Exit criteria:
 
 Blocked by:
 
-- Phase 1 admin/support/dispute contracts.
+- Phase 1 finance governance contracts, with dispute and support status transitions now closed as governed subsets.
 - Phase 2 admin permission hardening.
 
 ## Phase 7 — Observability, Security, And Release Operations
