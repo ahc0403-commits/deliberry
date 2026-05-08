@@ -24,6 +24,9 @@ additional_redirect_urls = [
   "http://localhost:3102",
   "http://localhost:3103",
   "http://localhost:3104",
+  "https://deliberry-customer.vercel.app",
+  "https://go.deli-berry.com",
+  "deliberry-customer-auth://zalo-callback/auth",
 ]
 jwt_expiry = 3600
 enable_refresh_token_rotation = true
@@ -37,3 +40,15 @@ enable_confirmations = false
 [auth.sms]
 enable_signup = true
 enable_confirmations = false
+
+[auth.external.google]
+enabled = false
+client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET)"
+skip_nonce_check = false
+
+[auth.external.apple]
+enabled = false
+client_id = "env(SUPABASE_AUTH_EXTERNAL_APPLE_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_EXTERNAL_APPLE_SECRET)"
+redirect_uri = "http://127.0.0.1:54321/auth/v1/callback"

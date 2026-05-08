@@ -1,0 +1,42 @@
+name: Phase 1 Merchant Audited Mutations E2E
+
+on:
+  workflow_dispatch:
+
+jobs:
+  merchant-audited-mutations-e2e:
+    name: Merchant audited mutations E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      SUPABASE_URL: ${{ secrets.REMOTE_AUDIT_SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.REMOTE_AUDIT_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.REMOTE_AUDIT_SUPABASE_SERVICE_ROLE_KEY }}
+      MERCHANT_AUDIT_OUTPUT_ROOT: output/merchant-audit
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+
+      - name: Check merchant audit script syntax
+        run: node --check docs/operations/phase-1-merchant-audited-mutations-e2e-2026-05-04.mjs
+
+      - name: Check merchant audit environment
+        run: scripts/check-phase1-merchant-audit-env.sh
+
+      - name: Run merchant audited mutations E2E
+        run: scripts/run-phase1-merchant-audit-e2e.sh
+
+      - name: Upload merchant audit artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: phase1-merchant-audited-mutations-e2e
+          path: output/merchant-audit/**
+          if-no-files-found: ignore

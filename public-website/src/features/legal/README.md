@@ -4,11 +4,11 @@ Status: Active
 Authority: Operational
 Surface: public-website
 Domains: legal, privacy, terms, refund-policy
-Last updated: 2026-03-16
+Last updated: 2026-04-18
 Retrieve when:
 - editing legal document pages or legal navigation
 - checking where privacy, terms, and refund content actually lives
-- verifying whether legal content is repository-backed or hardcoded
+- verifying whether legal content is route-screen-owned or legal-shell-owned
 Related files:
 - public-website/src/app/(legal)/privacy/page.tsx
 - public-website/src/app/(legal)/terms/page.tsx
@@ -34,7 +34,6 @@ Owns the public legal document screens and the legal-only route shell.
 - Live legal copy is currently hardcoded in the three legal presentation screens
 - Legal route navigation and shell framing live in `public-website/src/app/(legal)/layout.tsx`
 
-This source of truth is split. `public-website/src/shared/data/public-content-repository.ts` exposes a structural legal-content boundary, but the legal pages do not currently read from it.
 
 ## Key Files to Read First
 
@@ -46,8 +45,6 @@ This source of truth is split. `public-website/src/shared/data/public-content-re
 ## Related Shared and Domain Files
 
 - `public-website/src/shared/domain.ts`
-- `public-website/src/shared/data/content-service.ts`
-- `public-website/src/shared/data/public-content-repository.ts`
 
 ## Related Governance Docs
 
@@ -61,7 +58,7 @@ This source of truth is split. `public-website/src/shared/data/public-content-re
 
 - Legal documents are static hardcoded content.
 - Dates and contact details are manually maintained in the screen files.
-- The repository-backed legal content boundary is not used by the live legal routes.
+- There is no repository-backed legal publishing path today.
 
 ## Safe Modification Guidance
 
@@ -71,6 +68,5 @@ This source of truth is split. `public-website/src/shared/data/public-content-re
 
 ## What Not to Change Casually
 
-- Do not assume the legal repository snapshot is live.
 - Do not merge legal-shell concerns into individual document screens.
 - Do not change one legal page’s metadata conventions without checking the others.

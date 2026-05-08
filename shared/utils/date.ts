@@ -1,30 +1,40 @@
 /**
  * Date/time utilities for the Deliberry platform.
- * All timestamps stored in UTC. Display in America/Argentina/Buenos_Aires.
+ * All timestamps stored in UTC. Display in Asia/Ho_Chi_Minh.
  * See CONSTITUTION.md R-050, docs/governance/DATE.md.
  */
 
-export const BUENOS_AIRES_TZ = "America/Argentina/Buenos_Aires";
+export const HO_CHI_MINH_TZ = "Asia/Ho_Chi_Minh";
+
+function resolveDateLocale(locale?: string): string {
+  if (locale === "ko") return "ko-KR";
+  if (locale === "vi") return "vi-VN";
+  return "en-GB";
+}
 
 /**
- * Converts a UTC ISO string to a Buenos Aires local display string.
- * Example: "2026-03-14T15:30:00Z" -> "14 mar 2026, 12:30"
+ * Converts a UTC ISO string to a Ho Chi Minh City local display string.
+ * Example: "2026-03-14T15:30:00Z" -> "14 Mar 2026, 22:30"
  */
-export function toDisplayTime(utcIso: string): string {
-  return new Intl.DateTimeFormat("es-AR", {
-    timeZone: BUENOS_AIRES_TZ,
-    dateStyle: "medium",
-    timeStyle: "short",
+export function toDisplayTime(utcIso: string, locale?: string): string {
+  return new Intl.DateTimeFormat(resolveDateLocale(locale), {
+    timeZone: HO_CHI_MINH_TZ,
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
   }).format(new Date(utcIso));
 }
 
 /**
- * Returns the business date (YYYY-MM-DD) in Buenos Aires for a given UTC timestamp.
- * Example: "2026-03-14T02:30:00Z" -> "2026-03-13" (11:30 PM Buenos Aires on March 13)
+ * Returns the business date (YYYY-MM-DD) in Ho Chi Minh City for a given UTC timestamp.
+ * Example: "2026-03-14T18:30:00Z" -> "2026-03-15" (01:30 AM Ho Chi Minh City on March 15)
  */
 export function toBusinessDate(utcIso: string): string {
   return new Date(utcIso).toLocaleDateString("en-CA", {
-    timeZone: BUENOS_AIRES_TZ,
+    timeZone: HO_CHI_MINH_TZ,
   });
 }
 

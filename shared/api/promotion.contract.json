@@ -1,9 +1,23 @@
 {
   "domain": "promotion",
   "consumers": ["merchant-console", "admin-console"],
+  "production_scope": {
+    "status": "snapshot_read_only",
+    "notes": [
+      "Merchant promotions currently compose persisted store identity with snapshot campaign data.",
+      "Promotion create, update, publish, redemption, and settlement effects are not approved production mutations in the current cutover."
+    ]
+  },
   "requests": [
     { "name": "list_promotions", "required": ["store_id"] },
     { "name": "list_coupons", "required": ["store_id"] }
   ],
-  "responses": ["promotion_summary", "coupon_summary"]
+  "responses": ["promotion_summary", "coupon_summary"],
+  "not_approved": [
+    "create_promotion",
+    "update_promotion",
+    "publish_promotion",
+    "redeem_promotion",
+    "promotion_settlement_adjustment"
+  ]
 }

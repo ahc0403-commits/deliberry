@@ -24,33 +24,30 @@ Related files:
 
 The remediation-approved currency rule is:
 
-- `ARS` is the default write currency for governed platform mutations
+- `VND` is the default write currency for governed platform mutations
 - `USD` is secondary and must only be used when a path has an explicit documented business basis
-- `VND` is never allowed in governed runtime writes
 
 ## Immediate Consequences
 
 1. Customer order creation must not default to `USD` unless a separate approved document establishes why.
-2. Merchant external sales and any other governed write path must not persist `VND`.
-3. Shared currency types remain `ARS | USD`, but that type allowance does not by itself justify a `USD` default.
+2. Merchant external sales and any other governed write path should persist `VND` unless a documented secondary-currency reason exists.
+3. Shared currency types remain `VND | USD`, but that type allowance does not by itself justify a `USD` default.
 
 ## Current Decision
 
-Until a more specific business rule is approved, customer order creation should default to `ARS`.
+Until a more specific business rule is approved, customer order creation should default to `VND`.
 
-This is the least surprising interpretation of the constitutional rule that ARS is canonical and USD is secondary.
+This is the least surprising interpretation of the constitutional rule that VND is canonical and USD is secondary.
 
 ## Review Rule
 
 Any future governed write path that wants to persist `USD` must document:
 
-- why ARS is not correct for that path
+- why VND is not correct for that path
 - who approved the exception
 - what records or surfaces consume the secondary currency
 
 ## Prohibited During Remediation
 
-- no governed write path may persist `VND`
 - no remediation work may widen payment behavior into verification or real-money movement
 - no reviewer may accept a hardcoded `USD` write path merely because the type system allows `USD`
-

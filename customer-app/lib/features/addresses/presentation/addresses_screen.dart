@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../app/router/route_names.dart';
 import '../../../core/data/customer_runtime_controller.dart';
 import '../../../core/data/mock_data.dart';
+import '../../../core/i18n/app_localizations.dart';
 import '../../../core/session/customer_session_controller.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../common/presentation/widgets.dart';
@@ -30,6 +31,7 @@ class AddressesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final runtime = CustomerRuntimeController.instance;
     final session = CustomerSessionController.instance;
 
@@ -54,8 +56,8 @@ class AddressesScreen extends StatelessWidget {
           child: Scaffold(
             backgroundColor: AppTheme.backgroundGrey,
             appBar: AppBar(
-              title: const Text('My Addresses'),
-              backgroundColor: Colors.white,
+              title: Text(l10n.raw('My Addresses')),
+              backgroundColor: AppTheme.white,
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back_rounded),
                 onPressed: () => _handleExit(context, runtime),
@@ -64,7 +66,7 @@ class AddressesScreen extends StatelessWidget {
                 IconButton(
                   icon: Icon(Icons.add_rounded, color: AppTheme.primaryColor),
                   onPressed: () => _showAddAddressSheet(context, runtime),
-                  tooltip: 'Add address',
+                  tooltip: l10n.raw('Add address'),
                 ),
               ],
             ),
@@ -75,13 +77,13 @@ class AddressesScreen extends StatelessWidget {
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
                     children: [
                       FeatureHeroCard(
-                        eyebrow: 'Addresses',
-                        title: 'Manage your saved delivery addresses',
-                        subtitle:
-                            'Signed-in addresses sync with your customer account so they stay available after refresh and on future visits.',
+                        eyebrow: l10n.raw('Addresses'),
+                        title: l10n.raw('Manage your saved delivery addresses'),
+                        subtitle: l10n.raw(
+                          'Signed-in addresses sync with your customer account so they stay available after refresh and on future visits.',
+                        ),
                         icon: Icons.location_on_rounded,
-                        badge:
-                            '${addresses.length} saved address${addresses.length == 1 ? '' : 'es'}',
+                        badge: l10n.savedAddressCountLabel(addresses.length),
                       ),
                       const SizedBox(height: 16),
                       Wrap(
@@ -107,11 +109,12 @@ class AddressesScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 16),
                       if (addresses.isEmpty)
-                        const EmptyState(
+                        EmptyState(
                           icon: Icons.location_off_outlined,
-                          title: 'No saved addresses',
-                          subtitle:
-                              'Add an address to start using this account area for checkout and delivery.',
+                          title: l10n.raw('No saved addresses'),
+                          subtitle: l10n.raw(
+                            'Add an address to start using this account area for checkout and delivery.',
+                          ),
                         )
                       else
                         ...List.generate(addresses.length, (index) {
@@ -156,7 +159,7 @@ class AddressesScreen extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       builder: (_) => _AddressFormSheet(
-        title: 'Add New Address',
+        title: context.l10n.raw('Add New Address'),
         onSave: (label, street, detail) async {
           await runtime.addAddress(MockAddress(
             id: '',
@@ -175,7 +178,7 @@ class AddressesScreen extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       builder: (_) => _AddressFormSheet(
-        title: 'Edit Address',
+        title: context.l10n.raw('Edit Address'),
         address: address,
         onSave: (label, street, detail) async {
           await runtime.updateAddress(MockAddress(
@@ -200,8 +203,10 @@ class AddressesScreen extends StatelessWidget {
     } catch (_) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('We could not update the default address. Try again.'),
+        SnackBar(
+          content: Text(context.l10n.raw(
+            'We could not update the default address. Try again.',
+          )),
         ),
       );
     }
@@ -212,12 +217,14 @@ class AddressesScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete address'),
-        content: Text('Remove "${address.label}" from your saved addresses?'),
+        title: Text(context.l10n.raw('Delete address')),
+        content: Text(
+          '${context.l10n.raw('Remove saved address?')} ${context.l10n.raw('Remove this address from your saved addresses?')}',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.raw('Cancel')),
           ),
           TextButton(
             onPressed: () async {
@@ -227,15 +234,16 @@ class AddressesScreen extends StatelessWidget {
               } catch (_) {
                 if (!context.mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content:
-                        Text('We could not remove that address. Try again.'),
+                  SnackBar(
+                    content: Text(context.l10n.raw(
+                      'We could not remove that address. Try again.',
+                    )),
                   ),
                 );
               }
             },
             child: Text(
-              'Delete',
+              context.l10n.raw('Delete'),
               style: TextStyle(color: AppTheme.errorColor),
             ),
           ),
@@ -273,7 +281,7 @@ class _AddressCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: address.isDefault
@@ -283,7 +291,7 @@ class _AddressCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
+            color: AppTheme.inkColor.withValues(alpha: 0.03),
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
@@ -335,7 +343,7 @@ class _AddressCard extends StatelessWidget {
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            'Default',
+                            context.l10n.raw('Default'),
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
@@ -358,24 +366,24 @@ class _AddressCard extends StatelessWidget {
                     if (value == 'default') onSetDefault?.call();
                   },
                   itemBuilder: (_) => [
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'edit',
                       child: Row(
                         children: [
-                          Icon(Icons.edit_outlined, size: 18),
-                          SizedBox(width: 10),
-                          Text('Edit'),
+                          const Icon(Icons.edit_outlined, size: 18),
+                          const SizedBox(width: 10),
+                          Text(context.l10n.raw('Edit')),
                         ],
                       ),
                     ),
                     if (onSetDefault != null)
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'default',
                         child: Row(
                           children: [
-                            Icon(Icons.check_circle_outline, size: 18),
-                            SizedBox(width: 10),
-                            Text('Set as default'),
+                            const Icon(Icons.check_circle_outline, size: 18),
+                            const SizedBox(width: 10),
+                            Text(context.l10n.raw('Set as default')),
                           ],
                         ),
                       ),
@@ -387,7 +395,7 @@ class _AddressCard extends StatelessWidget {
                               size: 18, color: AppTheme.errorColor),
                           const SizedBox(width: 10),
                           Text(
-                            'Delete',
+                            context.l10n.raw('Delete'),
                             style: TextStyle(color: AppTheme.errorColor),
                           ),
                         ],
@@ -423,7 +431,7 @@ class _AddressCard extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 4),
                   child: Text(
-                    'Set as default',
+                    context.l10n.raw('Set as default'),
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
@@ -455,11 +463,11 @@ class _AddButton extends StatelessWidget {
         bottom: MediaQuery.of(context).padding.bottom + 16,
       ),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.white,
         border: Border(top: BorderSide(color: AppTheme.borderColor)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: AppTheme.inkColor.withValues(alpha: 0.05),
             blurRadius: 20,
             offset: const Offset(0, -6),
           ),
@@ -468,7 +476,7 @@ class _AddButton extends StatelessWidget {
       child: FilledButton.icon(
         onPressed: onTap,
         icon: const Icon(Icons.add_rounded, size: 20),
-        label: const Text('Add New Address'),
+        label: Text(context.l10n.raw('Add New Address')),
       ),
     );
   }
@@ -520,7 +528,11 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
     final detail = _detailController.text.trim();
     if (label.isEmpty || street.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Label and street address are required.')),
+        SnackBar(
+          content: Text(
+            context.l10n.raw('Label and street address are required.'),
+          ),
+        ),
       );
       return;
     }
@@ -532,8 +544,10 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('We could not save that address. Try again.'),
+        SnackBar(
+          content: Text(
+            context.l10n.raw('We could not save that address. Try again.'),
+          ),
         ),
       );
     } finally {
@@ -559,7 +573,7 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  widget.title,
+                  context.l10n.raw(widget.title),
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w800,
@@ -575,27 +589,27 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
             TextField(
               controller: _labelController,
               enabled: !_saving,
-              decoration: const InputDecoration(
-                labelText: 'Label (Home, Work...)',
-                prefixIcon: Icon(Icons.label_outline),
+              decoration: InputDecoration(
+                labelText: context.l10n.raw('Label (Home, Work...)'),
+                prefixIcon: const Icon(Icons.label_outline),
               ),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _streetController,
               enabled: !_saving,
-              decoration: const InputDecoration(
-                labelText: 'Street address',
-                prefixIcon: Icon(Icons.location_on_outlined),
+              decoration: InputDecoration(
+                labelText: context.l10n.raw('Street address'),
+                prefixIcon: const Icon(Icons.location_on_outlined),
               ),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _detailController,
               enabled: !_saving,
-              decoration: const InputDecoration(
-                labelText: 'Apt, floor, notes',
-                prefixIcon: Icon(Icons.apartment_outlined),
+              decoration: InputDecoration(
+                labelText: context.l10n.raw('Apt, floor, notes'),
+                prefixIcon: const Icon(Icons.apartment_outlined),
               ),
             ),
             const SizedBox(height: 24),
@@ -607,7 +621,7 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
                       width: 18,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text('Save Address'),
+                  : Text(context.l10n.raw('Save Address')),
             ),
             const SizedBox(height: 8),
           ],

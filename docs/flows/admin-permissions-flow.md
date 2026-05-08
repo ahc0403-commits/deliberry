@@ -62,7 +62,7 @@ Describe the current admin role-selection path from the access-boundary screen i
 ## Known Shallow, Partial, Fixture-Backed, or Local-Only Limits
 
 - Role selection is cookie-real and route-enforced.
-- The platform shell does not filter links by role.
+- The platform shell filters links from the same `admin-access.ts` route matrix used for route enforcement.
 - The permission model is still local-only and demo-safe.
 - The access-boundary flow is runtime-real for route access, but not a full IAM system.
 
@@ -70,7 +70,7 @@ Describe the current admin role-selection path from the access-boundary screen i
 
 - Treating role-card copy as if it already matches enforced permissions.
 - Changing route access in middleware or layout without updating the shared role matrix first.
-- Assuming link visibility and route access are already equivalent.
+- Adding shell navigation links outside the shared route matrix and creating a second permission source.
 
 ## Related Filemaps
 

@@ -23,6 +23,7 @@ This document closes Phase 0 of the governed production roadmap. It defines what
 - `docs/operations/showable-product-closure-plan-2026-04-28.md`
 - `docs/operations/production-roadmap-2026-04-28.md`
 - `docs/operations/vnpay-sandbox-readiness.md`
+- `docs/operations/payment-go-live-guardrail-record-2026-05-04.md`
 
 ## Production Definition
 
@@ -62,6 +63,10 @@ Payment verification may only be reintroduced after all of the following are rec
 - server-only production credential storage
 - production IPN design with checksum, amount, currency, order identity, idempotency, and audit controls
 - SIT result record for approved VNPAY scenarios
+
+The operational interpretation of those conditions is now fixed in:
+
+- `docs/operations/payment-go-live-guardrail-record-2026-05-04.md`
 
 ## Release Gates
 

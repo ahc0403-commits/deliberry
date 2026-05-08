@@ -36,6 +36,12 @@ npm install
 npm run dev
 ```
 
+Local Supabase seed credentials for admin smoke tests:
+
+- Email: `admin@deliberry.local`
+- Password: `admin1234`
+- Role: `platform_admin`
+
 ### Public Website
 
 ```bash
@@ -49,3 +55,6 @@ npm run dev
 - The web surfaces are intentionally independent and do not use shared workspace tooling yet.
 - The current setup is bootstrap-only: no business logic, API integration, or UI polish has been added.
 - `shared/docs/architecture-boundaries.md` defines what may and may not live in `shared/`.
+- Vercel linking is surface-local: run `vercel` from `customer-app/`, `merchant-console/`, `admin-console/`, or `public-website/` only.
+- Do not rely on a repo-root `.vercel` link; each deployed surface should keep its own project link and tracing root.
+- Settlement edge functions are intentionally gated. The linked Supabase project now has `delivery_settlements`, `delivery_settlement_items`, and `external_sales.settlement_id`, but `ENABLE_SETTLEMENT_RUNTIME` must still remain unset until the settlement rollout is explicitly approved.

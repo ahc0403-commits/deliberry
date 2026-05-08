@@ -4,7 +4,7 @@ Status: Active
 Authority: Operational
 Surface: admin-console
 Domains: auth, session, platform-entry
-Last updated: 2026-03-17
+Last updated: 2026-04-24
 Retrieve when:
 - changing admin login, sign-out, or initial route entry behavior
 - debugging why admin session cookies and visible route access do not match
@@ -28,7 +28,7 @@ Describe the real current admin auth path from login entry into the platform she
 
 - `/` -> redirect to `/login`
 - `/login` -> render `AdminLoginScreen`
-- `signInAdminAction()` -> write `ADMIN_SESSION_COOKIE`, clear `ADMIN_ROLE_COOKIE`, redirect to `/access-boundary`
+- `signInAdminAction()` -> validate Supabase Auth credentials, load `actor_profiles` and `admin_profiles`, write `ADMIN_SESSION_COOKIE`, clear `ADMIN_ROLE_COOKIE`, redirect to `/access-boundary`
 - `/access-boundary` -> requires session, renders role selection when role is unresolved, redirects to the role home route when the role is already valid
 - protected platform route -> middleware and platform layout both require session and valid role before render
 - `signOutAdminAction()` from the platform shell -> clear cookies -> redirect to `/login`
@@ -51,6 +51,9 @@ Describe the real current admin auth path from login entry into the platform she
 ## What Is Authoritative vs Derived In This Flow
 
 - Authoritative:
+  - Supabase Auth password validation
+  - `public.actor_profiles.actor_type = 'admin'`
+  - `public.admin_profiles.role`
   - session cookie value written by `signInAdminAction()`
   - session cookie deletion in `signOutAdminAction()`
   - redirect targets inside auth actions
@@ -61,10 +64,9 @@ Describe the real current admin auth path from login entry into the platform she
 
 ## Known Shallow, Partial, Fixture-Backed, or Local-Only Limits
 
-- Auth is demo-safe only.
-- Credentials are not validated.
-- Admin identity is hardcoded.
-- Session truth is cookie-real and route-enforced, but still local-only and demo-safe.
+- Local seed includes `admin@deliberry.local / admin1234` for smoke tests only.
+- Session truth is Supabase-authenticated, cookie-real, and route-enforced.
+- Production admin accounts still need to be provisioned in Supabase/Auth and `admin_profiles` outside the local seed path.
 
 ## Common Edit Mistakes
 

@@ -15,9 +15,9 @@ Wave 2 resolves 3 gaps, all in `customer-app`. These are the highest-severity re
 
 ## Gaps to Resolve
 
-### GAP-C01: Float dollars to integer centavos (CRITICAL)
+### GAP-C01: Float money to integer money units (CRITICAL)
 
-**Rules violated**: R-010 (integer centavos), R-011 (no floats for money)
+**Rules violated**: R-010 (integer minor money units), R-011 (no floats for money)
 **Decay mode**: DECAY_PATH.md Mode 2 (Float Money)
 
 **Current state**:
@@ -32,7 +32,7 @@ Wave 2 resolves 3 gaps, all in `customer-app`. These are the highest-severity re
 
 **Required state**:
 - All money fields change from `double` to `int`
-- All values multiply by 100 to become centavos (e.g., 12.99 -> 1299)
+- All values must be converted from float display amounts to integer money units
 - `MockCartItem.total` getter returns `int` (menuItem.price * quantity)
 - `cartSubtotal`, `cartDeliveryFee`, `cartServiceFee`, `cartTotal` all return `int`
 
@@ -40,9 +40,9 @@ Wave 2 resolves 3 gaps, all in `customer-app`. These are the highest-severity re
 
 | File | Changes Required |
 |------|-----------------|
-| `customer-app/lib/core/data/mock_data.dart` | Change `double` types to `int` for: `MockStore.deliveryFee`, `MockMenuItem.price`, `MockOrder.total`, `MockCartItem.total` getter, `cartSubtotal`, `cartDeliveryFee`, `cartServiceFee`, `cartTotal`. Convert all money literal values to centavos. |
-| `customer-app/lib/features/cart/presentation/cart_screen.dart` | Update money display: divide centavos by 100 for user-facing text (e.g., `(item.total / 100).toStringAsFixed(2)`) |
-| `customer-app/lib/features/checkout/presentation/checkout_screen.dart` | Update money display: divide centavos by 100 for user-facing text |
+| `customer-app/lib/core/data/mock_data.dart` | Change `double` types to `int` for money-semantic fields. Convert float money literals into integer money units aligned to the canonical currency baseline. |
+| `customer-app/lib/features/cart/presentation/cart_screen.dart` | Update money display to use the surface money formatter instead of raw float presentation |
+| `customer-app/lib/features/checkout/presentation/checkout_screen.dart` | Update money display to use the surface money formatter instead of raw float presentation |
 | `customer-app/lib/features/orders/presentation/orders_screen.dart` | Update money display if order totals are shown |
 | `customer-app/lib/features/orders/presentation/order_detail_screen.dart` | Update money display if order totals are shown |
 | `customer-app/lib/features/home/presentation/home_screen.dart` | Update money display if store delivery fees are shown |
@@ -104,7 +104,7 @@ Wave 2 resolves 3 gaps, all in `customer-app`. These are the highest-severity re
 | `customer-app/lib/features/orders/presentation/order_detail_screen.dart` | Update field reference if used |
 | `customer-app/lib/features/notifications/presentation/notifications_screen.dart` | Update field reference `time` -> `createdAt`; add display-layer relative time formatting |
 
-**Caution**: Use realistic Buenos Aires-local times converted to UTC. For example, "Today, 2:30 PM" Buenos Aires (UTC-3) = `2026-03-17T17:30:00Z`. Use dates consistent with the current date context (2026-03-17).
+**Caution**: Use realistic Ho Chi Minh City-local times converted to UTC. Use dates consistent with the current date context (2026-03-17).
 
 ---
 
@@ -151,7 +151,7 @@ npm run typecheck --prefix public-website
 
 Wave 2 is complete when ALL of the following are true:
 
-1. **GAP-C01**: Zero `double` types remain on money-semantic fields in `mock_data.dart`. All money values are integer centavos. All presentation code divides by 100 for display.
+1. **GAP-C01**: Zero `double` types remain on money-semantic fields in `mock_data.dart`. All money values are integer money units. Presentation code formats them through the approved display path.
 2. **GAP-C02**: Zero display-formatted status strings remain in `mock_data.dart`. All status values match canonical `DomainContractBridge.orderStatuses` values. Presentation layer handles display formatting.
 3. **GAP-C03**: Zero relative or informal date strings remain in `mock_data.dart`. All timestamp fields are named `createdAt` and contain UTC ISO 8601 strings ending with `Z`. Presentation layer handles relative time display.
 4. `flutter analyze` passes with no issues.

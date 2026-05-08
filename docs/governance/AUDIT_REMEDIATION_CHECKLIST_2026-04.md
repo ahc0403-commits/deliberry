@@ -66,9 +66,9 @@ Evidence required:
 
 ### 0C -- Currency Policy Clarification
 
-- [x] Decide whether customer order creation defaults to `ARS` or derives currency from a documented rule.
+- [x] Decide whether customer order creation defaults to `VND` or derives currency from a documented rule.
 - [x] Confirm whether any runtime path is legitimately allowed to write `USD`.
-- [x] Confirm no path may write `VND`.
+- [x] Confirm no undocumented currency may be written by governed runtime paths.
 
 Evidence required:
 
@@ -83,7 +83,7 @@ Owner: governance remediation track
 Completed items:
 - Public customer auth exchange resolved as a formal temporary exception
 - Canonical admin identity model resolved to `actor_type = admin` plus `role`
-- Currency remediation rule clarified: ARS default, USD explicit secondary only, VND forbidden
+- Currency remediation rule clarified: VND default, USD explicit secondary only, no undocumented currencies
 
 Evidence:
 - `docs/governance/exceptions/2026-04-15-R-001-R-073-public-auth-exchange.md`

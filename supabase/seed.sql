@@ -32,7 +32,7 @@ values
     '11111111-1111-4111-8111-111111111111',
     'authenticated',
     'authenticated',
-    'demo@saborcriollo.com',
+    'demo@saigonhome.vn',
     extensions.crypt('demo1234', extensions.gen_salt('bf')),
     timezone('utc', now()),
     '',
@@ -98,6 +98,30 @@ values
     '{"surface":"customer-app","mode":"seed"}'::jsonb,
     timezone('utc', now()),
     timezone('utc', now())
+  ),
+  (
+    '00000000-0000-0000-0000-000000000000',
+    '44444444-4444-4444-8444-444444444444',
+    'authenticated',
+    'authenticated',
+    'admin@deliberry.local',
+    extensions.crypt('admin1234', extensions.gen_salt('bf')),
+    timezone('utc', now()),
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+    false,
+    false,
+    false,
+    '{"provider":"email","providers":["email"]}'::jsonb,
+    '{"surface":"admin-console","mode":"seed","role":"platform_admin"}'::jsonb,
+    timezone('utc', now()),
+    timezone('utc', now())
   )
 on conflict (id) do update
 set
@@ -130,11 +154,11 @@ insert into auth.identities (
 )
 values
   (
-    'demo@saborcriollo.com',
+    'demo@saigonhome.vn',
     '11111111-1111-4111-8111-111111111111',
     jsonb_build_object(
       'sub', '11111111-1111-4111-8111-111111111111',
-      'email', 'demo@saborcriollo.com',
+      'email', 'demo@saigonhome.vn',
       'email_verified', true
     ),
     'email',
@@ -167,6 +191,19 @@ values
     timezone('utc', now()),
     timezone('utc', now()),
     timezone('utc', now())
+  ),
+  (
+    'admin@deliberry.local',
+    '44444444-4444-4444-8444-444444444444',
+    jsonb_build_object(
+      'sub', '44444444-4444-4444-8444-444444444444',
+      'email', 'admin@deliberry.local',
+      'email_verified', true
+    ),
+    'email',
+    timezone('utc', now()),
+    timezone('utc', now()),
+    timezone('utc', now())
   )
 on conflict (provider_id, provider) do update
 set
@@ -184,23 +221,30 @@ values
   (
     '11111111-1111-4111-8111-111111111111',
     'merchant_owner',
-    'Demo Merchant',
-    'demo@saborcriollo.com',
-    '+54 11 4000 1000'
+    'Saigon Home Kitchen',
+    'demo@saigonhome.vn',
+    '+84 28 7300 1000'
   ),
   (
     '22222222-2222-4222-8222-222222222222',
     'customer',
     'Maria Gomez',
     'customer.one@example.com',
-    '+54 11 5000 1000'
+    '+84 28 7300 2001'
   ),
   (
     '33333333-3333-4333-8333-333333333333',
     'customer',
     'Carlos Ruiz',
     'customer.two@example.com',
-    '+54 11 5000 2000'
+    '+84 28 7300 2002'
+  ),
+  (
+    '44444444-4444-4444-8444-444444444444',
+    'admin',
+    'Local Platform Admin',
+    'admin@deliberry.local',
+    null
   )
 on conflict (id) do update
 set
@@ -210,6 +254,22 @@ set
   phone_number = excluded.phone_number,
   updated_at = timezone('utc', now());
 
+insert into public.admin_profiles (
+  actor_id,
+  role,
+  mfa_required
+)
+values (
+  '44444444-4444-4444-8444-444444444444',
+  'platform_admin',
+  false
+)
+on conflict (actor_id) do update
+set
+  role = excluded.role,
+  mfa_required = excluded.mfa_required,
+  updated_at = timezone('utc', now());
+
 insert into public.merchant_profiles (
   user_id,
   merchant_name,
@@ -217,7 +277,7 @@ insert into public.merchant_profiles (
 )
 values (
   '11111111-1111-4111-8111-111111111111',
-  'Demo Merchant',
+  'Saigon Home Kitchen',
   true
 )
 on conflict (user_id) do update
@@ -248,16 +308,16 @@ insert into public.stores (
 values (
   'demo-store',
   '11111111-1111-4111-8111-111111111111',
-  'Sabor Criollo Kitchen',
-  'Buenos Aires',
+  'Saigon Home Kitchen',
+  'Ho Chi Minh City',
   true,
-  'Av. Corrientes 1234, Buenos Aires',
-  '+54 11 4567-8900',
-  'info@saborcriollo.com',
+  '12 Nguyen Hue, Ben Nghe Ward, District 1, Ho Chi Minh City',
+  '+84 28 7300 1100',
+  'info@saigonhome.vn',
   4.6,
   2,
   'open',
-  'Argentine / Latin American',
+  'Vietnamese Home Kitchen',
   '[
     {"day":"Monday","open":"10:00","close":"23:00"},
     {"day":"Tuesday","open":"10:00","close":"23:00"},
@@ -317,10 +377,10 @@ values
   (
     'menu-demo-001',
     'demo-store',
-    'Asado para 2',
-    'Traditional grilled beef platter with chimichurri and roasted vegetables.',
-    'Popular',
-    420000,
+    'Com Tam Suon Nuong',
+    'Com tam suon nuong kem mo hanh, do chua va rau an kem.',
+    'Rice bowls',
+    185000,
     '#FFB74D',
     true,
     true,
@@ -329,10 +389,10 @@ values
   (
     'menu-demo-002',
     'demo-store',
-    'Milanesa Napolitana',
-    'Breaded beef topped with tomato sauce, ham, and melted mozzarella.',
-    'Popular',
-    185000,
+    'Bun Thit Nuong',
+    'Bun thit nuong voi rau song, lac rang va nuoc mam chua ngot.',
+    'Rice bowls',
+    150000,
     '#FF8A65',
     true,
     true,
@@ -341,10 +401,10 @@ values
   (
     'menu-demo-003',
     'demo-store',
-    'Empanadas Surtidas x6',
-    'Six assorted empanadas with beef, chicken, and cheese fillings.',
+    'Cha Gio Tom Cua',
+    'Cha gio tom cua gion, an kem rau song va nuoc cham.',
     'Popular',
-    150000,
+    90000,
     '#E57373',
     true,
     true,
@@ -353,10 +413,10 @@ values
   (
     'menu-demo-004',
     'demo-store',
-    'Choripan Completo',
-    'Grilled chorizo sandwich with criolla salsa and chimichurri.',
-    'Sandwiches',
-    90000,
+    'Goi Cuon',
+    'Goi cuon tom tuoi voi bun, rau thom va sot cham nha lam.',
+    'Sides',
+    80000,
     '#FFCC80',
     false,
     true,
@@ -365,10 +425,10 @@ values
   (
     'menu-demo-005',
     'demo-store',
-    'Ensalada Mixta',
-    'Tomato, lettuce, onion, and olives with house dressing.',
+    'Bo La Lot',
+    'Bo la lot nuong than, them muoi lac rang va mo hanh.',
     'Sides',
-    80000,
+    120000,
     '#81C784',
     false,
     true,
@@ -377,10 +437,10 @@ values
   (
     'menu-demo-006',
     'demo-store',
-    'Provoleta',
-    'Grilled provolone cheese finished with oregano and olive oil.',
-    'Sides',
-    120000,
+    'Tra Dao',
+    'Tra dao voi nha dam va trai cay tuoi cat lat.',
+    'Drinks',
+    85000,
     '#FFD54F',
     false,
     true,
@@ -389,8 +449,8 @@ values
   (
     'menu-demo-007',
     'demo-store',
-    'Flan con Dulce de Leche',
-    'Classic flan topped with dulce de leche and whipped cream.',
+    'Che Ba Mau',
+    'Che ba mau voi dau, thach va nuoc cot dua.',
     'Desserts',
     75000,
     '#CE93D8',
@@ -401,14 +461,296 @@ values
   (
     'menu-demo-008',
     'demo-store',
-    'Vino Malbec Copa',
-    'Glass of Mendoza Malbec served slightly chilled.',
+    'Ca Phe Sua Da',
+    'Ca phe sua da dam vi voi sua dac.',
     'Drinks',
     85000,
     '#A1887F',
     false,
     true,
     8
+  )
+on conflict (id) do update
+set
+  store_id = excluded.store_id,
+  name = excluded.name,
+  description = excluded.description,
+  category = excluded.category,
+  price_centavos = excluded.price_centavos,
+  image_color_hex = excluded.image_color_hex,
+  is_popular = excluded.is_popular,
+  is_available = excluded.is_available,
+  sort_order = excluded.sort_order,
+  updated_at = timezone('utc', now());
+
+-- Smoke runtime stores for multi-store concurrent order verification.
+insert into public.stores (
+  id,
+  merchant_actor_id,
+  name,
+  city,
+  is_open,
+  address,
+  phone,
+  email,
+  rating,
+  review_count,
+  status,
+  cuisine_type,
+  hours_json,
+  delivery_radius,
+  avg_prep_time,
+  accepting_orders,
+  settings_json
+)
+values
+  (
+    'smoke-store-01',
+    '11111111-1111-4111-8111-111111111111',
+    'Smoke Test Arepa Bar',
+    'Ho Chi Minh City',
+    true,
+    '101 Le Thanh Ton, Ben Thanh Ward, District 1, Ho Chi Minh City',
+    '+84 28 7300 3001',
+    'smoke-store-01@deliberry.local',
+    4.5,
+    0,
+    'open',
+    'Latin Bowls',
+    '[{"day":"Everyday","open":"10:00","close":"22:00"}]'::jsonb,
+    '4 km',
+    '20-30 min',
+    true,
+    '{"auto_accept_orders":false,"order_notifications":true,"allow_special_instructions":true}'::jsonb
+  ),
+  (
+    'smoke-store-02',
+    '11111111-1111-4111-8111-111111111111',
+    'Smoke Test Noodle Lab',
+    'Ho Chi Minh City',
+    true,
+    '102 Hai Ba Trung, Ben Nghe Ward, District 1, Ho Chi Minh City',
+    '+84 28 7300 3002',
+    'smoke-store-02@deliberry.local',
+    4.4,
+    0,
+    'open',
+    'Noodles',
+    '[{"day":"Everyday","open":"10:00","close":"22:00"}]'::jsonb,
+    '4 km',
+    '18-28 min',
+    true,
+    '{"auto_accept_orders":false,"order_notifications":true,"allow_special_instructions":true}'::jsonb
+  ),
+  (
+    'smoke-store-03',
+    '11111111-1111-4111-8111-111111111111',
+    'Smoke Test Pizza Bench',
+    'Ho Chi Minh City',
+    true,
+    '103 Vo Van Tan, Ward 6, District 3, Ho Chi Minh City',
+    '+84 28 7300 3003',
+    'smoke-store-03@deliberry.local',
+    4.3,
+    0,
+    'open',
+    'Pizza',
+    '[{"day":"Everyday","open":"10:00","close":"22:00"}]'::jsonb,
+    '5 km',
+    '25-35 min',
+    true,
+    '{"auto_accept_orders":false,"order_notifications":true,"allow_special_instructions":true}'::jsonb
+  ),
+  (
+    'smoke-store-04',
+    '11111111-1111-4111-8111-111111111111',
+    'Smoke Test Curry Desk',
+    'Ho Chi Minh City',
+    true,
+    '104 Nguyen Dinh Chieu, Da Kao Ward, District 1, Ho Chi Minh City',
+    '+84 28 7300 3004',
+    'smoke-store-04@deliberry.local',
+    4.6,
+    0,
+    'open',
+    'Curry',
+    '[{"day":"Everyday","open":"10:00","close":"22:00"}]'::jsonb,
+    '5 km',
+    '22-32 min',
+    true,
+    '{"auto_accept_orders":false,"order_notifications":true,"allow_special_instructions":true}'::jsonb
+  ),
+  (
+    'smoke-store-05',
+    '11111111-1111-4111-8111-111111111111',
+    'Smoke Test Salad Works',
+    'Ho Chi Minh City',
+    true,
+    '105 Tran Hung Dao, Co Giang Ward, District 1, Ho Chi Minh City',
+    '+84 28 7300 3005',
+    'smoke-store-05@deliberry.local',
+    4.2,
+    0,
+    'open',
+    'Salads',
+    '[{"day":"Everyday","open":"10:00","close":"22:00"}]'::jsonb,
+    '3 km',
+    '15-25 min',
+    true,
+    '{"auto_accept_orders":false,"order_notifications":true,"allow_special_instructions":true}'::jsonb
+  )
+on conflict (id) do update
+set
+  merchant_actor_id = excluded.merchant_actor_id,
+  name = excluded.name,
+  city = excluded.city,
+  is_open = excluded.is_open,
+  address = excluded.address,
+  phone = excluded.phone,
+  email = excluded.email,
+  rating = excluded.rating,
+  review_count = excluded.review_count,
+  status = excluded.status,
+  cuisine_type = excluded.cuisine_type,
+  hours_json = excluded.hours_json,
+  delivery_radius = excluded.delivery_radius,
+  avg_prep_time = excluded.avg_prep_time,
+  accepting_orders = excluded.accepting_orders,
+  settings_json = excluded.settings_json,
+  updated_at = timezone('utc', now());
+
+insert into public.store_menu_items (
+  id,
+  store_id,
+  name,
+  description,
+  category,
+  price_centavos,
+  image_color_hex,
+  is_popular,
+  is_available,
+  sort_order
+)
+values
+  (
+    'menu-smoke-01-001',
+    'smoke-store-01',
+    'Smoke Arepa Combo',
+    'Arepa, beans, plantain, and avocado for concurrent order smoke testing.',
+    'Smoke Orders',
+    129000,
+    '#F6A15A',
+    true,
+    true,
+    1
+  ),
+  (
+    'menu-smoke-01-002',
+    'smoke-store-01',
+    'Smoke Guava Juice',
+    'Seeded drink item used by the smoke order harness.',
+    'Smoke Orders',
+    32000,
+    '#F47B80',
+    false,
+    true,
+    2
+  ),
+  (
+    'menu-smoke-02-001',
+    'smoke-store-02',
+    'Smoke Noodle Bowl',
+    'Noodle bowl with vegetables and broth for concurrent order smoke testing.',
+    'Smoke Orders',
+    118000,
+    '#F0C75E',
+    true,
+    true,
+    1
+  ),
+  (
+    'menu-smoke-02-002',
+    'smoke-store-02',
+    'Smoke Spring Rolls',
+    'Seeded side item used by the smoke order harness.',
+    'Smoke Orders',
+    45000,
+    '#79BF84',
+    false,
+    true,
+    2
+  ),
+  (
+    'menu-smoke-03-001',
+    'smoke-store-03',
+    'Smoke Margherita Pizza',
+    'Personal pizza for concurrent order smoke testing.',
+    'Smoke Orders',
+    135000,
+    '#E97764',
+    true,
+    true,
+    1
+  ),
+  (
+    'menu-smoke-03-002',
+    'smoke-store-03',
+    'Smoke Garlic Knots',
+    'Seeded side item used by the smoke order harness.',
+    'Smoke Orders',
+    39000,
+    '#D9A657',
+    false,
+    true,
+    2
+  ),
+  (
+    'menu-smoke-04-001',
+    'smoke-store-04',
+    'Smoke Curry Rice',
+    'Curry rice bowl for concurrent order smoke testing.',
+    'Smoke Orders',
+    122000,
+    '#C98D44',
+    true,
+    true,
+    1
+  ),
+  (
+    'menu-smoke-04-002',
+    'smoke-store-04',
+    'Smoke Cucumber Raita',
+    'Seeded side item used by the smoke order harness.',
+    'Smoke Orders',
+    28000,
+    '#8BC6A3',
+    false,
+    true,
+    2
+  ),
+  (
+    'menu-smoke-05-001',
+    'smoke-store-05',
+    'Smoke Harvest Salad',
+    'Salad bowl for concurrent order smoke testing.',
+    'Smoke Orders',
+    99000,
+    '#76B86C',
+    true,
+    true,
+    1
+  ),
+  (
+    'menu-smoke-05-002',
+    'smoke-store-05',
+    'Smoke Berry Tea',
+    'Seeded drink item used by the smoke order harness.',
+    'Smoke Orders',
+    26000,
+    '#B46FA9',
+    false,
+    true,
+    2
   )
 on conflict (id) do update
 set
@@ -435,6 +777,48 @@ values (
   'merchant_owner',
   true
 )
+on conflict (user_id, store_id) do update
+set
+  role = excluded.role,
+  is_default = excluded.is_default;
+
+insert into public.merchant_memberships (
+  user_id,
+  store_id,
+  role,
+  is_default
+)
+values
+  (
+    '11111111-1111-4111-8111-111111111111',
+    'smoke-store-01',
+    'merchant_owner',
+    false
+  ),
+  (
+    '11111111-1111-4111-8111-111111111111',
+    'smoke-store-02',
+    'merchant_owner',
+    false
+  ),
+  (
+    '11111111-1111-4111-8111-111111111111',
+    'smoke-store-03',
+    'merchant_owner',
+    false
+  ),
+  (
+    '11111111-1111-4111-8111-111111111111',
+    'smoke-store-04',
+    'merchant_owner',
+    false
+  ),
+  (
+    '11111111-1111-4111-8111-111111111111',
+    'smoke-store-05',
+    'merchant_owner',
+    false
+  )
 on conflict (user_id, store_id) do update
 set
   role = excluded.role,
@@ -472,22 +856,22 @@ values
     'pending',
     'card',
     560000,
-    'ARS',
+  'VND',
     timezone('utc', now()) - interval '20 minutes',
     null,
     null,
     null,
     'Maria Gomez',
-    '+54 11 5000 1000',
-    'Av. Santa Fe 2100, 3B',
+    '+84 28 7300 2001',
+    '210 Nguyen Thai Hoc, Co Giang Ward, District 1, Ho Chi Minh City',
     'Ring doorbell twice please',
     525000,
     35000,
     timezone('utc', now()) + interval '25 minutes',
     '[
-      {"name":"Milanesa Napolitana","quantity":2,"unit_price_centavos":185000,"modifiers":["Extra cheese"]},
-      {"name":"Ensalada Mixta","quantity":1,"unit_price_centavos":80000},
-      {"name":"Flan con Dulce de Leche","quantity":2,"unit_price_centavos":75000}
+      {"name":"Com Tam Suon Nuong","quantity":2,"unit_price_centavos":185000,"modifiers":["Extra fried egg"]},
+      {"name":"Goi Cuon","quantity":1,"unit_price_centavos":80000},
+      {"name":"Che Ba Mau","quantity":2,"unit_price_centavos":75000}
     ]'::jsonb,
     '#1247'
   ),
@@ -499,21 +883,21 @@ values
     'pending',
     'cash',
     365000,
-    'ARS',
+    'VND',
     timezone('utc', now()) - interval '45 minutes',
     timezone('utc', now()) - interval '40 minutes',
     timezone('utc', now()) - interval '30 minutes',
     null,
     'Carlos Ruiz',
-    '+54 11 5000 2000',
-    'Calle Florida 450, PB',
+    '+84 28 7300 2002',
+    '450 Cach Mang Thang Tam, Ward 11, District 3, Ho Chi Minh City',
     null,
     330000,
     35000,
     timezone('utc', now()) + interval '10 minutes',
     '[
-      {"name":"Empanadas Surtidas x6","quantity":1,"unit_price_centavos":150000},
-      {"name":"Choripan Completo","quantity":2,"unit_price_centavos":90000}
+      {"name":"Bun Thit Nuong","quantity":1,"unit_price_centavos":150000},
+      {"name":"Cha Gio Tom Cua","quantity":2,"unit_price_centavos":90000}
     ]'::jsonb,
     '#1246'
   ),
@@ -525,22 +909,22 @@ values
     'pending',
     'card',
     710000,
-    'ARS',
+    'VND',
     timezone('utc', now()) - interval '70 minutes',
     timezone('utc', now()) - interval '65 minutes',
     timezone('utc', now()) - interval '55 minutes',
     timezone('utc', now()) - interval '5 minutes',
     'Maria Gomez',
-    '+54 11 5000 1000',
-    'Av. Callao 890, 5A',
+    '+84 28 7300 2001',
+    '890 Dien Bien Phu, Ward 10, District 10, Ho Chi Minh City',
     'Free delivery promo applied',
     710000,
     0,
     timezone('utc', now()) + interval '5 minutes',
     '[
-      {"name":"Asado para 2","quantity":1,"unit_price_centavos":420000},
-      {"name":"Provoleta","quantity":1,"unit_price_centavos":120000},
-      {"name":"Vino Malbec Copa","quantity":2,"unit_price_centavos":85000}
+      {"name":"Lau Ga La E","quantity":1,"unit_price_centavos":420000},
+      {"name":"Bo La Lot","quantity":1,"unit_price_centavos":120000},
+      {"name":"Tra Dao","quantity":2,"unit_price_centavos":85000}
     ]'::jsonb,
     '#1245'
   )
@@ -588,8 +972,8 @@ values
     'demo-store',
     '33333333-3333-4333-8333-333333333333',
     5,
-    'Great empanadas and fast prep time.',
-    '["Great food","Fast delivery"]'::jsonb,
+    'Goi cuon va thit nuong rat vua mieng. Ben cua hang chuan bi cung kha nhanh.',
+    '["Fresh food","Fast prep"]'::jsonb,
     null,
     null,
     null,
@@ -601,9 +985,9 @@ values
     'demo-store',
     '22222222-2222-4222-8222-222222222222',
     4,
-    'Food was excellent, but pickup was slightly delayed.',
+    'Mon an ngon, nhung luc lay don hoi tre hon du kien mot chut.',
     '["Accurate order","Worth the price"]'::jsonb,
-    'Thanks for the feedback. We tightened the pickup handoff timing for tonight.',
+    'Cam on ban da gop y. Toi nay ben minh da siet lai quy trinh giao don tai diem lay hang.',
     timezone('utc', now()) - interval '6 hours',
     '11111111-1111-4111-8111-111111111111',
     timezone('utc', now()) - interval '1 day'
@@ -614,8 +998,8 @@ values
     'demo-store',
     '22222222-2222-4222-8222-222222222222',
     3,
-    'Tasty, but packaging could be improved.',
-    '["Good packaging"]'::jsonb,
+    'Mon an ngon, nhung ly nuoc va hop trang mieng van nen dong chac hon.',
+    '["Needs packaging work"]'::jsonb,
     null,
     null,
     null,
@@ -768,3 +1152,306 @@ set
   assignee_name = excluded.assignee_name,
   created_at = excluded.created_at,
   updated_at = timezone('utc', now());
+
+with settlement_seed (
+  settlement_id,
+  restaurant_id,
+  source_system,
+  period_start,
+  period_end,
+  period_label,
+  gross_total,
+  total_deductions,
+  net_settlement,
+  status,
+  received_at,
+  order_count
+) as (
+  values
+    (
+      '90000000-0000-4000-8000-000000000001'::uuid,
+      'demo-store',
+      'deliberry',
+      date '2026-03-08',
+      date '2026-03-14',
+      '2026-03-08_to_2026-03-14',
+      845650,
+      131348,
+      714302,
+      'pending',
+      null::timestamptz,
+      187
+    ),
+    (
+      '90000000-0000-4000-8000-000000000002'::uuid,
+      'demo-store',
+      'deliberry',
+      date '2026-03-01',
+      date '2026-03-07',
+      '2026-03-01_to_2026-03-07',
+      723400,
+      108510,
+      614890,
+      'calculated',
+      null::timestamptz,
+      162
+    ),
+    (
+      '90000000-0000-4000-8000-000000000003'::uuid,
+      'demo-store',
+      'deliberry',
+      date '2026-02-22',
+      date '2026-02-28',
+      '2026-02-22_to_2026-02-28',
+      789050,
+      120608,
+      668442,
+      'received',
+      '2026-03-03T12:00:00Z'::timestamptz,
+      174
+    ),
+    (
+      '90000000-0000-4000-8000-000000000004'::uuid,
+      'demo-store',
+      'deliberry',
+      date '2026-02-15',
+      date '2026-02-21',
+      '2026-02-15_to_2026-02-21',
+      699800,
+      104970,
+      594830,
+      'adjusted',
+      null::timestamptz,
+      156
+    ),
+    (
+      '90000000-0000-4000-8000-000000000005'::uuid,
+      'demo-store',
+      'deliberry',
+      date '2026-02-08',
+      date '2026-02-14',
+      '2026-02-08_to_2026-02-14',
+      654200,
+      99630,
+      554570,
+      'received',
+      '2026-02-17T12:00:00Z'::timestamptz,
+      148
+    )
+)
+insert into public.delivery_settlements (
+  id,
+  restaurant_id,
+  source_system,
+  period_start,
+  period_end,
+  period_label,
+  gross_total,
+  total_deductions,
+  net_settlement,
+  status,
+  received_at,
+  notes
+)
+select
+  settlement_id,
+  restaurant_id,
+  source_system,
+  period_start,
+  period_end,
+  period_label,
+  gross_total,
+  total_deductions,
+  net_settlement,
+  status,
+  received_at,
+  'Local settlement visibility seed for demo-store'
+from settlement_seed
+on conflict (id) do update
+set
+  restaurant_id = excluded.restaurant_id,
+  source_system = excluded.source_system,
+  period_start = excluded.period_start,
+  period_end = excluded.period_end,
+  period_label = excluded.period_label,
+  gross_total = excluded.gross_total,
+  total_deductions = excluded.total_deductions,
+  net_settlement = excluded.net_settlement,
+  status = excluded.status,
+  received_at = excluded.received_at,
+  notes = excluded.notes,
+  updated_at = timezone('utc', now());
+
+insert into public.delivery_settlement_items (
+  id,
+  settlement_id,
+  item_type,
+  amount,
+  description
+)
+values
+  (
+    '91000000-0000-4000-8000-000000000001'::uuid,
+    '90000000-0000-4000-8000-000000000001'::uuid,
+    'platform_commission',
+    126848,
+    'Platform commission at seeded demo rate'
+  ),
+  (
+    '91000000-0000-4000-8000-000000000002'::uuid,
+    '90000000-0000-4000-8000-000000000001'::uuid,
+    'manual_adjustment',
+    4500,
+    'Packaging quality goodwill adjustment'
+  ),
+  (
+    '91000000-0000-4000-8000-000000000003'::uuid,
+    '90000000-0000-4000-8000-000000000002'::uuid,
+    'platform_commission',
+    108510,
+    'Platform commission at seeded demo rate'
+  ),
+  (
+    '91000000-0000-4000-8000-000000000004'::uuid,
+    '90000000-0000-4000-8000-000000000003'::uuid,
+    'platform_commission',
+    118358,
+    'Platform commission at seeded demo rate'
+  ),
+  (
+    '91000000-0000-4000-8000-000000000005'::uuid,
+    '90000000-0000-4000-8000-000000000003'::uuid,
+    'manual_adjustment',
+    2250,
+    'Delivery delay recovery adjustment'
+  ),
+  (
+    '91000000-0000-4000-8000-000000000006'::uuid,
+    '90000000-0000-4000-8000-000000000004'::uuid,
+    'platform_commission',
+    104970,
+    'Platform commission at seeded demo rate'
+  ),
+  (
+    '91000000-0000-4000-8000-000000000007'::uuid,
+    '90000000-0000-4000-8000-000000000005'::uuid,
+    'platform_commission',
+    98130,
+    'Platform commission at seeded demo rate'
+  ),
+  (
+    '91000000-0000-4000-8000-000000000008'::uuid,
+    '90000000-0000-4000-8000-000000000005'::uuid,
+    'manual_adjustment',
+    1500,
+    'Promo delivery cost recovery'
+  )
+on conflict (id) do nothing;
+
+with settlement_seed (
+  settlement_id,
+  restaurant_id,
+  source_system,
+  period_end,
+  period_label,
+  gross_total,
+  order_count
+) as (
+  values
+    (
+      '90000000-0000-4000-8000-000000000001'::uuid,
+      'demo-store',
+      'deliberry',
+      date '2026-03-14',
+      '2026-03-08_to_2026-03-14',
+      845650,
+      187
+    ),
+    (
+      '90000000-0000-4000-8000-000000000002'::uuid,
+      'demo-store',
+      'deliberry',
+      date '2026-03-07',
+      '2026-03-01_to_2026-03-07',
+      723400,
+      162
+    ),
+    (
+      '90000000-0000-4000-8000-000000000003'::uuid,
+      'demo-store',
+      'deliberry',
+      date '2026-02-28',
+      '2026-02-22_to_2026-02-28',
+      789050,
+      174
+    ),
+    (
+      '90000000-0000-4000-8000-000000000004'::uuid,
+      'demo-store',
+      'deliberry',
+      date '2026-02-21',
+      '2026-02-15_to_2026-02-21',
+      699800,
+      156
+    ),
+    (
+      '90000000-0000-4000-8000-000000000005'::uuid,
+      'demo-store',
+      'deliberry',
+      date '2026-02-14',
+      '2026-02-08_to_2026-02-14',
+      654200,
+      148
+    )
+)
+insert into public.external_sales (
+  restaurant_id,
+  source_system,
+  external_order_id,
+  sales_channel,
+  gross_amount,
+  discount_amount,
+  delivery_fee,
+  net_amount,
+  currency,
+  order_status,
+  is_revenue,
+  completed_at,
+  payload,
+  settlement_id
+)
+select
+  seed.restaurant_id,
+  seed.source_system,
+  format('%s-sale-%s', seed.period_label, series.n),
+  'delivery',
+  greatest(1, seed.gross_total / seed.order_count),
+  0,
+  0,
+  greatest(1, seed.gross_total / seed.order_count),
+    'VND',
+  'completed',
+  true,
+  timezone('utc', seed.period_end::timestamp) + interval '12 hours',
+  jsonb_build_object(
+    'seed', 'settlement_demo',
+    'period_label', seed.period_label,
+    'sequence', series.n
+  ),
+  seed.settlement_id
+from settlement_seed as seed
+cross join lateral generate_series(1, seed.order_count) as series(n)
+on conflict (source_system, external_order_id) do update
+set
+  restaurant_id = excluded.restaurant_id,
+  sales_channel = excluded.sales_channel,
+  gross_amount = excluded.gross_amount,
+  discount_amount = excluded.discount_amount,
+  delivery_fee = excluded.delivery_fee,
+  net_amount = excluded.net_amount,
+  currency = excluded.currency,
+  order_status = excluded.order_status,
+  is_revenue = excluded.is_revenue,
+  completed_at = excluded.completed_at,
+  payload = excluded.payload,
+  settlement_id = excluded.settlement_id;

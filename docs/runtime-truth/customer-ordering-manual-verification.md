@@ -4,7 +4,7 @@ Status: active
 Authority: operational
 Surface: customer-app
 Domains: auth, addresses, checkout, orders
-Last updated: 2026-04-08
+Last updated: 2026-04-28
 Retrieve when:
 - validating live/manual customer flow after auth or checkout changes
 - confirming post-login ordering continuity with real Supabase-backed session
@@ -13,7 +13,7 @@ Retrieve when:
 
 This checklist validates the real customer ordering path:
 
-Entry -> Login -> Address required gate -> Address add/select -> Home -> Store/Menu/Cart -> Checkout -> Payment method selection -> Order creation -> Order completion -> Order status
+Entry -> Login -> Address required gate -> Address add/select -> Home -> Store/Menu/Cart -> Checkout -> Payment method selection -> Order creation -> Cash completion or VNPAY pending status -> Order status
 
 ## Preconditions
 
@@ -76,11 +76,13 @@ Expected:
 
 ### 6) Payment Method Selection
 
-- In checkout, switch between available methods (`Cash`, `Card •••• 4242`).
+- In checkout, switch between available methods (`Cash`, `VNPAY Card Test`, `VNPAY Pay Test`).
 
 Expected:
 - Selection state updates visually.
-- No real payment provider processing occurs (placeholder behavior only).
+- `VNPAY Card Test` is described as sandbox card flow and may send the customer to VNPAY for bank selection.
+- `VNPAY Pay Test` is described as sandbox QR/mobile-banking flow.
+- No live payment completion occurs inside Deliberry.
 
 ### 7) Order Creation
 
@@ -88,29 +90,33 @@ Expected:
 
 Expected:
 - Order is persisted through runtime gateway.
-- If session is missing, user-facing blocker is shown (`Sign in with Kakao or Zalo...`).
+- If a VNPAY sandbox method was selected, the app requests a hosted VNPAY URL after order creation.
+- If session is missing, user-facing blocker is shown.
 
 ### 8) Order Completion Screen
 
 - After successful order creation, verify transition.
 
 Expected:
-- App routes to `/orders/completion`.
-- Completion screen shows order id/store/items/total.
+- Cash checkout routes to `/orders/completion`.
+- Completion screen uses `Order submitted` language and shows order id/store/items/total.
+- If a VNPAY sandbox method was selected, the app does not use the completion screen as a fake payment-success state.
 
 ### 9) Order Status Continuity
 
-- From completion, tap `Track Order Status`.
+- From completion, tap `Track Order Status`, or confirm direct status routing after a VNPAY sandbox launch attempt.
 
 Expected:
 - App routes to `/orders/status` for created order id.
 - Status screen and order detail route are reachable.
+- If a VNPAY sandbox method was selected, order status still shows payment pending language after sandbox launch or launch failure.
 
 ## PASS Criteria
 
 - All 9 steps pass in one continuous run.
 - No unexpected fallback to login screen after successful session establishment.
 - Order id created in checkout is visible in completion and status flows.
+- VNPAY sandbox selection does not move any tested order out of `payment_status = pending`.
 
 ## Known Manual-Only Constraints
 

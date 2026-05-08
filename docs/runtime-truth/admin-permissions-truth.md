@@ -4,7 +4,8 @@ Status: Active
 Authority: Operational
 Surface: admin-console
 Domains: permissions, role-selection, access-boundary
-Last updated: 2026-03-17
+Last updated: 2026-05-06
+Last verified: 2026-05-06
 Retrieve when:
 - changing admin role selection or access-boundary behavior
 - checking where admin role state is actually stored
@@ -36,6 +37,7 @@ Identify where admin role-selection truth lives today and how it is enforced at 
 - mirrored session role value inside `ADMIN_SESSION_COOKIE`
 - validated redirect from role selection to the role-allowed home route
 - route-allowance checks for protected admin paths
+- Supabase-backed role source at sign-in: `public.admin_profiles.role`, joined against `public.actor_profiles`
 
 ## What Screens and Routes Depend on It
 
@@ -54,19 +56,21 @@ Identify where admin role-selection truth lives today and how it is enforced at 
 - Derived:
   - role titles, icons, and descriptions shown in the access-boundary screen
   - placeholder-state descriptions
-  - the unfiltered platform navigation set
+  - the filtered platform navigation set derived from the route matrix
 
 ## What Is Still Shallow, Partial, Fixture-Backed, or Local-Only
 
 - Role selection is demo-safe only.
 - Roles are stored in a cookie and enforced at route entry, but not against any live IAM provider.
+- There are no `admin_permissions` or `admin_role_assignments` tables in the current runtime schema. The active permission boundary is the admin route layer plus the signed-in `admin_profiles.role` value.
 - The role boundary is runtime-real for route access, but still shallow compared with a full permission system.
 - The access-boundary route now uses sign-out as the truthful account-exit path instead of a broken loop back to `/login`.
+- Route denial now carries explicit redirect reasons (`role_required`, `access_denied`) so access-boundary and post-redirect UX can explain why the current route set changed.
 
 ## Known Risks
 
 - Future route and nav filtering can diverge from cookie semantics if the role list changes casually.
-- Shell badge counts are now derived from fixture-backed route datasets, so they remain internally aligned but not backend-real.
+- Shell badge counts are read only for links visible to the current role and come from the admin runtime repository where available.
 
 ## Safe Modification Guidance
 

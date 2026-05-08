@@ -3,10 +3,10 @@ import "server-only";
 import {
   buildExternalLlmTransmissionAuditRecord,
   buildExternalLlmMaskedTransmissionEnvelope,
-  type AuthActorType,
   type ExternalMaskingProfile,
   type MaskedMerchantStoreExportBundleForLLM,
-} from "../domain";
+} from "../merchant-governed-domain";
+import type { AuthActorType } from "../domain";
 import { recordMerchantExternalLlmTransmissionAttempt } from "./external-llm-transmission-audit-service";
 import { merchantRepository } from "./merchant-repository";
 import { supabaseMerchantRuntimeRepository } from "./supabase-merchant-runtime-repository";

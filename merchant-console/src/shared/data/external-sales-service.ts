@@ -87,7 +87,7 @@ export class ExternalSalesService {
         discount_amount: 0,
         delivery_fee: input.order.deliveryFee,
         net_amount: input.netAmount,
-        currency: "ARS",
+        currency: "VND",
         order_status: input.status,
         is_revenue: input.isRevenue,
         completed_at: new Date().toISOString(),

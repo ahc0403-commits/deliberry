@@ -4,8 +4,8 @@ Status: active
 Authority: operational
 Surface: customer-app
 Domains: group-order, invite-preview, partial-support
-Last updated: 2026-03-16
-Last verified: 2026-03-16
+Last updated: 2026-05-05
+Last verified: 2026-05-05
 Retrieve when:
 - changing group-order preview behavior or invite-copy actions
 - checking why the group-order flow is intentionally partial
@@ -16,53 +16,55 @@ Related files:
 
 ## Purpose
 
-Document the current group-order flow honestly as a local preview path, not a live shared-cart flow.
+Document the current group-order flow honestly as a local room path, not a live shared-cart flow.
 
 ## Entry points
 
 - direct route entry into `/group-order`
-- create-preview path into `/group-order/share`
+- create-room path into `/group-order/share`
 
 ## Main route sequence
 
-- `/group-order` -> `/group-order/share`
-- `/group-order` -> join-room attempt -> explicit unavailable feedback
+- `/group-order` -> create local room -> `/group-order/share`
+- `/group-order` -> join matching local room code -> `/group-order/share`
+- `/group-order` -> join unknown code -> explicit local-only feedback
 
 ## Source-of-truth files involved
 
-- [app_router.dart](/Users/andremacmini/Deliberry/customer-app/lib/app/router/app_router.dart)
-  - route ownership and route argument threading for preview code
+- [customer_runtime_controller.dart](/Users/andremacmini/Deliberry/customer-app/lib/core/data/customer_runtime_controller.dart)
+  - local room code and participant state
 - [group_order_screen.dart](/Users/andremacmini/Deliberry/customer-app/lib/features/group_order/presentation/group_order_screen.dart)
-  - preview-code generation and host/join entry behavior
+  - local room creation and join entry behavior
 - [group_order_share_screen.dart](/Users/andremacmini/Deliberry/customer-app/lib/features/group_order/presentation/group_order_share_screen.dart)
-  - preview invite copy actions
+  - invite copy actions and local participant rendering
 
 ## Key dependent screens/files
 
 - [group_order_screen.dart](/Users/andremacmini/Deliberry/customer-app/lib/features/group_order/presentation/group_order_screen.dart)
 - [group_order_share_screen.dart](/Users/andremacmini/Deliberry/customer-app/lib/features/group_order/presentation/group_order_share_screen.dart)
+- [customer_runtime_controller.dart](/Users/andremacmini/Deliberry/customer-app/lib/core/data/customer_runtime_controller.dart)
 - [route_names.dart](/Users/andremacmini/Deliberry/customer-app/lib/app/router/route_names.dart)
 
 ## What is authoritative vs derived in this flow
 
 - Authoritative:
   - route ownership
-  - preview code passed in route arguments
+  - local room code and participant state in `CustomerRuntimeController`
   - copy-to-clipboard actions
 - Derived:
-  - generated preview code value
-  - preview participant labels
+  - route argument fallback for room code
+  - participant labels derived from local profile/session identity
   - explanatory copy shown on both screens
 - Not authoritative:
-  - there is no shared room membership truth
+  - there is no cross-device shared room membership truth
   - there is no live shared-cart truth
 
 ## Known shallow / partial / local-only limits
 
 - This flow is intentionally local-only.
-- Join-room is explicitly unavailable.
-- Share/invite behavior copies preview text only.
-- There is no participant sync, live room state, or group cart runtime.
+- Join-room now works only for a room code created on the same device in the current runtime session.
+- Share/invite behavior copies local-room text only.
+- There is no participant sync across devices, no backend room persistence, and no group cart runtime.
 
 ## Common edit mistakes
 

@@ -16,6 +16,26 @@ type SettlementRunResult = {
   results: Array<Record<string, unknown>>;
 };
 
+type SettlementSchemaProbeClient = {
+  from: (table: string) => {
+    select: (columns: string) => {
+      limit: (count: number) => Promise<{ error: { message: string } | null }>;
+    };
+  };
+};
+
+export class SettlementRuntimeGuardError extends Error {
+  code: string;
+  details?: Record<string, unknown>;
+
+  constructor(code: string, message: string, details?: Record<string, unknown>) {
+    super(message);
+    this.name = "SettlementRuntimeGuardError";
+    this.code = code;
+    this.details = details;
+  }
+}
+
 function parseIsoDate(date: string): Date | null {
   const trimmed = date.trim();
   if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
@@ -23,6 +43,45 @@ function parseIsoDate(date: string): Date | null {
   }
   const parsed = new Date(`${trimmed}T00:00:00.000Z`);
   return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+export function assertSettlementRuntimeEnabled() {
+  const runtimeFlag = (Deno.env.get("ENABLE_SETTLEMENT_RUNTIME") ?? "").trim().toLowerCase();
+  if (runtimeFlag !== "true") {
+    throw new SettlementRuntimeGuardError(
+      "settlement_runtime_disabled",
+      "Settlement runtime is disabled until rollout approval.",
+      { env: "ENABLE_SETTLEMENT_RUNTIME", requiredValue: "true" },
+    );
+  }
+}
+
+async function assertSettlementSchemaReady(supabase: SettlementSchemaProbeClient) {
+  const probes = [
+    {
+      target: "external_sales.settlement_id",
+      run: () => supabase.from("external_sales").select("settlement_id").limit(1),
+    },
+    {
+      target: "delivery_settlements.id",
+      run: () => supabase.from("delivery_settlements").select("id").limit(1),
+    },
+    {
+      target: "delivery_settlement_items.id",
+      run: () => supabase.from("delivery_settlement_items").select("id").limit(1),
+    },
+  ];
+
+  for (const probe of probes) {
+    const { error } = await probe.run();
+    if (error) {
+      throw new SettlementRuntimeGuardError(
+        "settlement_schema_not_ready",
+        `Settlement schema probe failed for ${probe.target}.`,
+        { target: probe.target, message: error.message },
+      );
+    }
+  }
 }
 
 export function resolveAutoSettlementWindow(now = new Date()): WindowInput {
@@ -79,6 +138,8 @@ export function validateWindow(input: {
 export async function runSettlementGeneration(
   options: SettlementRunOptions,
 ): Promise<SettlementRunResult> {
+  assertSettlementRuntimeEnabled();
+
   const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
@@ -89,6 +150,8 @@ export async function runSettlementGeneration(
   const supabase = createClient(supabaseUrl, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
+
+  await assertSettlementSchemaReady(supabase as unknown as SettlementSchemaProbeClient);
 
   const startIso = `${options.periodStart}T00:00:00.000Z`;
   const endIso = `${options.periodEnd}T23:59:59.999Z`;
@@ -267,4 +330,3 @@ export async function runSettlementGeneration(
     results,
   };
 }
-

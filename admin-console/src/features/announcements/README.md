@@ -4,7 +4,7 @@ Status: Active
 Authority: Operational
 Surface: admin-console
 Domains: announcements, communications, admin
-Last updated: 2026-03-17
+Last updated: 2026-05-06
 Retrieve when:
 - editing the admin announcements route
 - checking whether announcement actions are local or backed by platform truth
@@ -54,6 +54,8 @@ The route is access-enforced. Announcement data is fixture-backed and action con
 - Announcement content is fixture-backed.
 - Compose, publish, and dismiss controls are local UI affordances.
 - There is no live messaging backend.
+- Audience/status labels and displayed publish/schedule timestamps now follow the admin locale layer.
+- Snapshot announcement titles now use Vietnam-market baseline copy, but they remain fixture-owned and not operator-authored runtime content.
 
 ## Safe Modification Guidance
 
@@ -64,5 +66,5 @@ The route is access-enforced. Announcement data is fixture-backed and action con
 ## What Not to Change Casually
 
 - Do not present compose actions as live outbound sends.
-- Do not bypass `adminQueryServices`.
+- Do not bypass `adminFixtureFacade`.
 - Do not treat local screen state as platform message truth.

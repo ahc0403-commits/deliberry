@@ -8,6 +8,7 @@ import {
   resolveAdminHomePath,
 } from "../../../shared/auth/admin-access";
 import {
+  ADMIN_COOKIE_OPTIONS,
   ADMIN_SESSION_COOKIE,
   ADMIN_ROLE_COOKIE,
   readAdminSession,
@@ -28,7 +29,7 @@ export async function setAdminRoleAction(formData: FormData) {
     redirect("/access-boundary");
   }
 
-  store.set(ADMIN_ROLE_COOKIE, role);
+  store.set(ADMIN_ROLE_COOKIE, role, ADMIN_COOKIE_OPTIONS);
   store.set(
     ADMIN_SESSION_COOKIE,
     JSON.stringify({
@@ -37,6 +38,7 @@ export async function setAdminRoleAction(formData: FormData) {
       actorType: "admin",
       role,
     }),
+    ADMIN_COOKIE_OPTIONS,
   );
 
   redirect(resolveAdminHomePath(role));

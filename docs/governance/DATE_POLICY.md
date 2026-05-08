@@ -4,8 +4,8 @@ Status: archived
 Authority: supporting-artifact (NOT canonical governance)
 Surface: cross-surface
 Domains: time, timestamps, timezone
-Last updated: 2026-03-14
-Last verified: 2026-03-16
+Last updated: 2026-05-05
+Last verified: 2026-05-05
 Archived: 2026-03-16
 Superseded by: docs/governance/DATE.md
 Retrieve when:
@@ -47,31 +47,31 @@ Examples:
 The canonical display timezone for the Deliberry platform is:
 
 ```
-America/Argentina/Buenos_Aires (UTC-3, no daylight saving time)
+Asia/Ho_Chi_Minh (UTC+7, no daylight saving time)
 ```
 
-- All user-facing timestamps MUST be converted to Buenos Aires time at the presentation layer.
+- All user-facing timestamps MUST be converted to Ho Chi Minh City time at the presentation layer.
 - Conversion MUST happen in the UI rendering code, never in the data layer.
-- The timezone offset is fixed at UTC-3 (Argentina does not observe DST).
+- The timezone offset is fixed at UTC+7 (Vietnam does not observe DST).
 
 ---
 
 ## 3. Business Date Definition
 
-A "business date" is the calendar date in `America/Argentina/Buenos_Aires` at the time of the event.
+A "business date" is the calendar date in `Asia/Ho_Chi_Minh` at the time of the event.
 
-- An order placed at `2026-03-14T02:30:00Z` (UTC) is business date `2026-03-13` (11:30 PM Buenos Aires time on March 13).
+- An order placed at `2026-03-14T18:30:00Z` (UTC) is business date `2026-03-15` (01:30 AM Ho Chi Minh City time on March 15).
 - Settlement periods, daily reports, and analytics MUST use business dates.
 
 ---
 
 ## 4. Settlement Period Cutoff
 
-Settlement periods cut off at `23:59:59` Buenos Aires time, which is `02:59:59Z` the following UTC day.
+Settlement periods cut off at `23:59:59` Ho Chi Minh City time, which is `16:59:59Z` the same UTC day.
 
 Example: The settlement period for business date 2026-03-14 covers:
-- Start: `2026-03-14T03:00:00Z` (midnight Buenos Aires)
-- End: `2026-03-15T02:59:59Z` (23:59:59 Buenos Aires)
+- Start: `2026-03-13T17:00:00Z` (midnight Ho Chi Minh City on 2026-03-14)
+- End: `2026-03-14T16:59:59Z` (23:59:59 Ho Chi Minh City on 2026-03-14)
 
 ---
 
@@ -102,7 +102,7 @@ Every entity that records timestamps MUST use the following field names and sema
 
 ### 6.1 Storage
 
-- MUST NOT store local Argentine time as-is in any persistent field (R-053).
+- MUST NOT store local Ho Chi Minh City time as-is in any persistent field (R-053).
 - MUST NOT store Unix epoch integers in contract or API fields (use ISO 8601 strings).
 - MUST NOT store relative time strings (`"2 min ago"`, `"yesterday"`) in persistent storage.
 
@@ -111,13 +111,13 @@ Every entity that records timestamps MUST use the following field names and sema
 - MUST NOT use `new Date()` without explicit UTC context in server-side code.
 - MUST NOT use `Date.now()` directly in contract fields (convert to ISO 8601 first).
 - MUST NOT use `toLocaleDateString()` or `toLocaleTimeString()` in data-layer code.
-- MUST NOT assume server timezone matches Buenos Aires.
+- MUST NOT assume server timezone matches Ho Chi Minh City.
 
 ### 6.3 Client-Side Code
 
 - MUST NOT persist display-formatted dates back to the server.
 - MUST NOT send local-time strings in API requests (always send UTC).
-- MAY use `Intl.DateTimeFormat` with `timeZone: 'America/Argentina/Buenos_Aires'` for display.
+- MAY use `Intl.DateTimeFormat` with `timeZone: 'Asia/Ho_Chi_Minh'` for display.
 
 ### 6.4 Mock Data
 
@@ -135,9 +135,9 @@ timestamps before live integration.
 // Creating a UTC timestamp
 const now = new Date().toISOString(); // "2026-03-14T15:30:00.000Z"
 
-// Converting to Buenos Aires for display
-const displayTime = new Intl.DateTimeFormat('es-AR', {
-  timeZone: 'America/Argentina/Buenos_Aires',
+// Converting to Ho Chi Minh City for display
+const displayTime = new Intl.DateTimeFormat('en-GB', {
+  timeZone: 'Asia/Ho_Chi_Minh',
   dateStyle: 'medium',
   timeStyle: 'short',
 }).format(new Date(utcTimestamp));
@@ -146,8 +146,8 @@ const displayTime = new Intl.DateTimeFormat('es-AR', {
 function getBusinessDate(utcTimestamp: string): string {
   const date = new Date(utcTimestamp);
   return date.toLocaleDateString('en-CA', {
-    timeZone: 'America/Argentina/Buenos_Aires',
-  }); // Returns YYYY-MM-DD in Buenos Aires time
+    timeZone: 'Asia/Ho_Chi_Minh',
+  }); // Returns YYYY-MM-DD in Ho Chi Minh City time
 }
 ```
 
@@ -157,8 +157,8 @@ function getBusinessDate(utcTimestamp: string): string {
 // Creating a UTC timestamp
 final now = DateTime.now().toUtc().toIso8601String();
 
-// Converting to Buenos Aires for display
-// Use the `timezone` package with 'America/Argentina/Buenos_Aires'
+// Converting to Ho Chi Minh City for display
+// Use the `timezone` package with 'Asia/Ho_Chi_Minh'
 ```
 
 ### 7.3 Database (Supabase/PostgreSQL)

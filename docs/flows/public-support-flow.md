@@ -38,8 +38,6 @@ This is a single-route support flow. The main retrieval value is understanding w
 ## Key Dependent Screens and Files
 
 - [public-website/src/features/support/README.md](/Users/andremacmini/Deliberry/public-website/src/features/support/README.md)
-- [public-website/src/shared/data/content-service.ts](/Users/andremacmini/Deliberry/public-website/src/shared/data/content-service.ts)
-- [public-website/src/shared/data/public-content-repository.ts](/Users/andremacmini/Deliberry/public-website/src/shared/data/public-content-repository.ts)
 
 ## What Is Authoritative vs Derived in This Flow
 
@@ -52,8 +50,6 @@ Authoritative:
 Derived, structural, or retrieval-shim-only:
 
 - [public-website/src/features/support/README.md](/Users/andremacmini/Deliberry/public-website/src/features/support/README.md) is documentation only
-- [content-service.ts](/Users/andremacmini/Deliberry/public-website/src/shared/data/content-service.ts)
-- [public-content-repository.ts](/Users/andremacmini/Deliberry/public-website/src/shared/data/public-content-repository.ts)
 
 ## Known Static, Hardcoded, Partial, or Retrieval-Shim-Only Limits
 
@@ -64,7 +60,7 @@ Derived, structural, or retrieval-shim-only:
 ## Common Edit Mistakes
 
 - Editing `public-website/src/features/support/` and expecting the live `/support` route to change.
-- Treating shared content-service files as live support content owners.
+- Treating removed shared public content seams as live support content owners.
 - Moving the support implementation folder or import path without updating [support/page.tsx](/Users/andremacmini/Deliberry/public-website/src/app/(marketing)/support/page.tsx).
 
 ## Related Filemaps

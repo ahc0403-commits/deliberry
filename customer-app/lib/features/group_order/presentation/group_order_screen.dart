@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/router/route_names.dart';
+import '../../../core/data/customer_runtime_controller.dart';
+import '../../../core/i18n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 
 class GroupOrderRoomScreen extends StatefulWidget {
@@ -19,11 +21,6 @@ class _GroupOrderRoomScreenState extends State<GroupOrderRoomScreen> {
     );
   }
 
-  String _generatePreviewCode() {
-    final millis = DateTime.now().millisecondsSinceEpoch % 10000;
-    return 'LOCAL-${millis.toString().padLeft(4, '0')}';
-  }
-
   @override
   void dispose() {
     _codeController.dispose();
@@ -32,13 +29,20 @@ class _GroupOrderRoomScreenState extends State<GroupOrderRoomScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Group Order'),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
+    final l10n = context.l10n;
+    final runtime = CustomerRuntimeController.instance;
+
+    return ListenableBuilder(
+      listenable: runtime,
+      builder: (context, _) {
+        final room = runtime.groupOrderRoom;
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(l10n.raw('Group Order')),
+          ),
+          body: ListView(
+            padding: const EdgeInsets.all(20),
+            children: [
           // Hero section
           Container(
             padding: const EdgeInsets.all(24),
@@ -55,21 +59,24 @@ class _GroupOrderRoomScreenState extends State<GroupOrderRoomScreen> {
             ),
             child: Column(
               children: [
-                const Icon(Icons.group_rounded, size: 48, color: Colors.white),
+                const Icon(Icons.group_rounded,
+                    size: 48, color: AppTheme.white),
                 const SizedBox(height: 12),
                 Text(
-                  'Order Together',
+                  l10n.raw('Order Together'),
                   style: Theme.of(context)
                       .textTheme
                       .headlineMedium!
-                      .copyWith(color: Colors.white),
+                      .copyWith(color: AppTheme.white),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Preview the invite flow for a shared order. Live multi-person syncing is not supported yet.',
+                  l10n.raw(
+                    'Create a local room code, copy the invite, and reuse it on this device. Live multi-person syncing is still not supported.',
+                  ),
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                        color: Colors.white.withValues(alpha: 0.85),
+                        color: AppTheme.white.withValues(alpha: 0.85),
                       ),
                 ),
               ],
@@ -80,33 +87,78 @@ class _GroupOrderRoomScreenState extends State<GroupOrderRoomScreen> {
 
           // Create room
           Text(
-            'Preview a host invite',
+            l10n.raw('Preview a host invite'),
             style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: 12),
           FilledButton.icon(
             onPressed: () {
+              final createdRoom = runtime.createGroupOrderRoom();
               Navigator.of(context).pushNamed(
                 RouteNames.groupOrderShare,
-                arguments: _generatePreviewCode(),
+                arguments: createdRoom.code,
               );
             },
             icon: const Icon(Icons.visibility_outlined),
-            label: const Text('Open Invite Preview'),
+            label: Text(l10n.raw('Create Local Room')),
           ),
           const SizedBox(height: 8),
           Text(
-            'This creates a local preview only. It does not open a live shared room.',
+            l10n.raw(
+              'This creates a local room on this device only. You can reopen it and test invite copy flows, but it does not sync across devices.',
+            ),
             style: Theme.of(context).textTheme.bodySmall!.copyWith(
                   color: AppTheme.textSecondary,
                 ),
           ),
 
+          if (room != null) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppTheme.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppTheme.borderColor),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          l10n.raw('Current local room'),
+                          style: Theme.of(context).textTheme.labelLarge,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          room.code,
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleLarge!
+                              .copyWith(fontWeight: FontWeight.w800),
+                        ),
+                      ],
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pushNamed(
+                      RouteNames.groupOrderShare,
+                      arguments: room.code,
+                    ),
+                    child: Text(l10n.raw('Open room')),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
           const SizedBox(height: 32),
 
           // Join room
           Text(
-            'Join an existing room',
+            l10n.raw('Join an existing room'),
             style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: 12),
@@ -114,19 +166,34 @@ class _GroupOrderRoomScreenState extends State<GroupOrderRoomScreen> {
             controller: _codeController,
             textCapitalization: TextCapitalization.characters,
             onChanged: (_) => setState(() {}),
-            decoration: const InputDecoration(
-              hintText: 'Enter room code',
-              prefixIcon: Icon(Icons.tag_rounded),
+            decoration: InputDecoration(
+              hintText: l10n.raw('Enter room code'),
+              prefixIcon: const Icon(Icons.tag_rounded),
             ),
           ),
           const SizedBox(height: 12),
           OutlinedButton(
             onPressed: _codeController.text.trim().isEmpty
                 ? null
-                : () => _showMessage(
-                      'Joining shared rooms is not supported yet. This screen only previews the host invite flow.',
-                    ),
-            child: const Text('Join Room'),
+                : () {
+                    final joined = runtime.joinGroupOrderRoom(
+                      _codeController.text,
+                    );
+                    if (!joined) {
+                      _showMessage(
+                        l10n.raw(
+                          'This code is not active on this device yet. Create the room here first, then join it locally.',
+                        ),
+                      );
+                      return;
+                    }
+
+                    Navigator.of(context).pushNamed(
+                      RouteNames.groupOrderShare,
+                      arguments: _codeController.text.trim().toUpperCase(),
+                    );
+                  },
+            child: Text(l10n.raw('Join Room')),
           ),
 
           const SizedBox(height: 32),
@@ -135,7 +202,7 @@ class _GroupOrderRoomScreenState extends State<GroupOrderRoomScreen> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppTheme.white,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: AppTheme.borderColor),
             ),
@@ -143,22 +210,24 @@ class _GroupOrderRoomScreenState extends State<GroupOrderRoomScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'How it works',
+                  l10n.raw('How it works'),
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 16),
-                _stepRow(context, '1', 'Open a local invite preview'),
-                _stepRow(context, '2', 'Copy the preview code or message'),
+                _stepRow(context, '1', l10n.raw('Open a local invite preview')),
+                _stepRow(context, '2', l10n.raw('Copy the preview code or message')),
                 _stepRow(
                   context,
                   '3',
-                  'Return here later for live shared-cart support',
+                  l10n.raw('Reuse the same code on this device to simulate a member join'),
                 ),
               ],
             ),
           ),
-        ],
-      ),
+            ],
+          ),
+        );
+      },
     );
   }
 

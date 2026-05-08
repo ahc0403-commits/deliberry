@@ -1,0 +1,23 @@
+{
+  "domain": "dispute",
+  "consumers": ["admin-console"],
+  "production_scope": {
+    "status": "limited_admin_audited_status_transitions",
+    "notes": [
+      "Admin disputes remain a narrow governance workflow.",
+      "Approved production mutations are limited to audited status transitions: open to investigating, open to escalated, investigating to escalated, investigating to resolved, and escalated to resolved.",
+      "Assignment, reopen, refund, payment adjustment, and payout-side dispute control are not approved."
+    ]
+  },
+  "requests": [
+    { "name": "list_disputes", "required": [] },
+    { "name": "transition_dispute_status", "required": ["dispute_id", "next_status"] }
+  ],
+  "responses": ["dispute_summary", "dispute_status_transition_result"],
+  "not_approved": [
+    "assign_dispute_owner",
+    "reopen_dispute",
+    "issue_refund_from_dispute",
+    "adjust_settlement_from_dispute"
+  ]
+}

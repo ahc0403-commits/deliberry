@@ -1,10 +1,23 @@
+"use client";
+
 import { ArrowRight, BadgeDollarSign, ReceiptText, ShieldAlert, WalletCards } from "lucide-react";
-import { adminQueryServices } from "../../../shared/data/admin-query-services";
 import { formatMoney } from "../../../shared/domain";
+import type { FinanceData } from "../../../shared/data/admin-repository";
+import { useAdminI18n } from "../../../shared/i18n/client";
 
-export function AdminFinanceScreen() {
-  const { summary, settlements } = adminQueryServices.getFinanceData();
-
+export function AdminFinanceScreen({ data }: { data: FinanceData }) {
+  const { raw } = useAdminI18n();
+  const { summary, settlements } = data;
+  const settlementStatusLabel = (status: string) =>
+    raw(
+      ({
+        pending: "Pending",
+        calculated: "Calculated",
+        received: "Received",
+        disputed: "Disputed",
+        adjusted: "Adjusted",
+      } as Record<string, string>)[status] ?? status,
+    );
   return (
     <div className="screen-container oversight-shell">
       <section className="oversight-hero">
@@ -12,34 +25,34 @@ export function AdminFinanceScreen() {
           <div className="oversight-hero-copy">
             <div className="oversight-eyebrow">
               <BadgeDollarSign size={14} />
-              Finance snapshot
+              {raw("Finance snapshot")}
             </div>
-            <h1 className="oversight-title">Finance Oversight</h1>
+            <h1 className="oversight-title">{raw("Finance Oversight")}</h1>
             <p className="oversight-subtitle">
-              Review platform financial indicators and recent settlement signals from one finance summary route without implying live reconciliation, payout control, or export integrations.
+              {raw("Review platform financial indicators and recent settlement signals from one finance summary route without implying live reconciliation, payout control, or export integrations beyond manual received acknowledgment in settlement oversight.")}
             </p>
           </div>
           <div className="oversight-hero-note">
-            <div className="oversight-note-label">Finance mode</div>
-            <div className="oversight-note-value">Snapshot review only</div>
+            <div className="oversight-note-label">{raw("Finance mode")}</div>
+            <div className="oversight-note-value">{raw("Runtime-backed finance review")}</div>
             <p className="oversight-note-text">
-              All finance summary rows are fixture-backed. This route stays focused on visibility and handoff, not live accounting operations.
+              {raw("Finance summary rows are derived from the live settlement read model. This route stays focused on visibility and handoff; settlement acknowledgment remains limited to the settlement oversight route and does not execute payouts.")}
             </p>
           </div>
         </div>
         <div className="oversight-hero-meta">
-          <div className="oversight-meta-chip"><ReceiptText size={14} />{summary.length} summary signals</div>
-          <div className="oversight-meta-chip"><WalletCards size={14} />{settlements.length} settlement rows</div>
-          <div className="oversight-meta-chip"><ShieldAlert size={14} />Manual finance follow-through outside console</div>
+          <div className="oversight-meta-chip"><ReceiptText size={14} />{raw("{count} summary signals").replace("{count}", String(summary.length))}</div>
+          <div className="oversight-meta-chip"><WalletCards size={14} />{raw("{count} settlement rows").replace("{count}", String(settlements.length))}</div>
+          <div className="oversight-meta-chip"><ShieldAlert size={14} />{raw("Manual finance follow-through outside console")}</div>
         </div>
       </section>
 
       <section className="oversight-summary-grid">
         {summary.map((item) => (
           <div key={item.label} className="oversight-summary-card">
-            <div className="oversight-summary-label"><BadgeDollarSign size={14} />{item.label}</div>
+            <div className="oversight-summary-label"><BadgeDollarSign size={14} />{raw(item.label)}</div>
             <div className="oversight-summary-value">{item.value}</div>
-            <div className="oversight-summary-meta">{item.period}</div>
+            <div className="oversight-summary-meta">{raw(item.period)}</div>
           </div>
         ))}
       </section>
@@ -47,13 +60,13 @@ export function AdminFinanceScreen() {
       <section className="oversight-panel">
         <div className="oversight-panel-header">
           <div>
-            <h2 className="oversight-panel-title">Recent Settlements</h2>
+            <h2 className="oversight-panel-title">{raw("Recent Settlements")}</h2>
             <p className="oversight-panel-subtitle">
-              Settlement rows stay visible here as finance context so the summary route and settlement route remain aligned.
+              {raw("Settlement rows stay visible here as finance context so the summary route and settlement route remain aligned.")}
             </p>
           </div>
           <a href="/settlements" className="oversight-link">
-            Open settlement oversight
+            {raw("Open settlement oversight")}
             <ArrowRight size={14} />
           </a>
         </div>
@@ -61,12 +74,12 @@ export function AdminFinanceScreen() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Merchant</th>
-                <th>Store</th>
-                <th>Gross</th>
-                <th>Commission</th>
-                <th>Net</th>
-                <th>Status</th>
+                <th>{raw("Merchant")}</th>
+                <th>{raw("Store")}</th>
+                <th>{raw("Gross")}</th>
+                <th>{raw("Commission")}</th>
+                <th>{raw("Net")}</th>
+                <th>{raw("Status")}</th>
               </tr>
             </thead>
             <tbody>
@@ -82,7 +95,7 @@ export function AdminFinanceScreen() {
                   <td>{formatMoney(s.grossAmount)}</td>
                   <td className="text-muted">{formatMoney(s.commission)}</td>
                   <td style={{ fontWeight: 700 }}>{formatMoney(s.netAmount)}</td>
-                  <td><span className={`status-badge status-badge--${s.status}`}>{s.status}</span></td>
+                  <td><span className={`status-badge status-badge--${s.status}`}>{settlementStatusLabel(s.status)}</span></td>
                 </tr>
               ))}
             </tbody>

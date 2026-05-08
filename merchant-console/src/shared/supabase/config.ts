@@ -5,6 +5,9 @@ export type MerchantSupabaseConfig = {
 };
 
 export type MerchantAuthAuthority = "supabase" | "demo-cookie";
+export type MerchantAuthAvailability =
+  | { available: true; authority: MerchantAuthAuthority }
+  | { available: false; reason: "missing_public_config" };
 
 function readEnv(name: string): string | null {
   const value = process.env[name]?.trim();
@@ -31,6 +34,18 @@ export function readMerchantSupabaseConfig(): MerchantSupabaseConfig {
 export function isMerchantSupabaseConfigured(): boolean {
   const config = readMerchantSupabaseConfig();
   return Boolean(config.url && config.anonKey);
+}
+
+export function readMerchantAuthAvailability(): MerchantAuthAvailability {
+  if (isMerchantSupabaseConfigured()) {
+    return { available: true, authority: "supabase" };
+  }
+
+  if (process.env.NODE_ENV === "production") {
+    return { available: false, reason: "missing_public_config" };
+  }
+
+  return { available: true, authority: "demo-cookie" };
 }
 
 export function readMerchantAuthAuthority(): MerchantAuthAuthority {

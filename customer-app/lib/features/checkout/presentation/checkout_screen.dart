@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../../app/router/route_names.dart';
 import '../../../core/data/customer_runtime_controller.dart';
-import '../../../core/data/mock_data.dart' show formatCentavos;
+import '../../../core/data/mock_data.dart' show formatCustomerMoney;
+import '../../../core/i18n/app_localizations.dart';
+import '../../../core/payments/vnpay_sandbox_payment_service.dart';
 import '../../../core/session/customer_session_controller.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../common/presentation/widgets.dart';
@@ -24,16 +26,22 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       icon: Icons.payments_outlined,
       label: 'Cash',
       detail: 'Pay on delivery',
+      paymentMethodCode: 'cash',
     ),
     _PaymentOption(
       icon: Icons.credit_card_rounded,
-      label: 'Card •••• 4242',
-      detail: 'Placeholder only',
+      label: 'VNPAY Card Test',
+      detail: 'Sandbox card flow with bank selection on VNPAY',
+      paymentMethodCode: 'card',
+      isVnpaySandbox: true,
     ),
     _PaymentOption(
       icon: Icons.account_balance_wallet_outlined,
-      label: 'Digital Wallet',
-      detail: 'Placeholder only',
+      label: 'VNPAY Pay Test',
+      detail: 'Sandbox QR and mobile banking flow',
+      paymentMethodCode: 'digital_wallet',
+      isVnpaySandbox: true,
+      vnpayBankCode: 'VNPAYQR',
     ),
   ];
 
@@ -57,9 +65,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     if (CustomerSessionController.instance.isGuest) {
       debugPrint('[Checkout] placeOrder:validation_failed guest_session');
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content:
-              Text('Sign in to place your order. Your cart will stay here.'),
+        SnackBar(
+          content: Text(
+            context.l10n.raw(
+              'Sign in to place your order. Your cart will stay here.',
+            ),
+          ),
         ),
       );
       Navigator.of(context).pushNamed(RouteNames.auth);
@@ -70,13 +81,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     try {
       debugPrint('[Checkout] placeOrder:validation_passed');
       await Future<void>.delayed(const Duration(milliseconds: 500));
+      final selectedPayment = _paymentMethods[_selectedPaymentIndex];
       debugPrint(
-        '[Checkout] placeOrder:submit_start paymentIndex=$_selectedPaymentIndex',
+        '[Checkout] placeOrder:submit_start payment=${selectedPayment.paymentMethodCode}',
       );
 
       final order = await runtime.submitOrder(
         instructions: _instructionsController.text,
-        paymentMethodIndex: _selectedPaymentIndex,
+        paymentMethod: selectedPayment.paymentMethodCode,
       );
 
       if (!mounted) return;
@@ -101,6 +113,29 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       debugPrint(
         '[Checkout] placeOrder:submit_success orderId=${order.order.id}',
       );
+      if (selectedPayment.isVnpaySandbox) {
+        final paymentResult =
+            await const VnpaySandboxPaymentService().openSandboxPayment(
+          VnpaySandboxPaymentRequest(
+            orderId: order.order.id,
+            bankCode: selectedPayment.vnpayBankCode,
+          ),
+        );
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(paymentResult.launched
+                ? 'Opening VNPAY sandbox. Order payment remains pending.'
+                : paymentResult.message ??
+                    'VNPAY sandbox could not be opened.'),
+          ),
+        );
+        Navigator.of(context).pushReplacementNamed(
+          RouteNames.orderStatus,
+          arguments: order.order.id,
+        );
+        return;
+      }
       debugPrint(
         '[Checkout] placeOrder:navigate route=${RouteNames.orderCompletion} orderId=${order.order.id}',
       );
@@ -116,8 +151,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Unable to place order right now. Please try again.'),
+        SnackBar(
+          content: Text(
+            context.l10n.raw(
+              'Unable to place order right now. Please try again.',
+            ),
+          ),
         ),
       );
     } finally {
@@ -130,11 +169,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   String _messageForBlocker(String? blocker) {
     switch (blocker) {
       case 'authenticated_customer_session_required':
-        return 'Sign in with Kakao or Zalo to place a real order.';
+        return 'Sign in to a supported customer account session to place a real order.';
       case 'checkout_input_missing':
         return 'Add a delivery address before placing your order.';
       case 'minimum_order_not_met':
-        return 'Minimum order is \$${formatCentavos(CustomerRuntimeController.minimumOrderCentavos)} before checkout.';
+        return 'Minimum order is ${formatCustomerMoney(CustomerRuntimeController.minimumOrderCentavos)} before checkout.';
       case 'store_menu_unavailable':
         return 'This store menu is unavailable right now. Please try another store.';
       case 'cart_line_items_unavailable':
@@ -152,6 +191,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final runtime = CustomerRuntimeController.instance;
 
     return ListenableBuilder(
@@ -174,8 +214,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         return Scaffold(
           backgroundColor: AppTheme.backgroundGrey,
           appBar: AppBar(
-            title: const Text('Checkout'),
-            backgroundColor: Colors.white,
+            title: Text(l10n.raw('Checkout')),
+            backgroundColor: AppTheme.backgroundGrey,
             leading: IconButton(
               icon: const Icon(Icons.arrow_back_rounded),
               onPressed: () => Navigator.of(context).pop(),
@@ -185,14 +225,20 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               ? EmptyState(
                   icon: Icons.shopping_bag_outlined,
                   title: blocker == 'cart_line_items_unavailable'
-                      ? 'Cart updated for live menu'
-                      : 'Nothing to check out yet',
+                      ? l10n.raw('Cart updated for live menu')
+                      : l10n.raw('Nothing to check out yet'),
                   subtitle: blocker == 'store_menu_unavailable'
-                      ? 'This store menu is unavailable right now. Please choose another store.'
+                      ? l10n.raw(
+                          'This store menu is unavailable right now. Please choose another store.',
+                        )
                       : blocker == 'cart_line_items_unavailable'
-                          ? 'Some items were removed because they are not available in the live menu anymore.'
-                          : 'Add items to your cart before placing an order.',
-                  actionLabel: 'Back to Home',
+                          ? l10n.raw(
+                              'Some items were removed because they are not available in the live menu anymore.',
+                            )
+                          : l10n.raw(
+                              'Add items to your cart before placing an order.',
+                            ),
+                  actionLabel: l10n.raw('Back to Home'),
                   onAction: () =>
                       Navigator.of(context).pushNamed(RouteNames.home),
                 )
@@ -200,21 +246,23 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
                   children: [
                     const _InfoNoticeCard(
-                      message: 'Payment processing is placeholder only. '
-                          'No real charges will be made.',
+                      message: 'VNPAY options open sandbox only. '
+                          'No live charges or payment completion will run.',
                     ),
                     if (menuUnavailable || cartHasUnavailableItems) ...[
                       const SizedBox(height: 16),
                       _InfoNoticeCard(
                         message: menuUnavailable
-                            ? 'This store does not have a live orderable menu right now, so placing an order is temporarily disabled.'
-                            : 'Some items in this cart are no longer available in the live menu. Please return to the store and add items again.',
+                            ? l10n.raw(
+                                'This store does not have a live orderable menu right now, so placing an order is temporarily disabled.')
+                            : l10n.raw(
+                                'Some items in this cart are no longer available in the live menu. Please return to the store and add items again.'),
                       ),
                     ],
                     const SizedBox(height: 16),
                     _SectionCard(
-                      title: 'Delivery Address',
-                      trailingLabel: 'Manage',
+                      title: l10n.raw('Delivery Address'),
+                      trailingLabel: l10n.raw('Manage'),
                       onTrailingTap: () =>
                           Navigator.of(context).pushNamed(RouteNames.addresses),
                       child: selectedAddress == null
@@ -228,7 +276,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Text(
-                                    'No delivery address saved. Tap Manage to add one.',
+                                    l10n.raw(
+                                      'No delivery address saved. Tap Manage to add one.',
+                                    ),
                                     style: TextStyle(
                                       fontSize: 14,
                                       color: AppTheme.textSecondary,
@@ -283,7 +333,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                                     BorderRadius.circular(5),
                                               ),
                                               child: Text(
-                                                'Default',
+                                                l10n.raw('Default'),
                                                 style: TextStyle(
                                                   fontSize: 10,
                                                   fontWeight: FontWeight.w700,
@@ -317,13 +367,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     ),
                     const SizedBox(height: 12),
                     _SectionCard(
-                      title: 'Delivery Instructions',
+                      title: l10n.raw('Delivery Instructions'),
                       child: TextField(
                         controller: _instructionsController,
                         maxLines: 3,
                         minLines: 2,
                         decoration: InputDecoration(
-                          hintText: 'E.g. Leave at the door, ring the bell...',
+                          hintText: l10n.raw(
+                            'E.g. Leave at the door, ring the bell...',
+                          ),
                           filled: true,
                           fillColor: AppTheme.backgroundGrey,
                           border: OutlineInputBorder(
@@ -348,7 +400,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     ),
                     const SizedBox(height: 12),
                     _SectionCard(
-                      title: 'Payment Method',
+                      title: l10n.raw('Payment Method'),
                       child: Column(
                         children:
                             List.generate(_paymentMethods.length, (index) {
@@ -393,7 +445,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                           CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          method.label,
+                                          l10n.raw(method.label),
                                           style: TextStyle(
                                             fontSize: 14,
                                             fontWeight: FontWeight.w700,
@@ -403,7 +455,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                           ),
                                         ),
                                         Text(
-                                          method.detail,
+                                          l10n.raw(method.detail),
                                           style: TextStyle(
                                             fontSize: 12,
                                             color: AppTheme.textSecondary,
@@ -427,7 +479,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     ),
                     const SizedBox(height: 12),
                     _SectionCard(
-                      title: 'Order Summary',
+                      title: l10n.raw('Order Summary'),
                       child: Column(
                         children: [
                           Row(
@@ -452,14 +504,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      store?.name ?? 'Selected store',
+                                      store?.name ?? l10n.raw('Selected store'),
                                       style: const TextStyle(
                                         fontSize: 15,
                                         fontWeight: FontWeight.w700,
                                       ),
                                     ),
                                     Text(
-                                      '${runtime.cartItemCount} item${runtime.cartItemCount == 1 ? '' : 's'}',
+                                      l10n.cartItemCount(runtime.cartItemCount),
                                       style: TextStyle(
                                         fontSize: 13,
                                         color: AppTheme.textSecondary,
@@ -506,7 +558,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                     ),
                                   ),
                                   Text(
-                                    '\$${formatCentavos(cartItem.total)}',
+                                    formatCustomerMoney(cartItem.total),
                                     style: const TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
@@ -521,28 +573,28 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     ),
                     const SizedBox(height: 12),
                     _SectionCard(
-                      title: 'Price Breakdown',
+                      title: l10n.raw('Price Breakdown'),
                       child: Column(
                         children: [
                           PriceRow(
-                            label: 'Subtotal',
-                            amount: '\$${formatCentavos(runtime.cartSubtotal)}',
+                            label: l10n.text('cart.subtotal'),
+                            amount: formatCustomerMoney(runtime.cartSubtotal),
                           ),
                           PriceRow(
-                            label: 'Delivery fee',
+                            label: l10n.text('cart.deliveryFee'),
                             amount:
-                                '\$${formatCentavos(runtime.cartDeliveryFee)}',
+                                formatCustomerMoney(runtime.cartDeliveryFee),
                           ),
                           PriceRow(
-                            label: 'Service fee',
-                            amount:
-                                '\$${formatCentavos(runtime.cartServiceFee)}',
+                            label: l10n.text('cart.serviceFee'),
+                            amount: formatCustomerMoney(runtime.cartServiceFee),
                           ),
                           if (runtime.hasPromoApplied)
                             PriceRow(
-                              label: 'Promo (${runtime.promoCode})',
+                              label:
+                                  '${l10n.raw('Promo')} (${runtime.promoCode})',
                               amount:
-                                  '-\$${formatCentavos(runtime.promoDiscount)}',
+                                  '-${formatCustomerMoney(runtime.promoDiscount)}',
                               isDiscount: true,
                             ),
                           const Padding(
@@ -550,8 +602,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             child: Divider(),
                           ),
                           PriceRow(
-                            label: 'Total',
-                            amount: '\$${formatCentavos(runtime.cartTotal)}',
+                            label: l10n.text('cart.total'),
+                            amount: formatCustomerMoney(runtime.cartTotal),
                             isBold: true,
                           ),
                         ],
@@ -560,8 +612,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     if (!runtime.meetsMinimumOrder) ...[
                       const SizedBox(height: 12),
                       _InfoNoticeCard(
-                        message:
-                            'Minimum order is \$${formatCentavos(CustomerRuntimeController.minimumOrderCentavos)}. Add \$${formatCentavos(runtime.minimumOrderShortfallCentavos)} more to continue.',
+                        message: l10n.minimumOrderNotice(
+                          minimum: formatCustomerMoney(
+                            CustomerRuntimeController.minimumOrderCentavos,
+                          ),
+                          shortfall: formatCustomerMoney(
+                            runtime.minimumOrderShortfallCentavos,
+                          ),
+                        ),
                       ),
                     ],
                   ],
@@ -570,11 +628,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               ? null
               : BottomCTABar(
                   label: _isSubmitting
-                      ? 'Placing Order...'
+                      ? l10n.raw('Placing Order...')
                       : menuUnavailable || cartHasUnavailableItems
-                          ? 'Menu Unavailable'
-                          : 'Place Order',
-                  trailingText: '\$${formatCentavos(runtime.cartTotal)}',
+                          ? l10n.raw('Menu Unavailable')
+                          : l10n.raw('Place Order'),
+                  sublabel: selectedAddress == null
+                      ? l10n.raw('Add delivery address')
+                      : store?.name ?? l10n.raw('Ready to submit'),
+                  trailingText: formatCustomerMoney(runtime.cartTotal),
                   onPressed: isPlaceOrderEnabled ? _placeOrder : null,
                 ),
         );
@@ -588,11 +649,17 @@ class _PaymentOption {
     required this.icon,
     required this.label,
     required this.detail,
+    required this.paymentMethodCode,
+    this.isVnpaySandbox = false,
+    this.vnpayBankCode,
   });
 
   final IconData icon;
   final String label;
   final String detail;
+  final String paymentMethodCode;
+  final bool isVnpaySandbox;
+  final String? vnpayBankCode;
 }
 
 class _SectionCard extends StatelessWidget {
@@ -613,9 +680,10 @@ class _SectionCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppTheme.cardRadius),
         border: Border.all(color: AppTheme.borderColor),
+        boxShadow: [AppTheme.softShadow(alpha: 0.03)],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -624,7 +692,7 @@ class _SectionCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                title,
+                context.l10n.raw(title),
                 style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
@@ -639,7 +707,7 @@ class _SectionCard extends StatelessWidget {
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                   child: Text(
-                    trailingLabel!,
+                    context.l10n.raw(trailingLabel!),
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -667,9 +735,8 @@ class _InfoNoticeCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppTheme.backgroundGrey,
+        color: AppTheme.surfaceMuted,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.borderColor),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -682,7 +749,7 @@ class _InfoNoticeCard extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              message,
+              context.l10n.raw(message),
               style: TextStyle(
                 fontSize: 13,
                 color: AppTheme.textSecondary,

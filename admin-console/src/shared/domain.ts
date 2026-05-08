@@ -35,3 +35,4 @@ export type {
 } from "../../../shared/types/domain.types";
 
 export { formatMoney } from "../../../shared/utils/currency";
+export { toDisplayTime } from "../../../shared/utils/date";

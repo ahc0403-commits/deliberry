@@ -48,14 +48,14 @@ export function isValidPaymentTransition(from: PaymentStatus, to: PaymentStatus)
   return PAYMENT_ALLOWED_TRANSITIONS[from]?.includes(to) ?? false;
 }
 
-// ── Settlement Transitions (FLOW.md Section 3.1) ────────────────────────
+// ── Settlement Transitions (current landed settlement schema) ───────────
 
 const SETTLEMENT_ALLOWED_TRANSITIONS: Record<SettlementState, readonly SettlementState[]> = {
-  pending: ["scheduled"],
-  scheduled: ["processing", "failed"],
-  processing: ["paid", "failed"],
-  paid: [],
-  failed: ["pending"],
+  pending: ["calculated", "disputed"],
+  calculated: ["received", "adjusted", "disputed"],
+  received: ["adjusted", "disputed"],
+  disputed: ["adjusted"],
+  adjusted: [],
 };
 
 export function isValidSettlementTransition(from: SettlementState, to: SettlementState): boolean {

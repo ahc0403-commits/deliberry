@@ -43,6 +43,8 @@ class CustomerMultiAuthAdapter implements CustomerAuthAdapter {
       case CustomerAuthProvider.zalo:
         return zaloAdapter.completeAuthCallback(callback.normalizedUri);
       case CustomerAuthProvider.kakao:
+      case CustomerAuthProvider.google:
+      case CustomerAuthProvider.apple:
         return socialAdapter.completeAuthCallback(callback.normalizedUri);
       case CustomerAuthProvider.phone:
         throw StateError(

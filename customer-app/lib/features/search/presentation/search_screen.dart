@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../app/router/route_names.dart';
 import '../../../core/data/customer_runtime_controller.dart';
 import '../../../core/data/mock_data.dart';
+import '../../../core/i18n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../common/presentation/widgets.dart';
 
@@ -62,7 +63,10 @@ class _SearchScreenState extends State<SearchScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  color: Colors.white,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    boxShadow: [AppTheme.softShadow(alpha: 0.035)],
+                  ),
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -73,7 +77,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             child: AppSearchBar(
                               readOnly: false,
                               autofocus: false,
-                              hint: 'Search stores or cuisines',
+                              hint: context.l10n.raw('Search food or restaurants'),
                               controller: _controller,
                               onChanged: runtime.setSearchQuery,
                             ),
@@ -88,7 +92,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                               ),
                               child: Text(
-                                'Cancel',
+                                context.l10n.raw('Cancel'),
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
@@ -108,7 +112,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             icon: Icons.search_rounded,
                             label: hasQuery
                                 ? 'Searching for "$query"'
-                                : 'Search stores and cuisines',
+                                : context.l10n.raw('Search stores and cuisines'),
                             highlight: hasQuery,
                           ),
                           if (runtime.activeFilterCount > 0)
@@ -125,8 +129,9 @@ class _SearchScreenState extends State<SearchScreen> {
                               size: 16,
                               color: AppTheme.primaryColor,
                             ),
-                            label: const Text('Filters'),
-                            backgroundColor: Colors.white,
+                            label: Text(context.l10n.raw('Filters')),
+                            backgroundColor:
+                                Theme.of(context).colorScheme.surface,
                             side: BorderSide(color: AppTheme.borderColor),
                             labelStyle: const TextStyle(
                               fontSize: 13,
@@ -181,16 +186,8 @@ class _SearchIdle extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
       children: [
-        const FeatureHeroCard(
-          eyebrow: 'Search',
-          title: 'Start broad, then narrow quickly',
-          subtitle:
-              'Recent searches stay in session, and filters stay applied until you change them.',
-          icon: Icons.manage_search_rounded,
-        ),
-        const SizedBox(height: 24),
         SectionHeader(
-          title: 'Recent Searches',
+          title: 'Recent searches',
           trailing: TextButton(
             onPressed: onClearRecent,
             style: TextButton.styleFrom(
@@ -198,12 +195,14 @@ class _SearchIdle extends StatelessWidget {
               minimumSize: Size.zero,
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
-            child: const Text('Clear all'),
+            child: Text(context.l10n.raw('Clear all')),
           ),
         ),
         if (recentSearches.isEmpty)
           Text(
-            'Your recent searches will appear here.',
+            context.l10n.raw(
+              'Recent searches from this session will appear here.',
+            ),
             style: TextStyle(
               fontSize: 14,
               color: AppTheme.textSecondary,
@@ -222,7 +221,7 @@ class _SearchIdle extends StatelessWidget {
                   color: AppTheme.textSecondary,
                 ),
                 label: Text(term),
-                backgroundColor: Colors.white,
+                backgroundColor: Theme.of(context).colorScheme.surface,
                 side: BorderSide(color: AppTheme.borderColor),
                 labelStyle: const TextStyle(
                   fontSize: 13,
@@ -232,7 +231,7 @@ class _SearchIdle extends StatelessWidget {
             }).toList(),
           ),
         const SizedBox(height: 32),
-        SectionHeader(title: 'Popular Categories'),
+        SectionHeader(title: 'Top categories'),
         GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
@@ -256,7 +255,7 @@ class _SearchIdle extends StatelessWidget {
                     height: 56,
                     decoration: BoxDecoration(
                       color: category.color.withValues(alpha: 0.12),
-                      shape: BoxShape.circle,
+                      borderRadius: BorderRadius.circular(18),
                     ),
                     child: Icon(category.icon, color: category.color, size: 24),
                   ),
@@ -277,7 +276,7 @@ class _SearchIdle extends StatelessWidget {
           },
         ),
         const SizedBox(height: 28),
-        SectionHeader(title: 'Popular Near You'),
+        SectionHeader(title: context.l10n.raw('Popular near you')),
         ...MockData.stores.take(3).map((store) {
           return Padding(
             padding: const EdgeInsets.only(bottom: 12),
@@ -312,15 +311,16 @@ class _SearchResults extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final runtime = CustomerRuntimeController.instance;
 
     if (results.isEmpty) {
       return EmptyState(
         icon: Icons.search_off_rounded,
-        title: 'No results for "$query"',
+        title: l10n.noResultsForQuery(query),
         subtitle: runtime.activeFilterCount > 0
-            ? 'Try changing your filters or search term'
-            : 'Try a different search term or browse categories',
+            ? l10n.text('search.tryFilters')
+            : l10n.text('search.tryDifferent'),
       );
     }
 
@@ -335,13 +335,12 @@ class _SearchResults extends StatelessWidget {
             children: [
               InfoPill(
                 icon: Icons.storefront_rounded,
-                label:
-                    '${results.length} result${results.length != 1 ? 's' : ''}',
+                label: l10n.searchResultCount(results.length),
                 highlight: true,
               ),
               if (runtime.activeFilterCount > 0)
                 StatusBadge(
-                  label: '${runtime.activeFilterCount} filters',
+                  label: l10n.activeFilterCount(runtime.activeFilterCount),
                   color: AppTheme.primaryColor,
                 ),
               ActionChip(
@@ -352,8 +351,8 @@ class _SearchResults extends StatelessWidget {
                   size: 16,
                   color: AppTheme.primaryColor,
                 ),
-                label: const Text('Adjust filters'),
-                backgroundColor: Colors.white,
+                label: Text(context.l10n.raw('Adjust filters')),
+                backgroundColor: Theme.of(context).colorScheme.surface,
                 side: BorderSide(color: AppTheme.borderColor),
                 labelStyle: const TextStyle(
                   fontSize: 13,

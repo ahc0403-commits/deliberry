@@ -4,8 +4,8 @@ Status: active
 Authority: operational
 Surface: customer-app
 Domains: checkout, orders, status, reorder
-Last updated: 2026-04-15
-Last verified: 2026-04-15
+Last updated: 2026-05-06
+Last verified: 2026-05-06
 Retrieve when:
 - changing checkout submission or downstream order reading
 - debugging cart -> checkout -> order status -> orders continuity
@@ -62,6 +62,7 @@ Document the transactional flow from an existing cart into persisted order creat
   - cart items at submit time
   - selected address at submit time
   - active/past order records
+  - signed-in order-linked review persistence keyed by `orderId`
   - route-owned `orderId`
 - Derived:
   - totals shown on checkout and detail screens
@@ -71,12 +72,20 @@ Document the transactional flow from an existing cart into persisted order creat
   - status timeline visuals
   - payment option UI chrome
 
+## Payment handoff truth
+
+- `submitOrder` persists the order first and keeps `payment_status = pending`.
+- If the selected payment method is a VNPAY sandbox option, checkout then asks `create-vnpay-sandbox-payment` for a signed hosted URL.
+- Card checkout may omit `bank_code`, which means VNPAY owns the issuing-bank selection and issuer-specific authentication UX.
+- VNPAY return and IPN remain display/verification-only at this stage and do not transition Deliberry payment state.
+
 ## Known shallow / partial / local-only limits
 
-- Payment is placeholder-only.
+- Payment is placeholder-only in the product sense: sandbox URL creation exists for contract readiness, but Deliberry still does not treat provider callbacks as payment completion.
 - Order creation is persisted for authenticated customers.
 - Order status is not realtime.
-- Reviews are flow-connected and persisted for signed-in customers, but the screen still contains preview-style fallback behavior when order context is missing.
+- Reviews are flow-connected and persisted for signed-in customers, and the saved review now hydrates back into runtime so `/orders/detail` and `/reviews` resolve the same signed-in review state after refresh.
+- Reviews still require valid order-linked context; when that context is missing, the screen falls back to an honest no-context state.
 
 ## Common edit mistakes
 
@@ -84,6 +93,7 @@ Document the transactional flow from an existing cart into persisted order creat
 - Treating `order_status_screen.dart` as status truth instead of a presentation over a record.
 - Breaking reorder by changing record item structure without updating `reorder()`.
 - Allowing missing `orderId` route arguments to hide errors behind fallback behavior.
+- Letting the order-detail review CTA imply writable review access before delivery is complete.
 
 ## Related filemaps
 

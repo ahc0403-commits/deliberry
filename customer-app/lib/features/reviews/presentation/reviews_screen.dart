@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/data/customer_runtime_controller.dart';
 import '../../../core/data/customer_runtime_gateway.dart';
 import '../../../core/data/mock_data.dart';
+import '../../../core/i18n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../app/router/route_names.dart';
 import '../../common/presentation/widgets.dart';
@@ -35,7 +36,7 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
   Future<void> _submit(CustomerOrderRecord record) async {
     if (_rating == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a rating')),
+        SnackBar(content: Text(context.l10n.raw('Please select a rating'))),
       );
       return;
     }
@@ -59,7 +60,11 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Unable to submit review: $error')),
+        SnackBar(
+          content: Text(
+            '${context.l10n.raw('Unable to submit review:')} $error',
+          ),
+        ),
       );
     } finally {
       if (mounted) {
@@ -97,17 +102,31 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
     final order = record?.order;
     final hasLinkedOrder = widget.orderId != null && order != null;
     final isDelivered = order?.status == 'delivered';
+    final l10n = context.l10n;
 
     if (hasLinkedOrder && !_hasRequestedReview) {
       _hasRequestedReview = true;
-      _loadExistingReview(widget.orderId!);
+      final cachedReview = runtime.findOrderReviewById(widget.orderId);
+      if (cachedReview != null) {
+        _rating = cachedReview.rating.toDouble();
+        _controller.text = cachedReview.reviewText;
+        _selectedTags = List<String>.from(cachedReview.tags);
+        _persistedReview = cachedReview;
+        _submitted = true;
+      } else {
+        _loadExistingReview(widget.orderId!);
+      }
     }
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundGrey,
       appBar: AppBar(
-        title: Text(hasLinkedOrder ? 'Leave a Review' : 'Review Preview'),
-        backgroundColor: Colors.white,
+        title: Text(
+          l10n.raw(
+            hasLinkedOrder ? 'Leave a Review' : 'Order-linked reviews',
+          ),
+        ),
+        backgroundColor: AppTheme.white,
       ),
       body: !hasLinkedOrder
           ? const _ReviewUnavailableView()
@@ -163,21 +182,23 @@ class _FormView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ratingLabels = {
-      1.0: 'Terrible',
-      2.0: 'Bad',
-      3.0: 'Okay',
-      4.0: 'Good',
-      5.0: 'Excellent!',
+      1.0: context.l10n.raw('Terrible'),
+      2.0: context.l10n.raw('Bad'),
+      3.0: context.l10n.raw('Okay'),
+      4.0: context.l10n.raw('Good'),
+      5.0: context.l10n.raw('Excellent!'),
     };
+    final l10n = context.l10n;
 
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         FeatureHeroCard(
-          eyebrow: 'Reviews',
-          title: 'Leave feedback for one completed order',
-          subtitle:
-              'This form is tied to the current order context and saves to the live review feed.',
+          eyebrow: l10n.raw('Reviews'),
+          title: l10n.raw('Leave feedback for one completed order'),
+          subtitle: l10n.raw(
+            'This form stays tied to the current order context so signed-in review history and order detail stay aligned.',
+          ),
           icon: Icons.rate_review_rounded,
           badge: order.id,
         ),
@@ -186,7 +207,7 @@ class _FormView extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppTheme.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: AppTheme.borderColor),
           ),
@@ -219,7 +240,7 @@ class _FormView extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${order.itemCount} items · ${formatOrderDate(order.createdAt)}',
+                      '${formatItemCount(order.itemCount, languageCode: l10n.locale.languageCode)} · ${formatOrderDate(order.createdAt, languageCode: l10n.locale.languageCode)}',
                       style: TextStyle(
                         fontSize: 13,
                         color: AppTheme.textSecondary,
@@ -244,15 +265,15 @@ class _FormView extends StatelessWidget {
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: const [
+          children: [
             InfoPill(
               icon: Icons.receipt_long_outlined,
-              label: 'Order-linked only',
+              label: l10n.raw('Order-linked only'),
               highlight: true,
             ),
             InfoPill(
               icon: Icons.info_outline_rounded,
-              label: 'Live review submission',
+              label: l10n.raw('Live review submission'),
             ),
           ],
         ),
@@ -263,18 +284,18 @@ class _FormView extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppTheme.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: AppTheme.borderColor),
           ),
           child: Column(
             children: [
-              const Text(
-                'How was your experience?',
+              Text(
+                l10n.raw('How was your experience?'),
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
-                  letterSpacing: -0.2,
+                  letterSpacing: 0,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -303,7 +324,7 @@ class _FormView extends StatelessWidget {
                         ),
                       )
                     : Text(
-                        'Tap to rate',
+                        l10n.raw('Tap to rate'),
                         key: const ValueKey('empty'),
                         style: TextStyle(
                           fontSize: 14,
@@ -321,15 +342,15 @@ class _FormView extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppTheme.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: AppTheme.borderColor),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Tell us more (optional)',
+              Text(
+                l10n.raw('Tell us more (optional)'),
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
@@ -340,9 +361,10 @@ class _FormView extends StatelessWidget {
                 controller: controller,
                 maxLines: 5,
                 maxLength: 500,
-                decoration: const InputDecoration(
-                  hintText:
-                      'What did you love? What could be better? Your feedback helps other customers and the restaurant.',
+                decoration: InputDecoration(
+                  hintText: l10n.raw(
+                    'What did you love? What could be better? Your feedback helps other customers and the restaurant.',
+                  ),
                   alignLabelWithHint: true,
                 ),
               ),
@@ -356,15 +378,15 @@ class _FormView extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppTheme.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: AppTheme.borderColor),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Quick tags',
+              Text(
+                l10n.raw('Quick tags'),
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
@@ -383,7 +405,9 @@ class _FormView extends StatelessWidget {
 
         FilledButton(
           onPressed: isSubmitting || isLoadingReview ? null : onSubmit,
-          child: Text(isSubmitting ? 'Submitting...' : 'Submit Review'),
+          child: Text(
+            l10n.raw(isSubmitting ? 'Submitting...' : 'Submit Review'),
+          ),
         ),
 
         const SizedBox(height: 24),
@@ -452,7 +476,7 @@ class _QuickTagsState extends State<_QuickTags> {
               ),
             ),
             child: Text(
-              tag,
+              context.l10n.raw(tag),
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
@@ -486,19 +510,18 @@ class _SuccessView extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       children: [
         FeatureHeroCard(
-          eyebrow: 'Feedback saved',
-          title: 'Review submitted',
-          subtitle:
-              'Thanks for rating $storeName. Your review is now part of the live store feedback feed.',
+          eyebrow: context.l10n.raw('Feedback saved'),
+          title: context.l10n.raw('Review submitted'),
+          subtitle: context.l10n.reviewSavedForStore(storeName),
           icon: Icons.check_circle_rounded,
-          badge: 'Submitted',
+          badge: context.l10n.raw('Submitted'),
         ),
         const SizedBox(height: 24),
         EmptyState(
           icon: Icons.rate_review_outlined,
-          title: 'Review saved',
+          title: context.l10n.raw('Review saved'),
           subtitle: reviewText.isEmpty
-              ? 'Thanks for the ${rating.toString()}-star rating.'
+              ? context.l10n.reviewSavedWithStars(rating)
               : reviewText,
         ),
         if (tags.isNotEmpty) ...[
@@ -517,7 +540,7 @@ class _SuccessView extends StatelessWidget {
         const SizedBox(height: 20),
         FilledButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Done'),
+          child: Text(context.l10n.raw('Done')),
         ),
       ],
     );
@@ -532,26 +555,28 @@ class _ReviewUnavailableView extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       children: [
-        const FeatureHeroCard(
-          eyebrow: 'Reviews',
-          title: 'Feedback needs a real order context',
-          subtitle:
-              'This route only supports order-linked review entry, so it stays tied to the right completed order.',
+        FeatureHeroCard(
+          eyebrow: context.l10n.raw('Reviews'),
+          title: context.l10n.raw('Feedback needs a real order context'),
+          subtitle: context.l10n.raw(
+            'This route only supports order-linked review entry, so it stays tied to the right completed order.',
+          ),
           icon: Icons.rate_review_outlined,
-          badge: 'Order detail entry only',
+          badge: context.l10n.raw('Order detail entry only'),
         ),
         const SizedBox(height: 24),
-        const EmptyState(
+        EmptyState(
           icon: Icons.rate_review_outlined,
-          title: 'Open a completed order to leave feedback',
-          subtitle:
-              'This profile entry is only a review preview. Start from an order detail screen so the review stays tied to the right order context.',
+          title: context.l10n.raw('Open a completed order to leave feedback'),
+          subtitle: context.l10n.raw(
+            'Start from an order detail screen so the review stays tied to the right completed order.',
+          ),
         ),
         const SizedBox(height: 20),
         FilledButton(
           onPressed: () =>
               Navigator.of(context).pushReplacementNamed(RouteNames.orders),
-          child: const Text('Go to Orders'),
+          child: Text(context.l10n.raw('Go to Orders')),
         ),
       ],
     );
@@ -569,26 +594,26 @@ class _ReviewPendingView extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       children: [
         FeatureHeroCard(
-          eyebrow: 'Reviews',
-          title: 'Review available after delivery',
-          subtitle:
-              'Your $storeName order is not marked as delivered yet, so reviews stay locked until delivery is confirmed.',
+          eyebrow: context.l10n.raw('Reviews'),
+          title: context.l10n.raw('Review available after delivery'),
+          subtitle: context.l10n.reviewPendingForStore(storeName),
           icon: Icons.rate_review_outlined,
-          badge: 'Delivery pending',
+          badge: context.l10n.raw('Delivery pending'),
         ),
         const SizedBox(height: 24),
-        const EmptyState(
+        EmptyState(
           icon: Icons.schedule_rounded,
-          title: 'Check back after delivery',
-          subtitle:
-              'Once the order is delivered, you can rate and share feedback from this screen.',
+          title: context.l10n.raw('Check back after delivery'),
+          subtitle: context.l10n.raw(
+            'Once the order is delivered, you can rate and share feedback from this screen.',
+          ),
         ),
         const SizedBox(height: 20),
         FilledButton(
           onPressed: () => Navigator.of(context).pushReplacementNamed(
             RouteNames.orders,
           ),
-          child: const Text('Go to Orders'),
+          child: Text(context.l10n.raw('Go to Orders')),
         ),
       ],
     );

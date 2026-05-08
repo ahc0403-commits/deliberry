@@ -34,8 +34,6 @@ Show the narrow file cluster for the public download route and its current stati
 - `public-website/src/features/app-download/presentation/app-download-screen.tsx`
 - `public-website/src/app/(marketing)/merchant/page.tsx`
 - `public-website/src/app/(marketing)/service/page.tsx`
-- `public-website/src/shared/data/content-service.ts`
-- `public-website/src/shared/data/public-content-repository.ts`
 
 ## Source-of-Truth Files
 
@@ -46,8 +44,6 @@ The live truth is split: download content and CTA behavior are hardcoded in the 
 
 ## Files Often Mistaken as Source of Truth but Are Not
 
-- `public-website/src/shared/data/content-service.ts`
-- `public-website/src/shared/data/public-content-repository.ts`
 - `public-website/src/shared/domain.ts`
 
 These define a structural content boundary, but they do not currently power the live download page.

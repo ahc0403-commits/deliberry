@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/i18n/app_localizations.dart';
 import '../../core/session/customer_session_controller.dart';
 import '../entry/customer_entry_screen.dart';
 import '../../features/addresses/presentation/addresses_screen.dart';
@@ -62,8 +63,8 @@ class AppRouter {
       case RouteNames.orders:
         return _guardRoute(
           session: session,
-          access: _CustomerAccess.authenticatedOnly,
-          fallbackRouteName: RouteNames.authLogin,
+          access: _CustomerAccess.customerFlow,
+          fallbackRouteName: RouteNames.entry,
           child: const MainShell(
             currentRouteName: RouteNames.orders,
             child: OrdersListScreen(),
@@ -73,8 +74,8 @@ class AppRouter {
       case RouteNames.profile:
         return _guardRoute(
           session: session,
-          access: _CustomerAccess.authenticatedOnly,
-          fallbackRouteName: RouteNames.authLogin,
+          access: _CustomerAccess.customerFlow,
+          fallbackRouteName: RouteNames.entry,
           child: const MainShell(
             currentRouteName: RouteNames.profile,
             child: ProfileScreen(),
@@ -86,7 +87,7 @@ class AppRouter {
         if (session.requiresOnboarding) {
           return _redirectRoute(RouteNames.onboarding, settings);
         }
-        if (session.hasAuthenticatedSession || session.isGuest) {
+        if (session.hasAuthenticatedSession) {
           return _redirectRoute(RouteNames.home, settings);
         }
         if (session.isOtpPending) {
@@ -97,7 +98,7 @@ class AppRouter {
         if (session.requiresOnboarding) {
           return _redirectRoute(RouteNames.onboarding, settings);
         }
-        if (session.hasAuthenticatedSession || session.isGuest) {
+        if (session.hasAuthenticatedSession) {
           return _redirectRoute(RouteNames.home, settings);
         }
         if (session.isOtpPending) {
@@ -108,7 +109,7 @@ class AppRouter {
         if (session.requiresOnboarding) {
           return _redirectRoute(RouteNames.onboarding, settings);
         }
-        if (session.hasAuthenticatedSession || session.isGuest) {
+        if (session.hasAuthenticatedSession) {
           return _redirectRoute(RouteNames.home, settings);
         }
         if (!session.isOtpPending) {
@@ -207,8 +208,8 @@ class AppRouter {
       case RouteNames.orderCompletion:
         return _guardRoute(
           session: session,
-          access: _CustomerAccess.authenticatedOnly,
-          fallbackRouteName: RouteNames.authLogin,
+          access: _CustomerAccess.customerFlow,
+          fallbackRouteName: RouteNames.entry,
           child: OrderCompletionScreen(
             orderId: settings.arguments as String?,
           ),
@@ -217,8 +218,8 @@ class AppRouter {
       case RouteNames.orderDetail:
         return _guardRoute(
           session: session,
-          access: _CustomerAccess.authenticatedOnly,
-          fallbackRouteName: RouteNames.authLogin,
+          access: _CustomerAccess.customerFlow,
+          fallbackRouteName: RouteNames.entry,
           child: OrderDetailScreen(
             orderId: settings.arguments as String?,
           ),
@@ -227,8 +228,8 @@ class AppRouter {
       case RouteNames.orderStatus:
         return _guardRoute(
           session: session,
-          access: _CustomerAccess.authenticatedOnly,
-          fallbackRouteName: RouteNames.authLogin,
+          access: _CustomerAccess.customerFlow,
+          fallbackRouteName: RouteNames.entry,
           child: OrderStatusScreen(
             orderId: settings.arguments as String?,
           ),
@@ -237,8 +238,8 @@ class AppRouter {
       case RouteNames.reviews:
         return _guardRoute(
           session: session,
-          access: _CustomerAccess.authenticatedOnly,
-          fallbackRouteName: RouteNames.authLogin,
+          access: _CustomerAccess.customerFlow,
+          fallbackRouteName: RouteNames.entry,
           child: ReviewsScreen(
             orderId: settings.arguments as String?,
           ),
@@ -247,8 +248,8 @@ class AppRouter {
       case RouteNames.settings:
         return _guardRoute(
           session: session,
-          access: _CustomerAccess.authenticatedOnly,
-          fallbackRouteName: RouteNames.authLogin,
+          access: _CustomerAccess.customerFlow,
+          fallbackRouteName: RouteNames.entry,
           child: const SettingsScreen(),
           settings: settings,
         );
@@ -256,8 +257,8 @@ class AppRouter {
         final addressArgs = settings.arguments as AddressRouteArgs?;
         return _guardRoute(
           session: session,
-          access: _CustomerAccess.authenticatedOnly,
-          fallbackRouteName: RouteNames.authLogin,
+          access: _CustomerAccess.customerFlow,
+          fallbackRouteName: RouteNames.entry,
           child: AddressesScreen(
             returnRouteName: addressArgs?.returnRouteName ?? RouteNames.home,
             isRequiredGate: addressArgs?.isRequiredGate ?? false,
@@ -267,8 +268,8 @@ class AppRouter {
       case RouteNames.notifications:
         return _guardRoute(
           session: session,
-          access: _CustomerAccess.authenticatedOnly,
-          fallbackRouteName: RouteNames.authLogin,
+          access: _CustomerAccess.customerFlow,
+          fallbackRouteName: RouteNames.entry,
           child: const NotificationsScreen(),
           settings: settings,
         );
@@ -355,13 +356,14 @@ class _StubScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final localizedTitle = context.l10n.raw(title);
     return Scaffold(
-      appBar: AppBar(title: Text(title)),
+      appBar: AppBar(title: Text(localizedTitle)),
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(title),
+            Text(localizedTitle),
             if (subtitle != null) ...[
               const SizedBox(height: 8),
               Text(subtitle!),

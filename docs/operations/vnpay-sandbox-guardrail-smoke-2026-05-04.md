@@ -1,10 +1,10 @@
 # VNPAY Sandbox Guardrail Smoke -- 2026-05-04
 
-Status: active
-Authority: operational
-Surface: customer-app, supabase
-Domains: payment, vnpay, sandbox, guardrails, callback-validation
-Last updated: 2026-05-04
+Status: active  
+Authority: operational  
+Surface: customer-app, supabase  
+Domains: payment, vnpay, sandbox, guardrails, callback-validation  
+Last updated: 2026-05-04  
 Last verified: 2026-05-04
 
 ## Purpose
@@ -77,12 +77,15 @@ The sandbox payment-attempt record was seeded server-side for this guarded smoke
 
 - Local smoke artifact: [/Users/andremacmini/Deliberry/tmp/vnpay-guardrail-callback-smoke-2026-05-04.json](/Users/andremacmini/Deliberry/tmp/vnpay-guardrail-callback-smoke-2026-05-04.json)
 - Reusable runner artifact: [/Users/andremacmini/Deliberry/output/vnpay-guardrail-smoke/phase1-vnpay-guardrail-smoke-2026-05-04T05-56-17.237Z/summary.json](/Users/andremacmini/Deliberry/output/vnpay-guardrail-smoke/phase1-vnpay-guardrail-smoke-2026-05-04T05-56-17.237Z/summary.json)
+- GitHub Actions run: `25303735665`
+- GitHub Actions artifact id: `6777507788`
+- GitHub Actions URL: [Phase 1 VNPAY Sandbox Guardrail Smoke / 25303735665](https://github.com/ahc0403-commits/deliberry/actions/runs/25303735665)
 
 ## Automation Status
 
 - GitHub repository secret `VNPAY_SANDBOX_HASH_SECRET` is configured.
 - The reusable workflow file exists at `.github/workflows/phase1-vnpay-sandbox-guardrail-smoke.yml`.
-- As of 2026-05-04, `workflow_dispatch` still cannot be triggered from GitHub until that workflow file is present on the default branch. The same smoke was re-run locally through the reusable runner and produced the artifact above.
+- `workflow_dispatch` now runs successfully on `main` and uploads the governed sandbox guardrail artifact.
 
 ## Verdict
 

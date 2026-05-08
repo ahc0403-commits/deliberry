@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../../app/router/route_names.dart';
 import '../../../core/data/customer_runtime_controller.dart';
-import '../../../core/data/mock_data.dart' show MockCartItem, formatCentavos;
+import '../../../core/data/mock_data.dart'
+    show MockCartItem, formatCustomerMoney;
+import '../../../core/i18n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../common/presentation/widgets.dart';
 
@@ -30,6 +32,7 @@ class _CartScreenState extends State<CartScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final runtime = CustomerRuntimeController.instance;
 
     return ListenableBuilder(
@@ -52,8 +55,8 @@ class _CartScreenState extends State<CartScreen> {
         return Scaffold(
           backgroundColor: AppTheme.backgroundGrey,
           appBar: AppBar(
-            title: const Text('Cart'),
-            backgroundColor: Colors.white,
+            title: Text(l10n.text('cart.title')),
+            backgroundColor: AppTheme.backgroundGrey,
             leading: IconButton(
               icon: const Icon(Icons.arrow_back_rounded),
               onPressed: () => Navigator.of(context).pop(),
@@ -62,7 +65,7 @@ class _CartScreenState extends State<CartScreen> {
               if (items.isNotEmpty)
                 TextButton(
                   onPressed: runtime.clearCart,
-                  child: const Text('Clear'),
+                  child: Text(l10n.text('cart.clear')),
                 ),
             ],
           ),
@@ -70,31 +73,22 @@ class _CartScreenState extends State<CartScreen> {
               ? EmptyState(
                   icon: Icons.shopping_cart_outlined,
                   title: blocker == 'cart_line_items_unavailable'
-                      ? 'Your cart was refreshed'
-                      : 'Your cart is empty',
+                      ? l10n.text('cart.refreshed')
+                      : l10n.text('cart.empty'),
                   subtitle: blocker == 'store_menu_unavailable'
                       ? 'This store menu is unavailable right now. Please choose another store.'
                       : blocker == 'cart_line_items_unavailable'
                           ? 'Some items were removed because they are not available in the live menu anymore.'
-                          : 'Add items from a restaurant to get started',
-                  actionLabel: 'Browse Restaurants',
+                          : l10n.text('cart.emptySubtitle'),
+                  actionLabel: l10n.text('cart.browse'),
                   onAction: () =>
                       Navigator.of(context).pushNamed(RouteNames.home),
                 )
               : ListView(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
                   children: [
-                    FeatureHeroCard(
-                      eyebrow: 'Cart',
-                      title: 'Review everything before checkout',
-                      subtitle:
-                          'Update quantities, apply the demo promo, and confirm this basket before you place the order.',
-                      icon: Icons.shopping_bag_rounded,
-                      badge: '\$${formatCentavos(runtime.cartTotal)} total',
-                    ),
-                    const SizedBox(height: 16),
                     _StoreContextCard(
-                      storeName: store?.name ?? 'Selected store',
+                      storeName: store?.name ?? l10n.text('cart.selectedStore'),
                       itemCount: runtime.cartItemCount,
                       onAddMore: store == null
                           ? null
@@ -114,9 +108,9 @@ class _CartScreenState extends State<CartScreen> {
                     ],
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.surface,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppTheme.borderColor),
+                        boxShadow: [AppTheme.softShadow(alpha: 0.045)],
                       ),
                       child: Column(
                         children: List.generate(items.length, (index) {
@@ -143,12 +137,13 @@ class _CartScreenState extends State<CartScreen> {
                         final applied =
                             runtime.applyPromoCode(_promoController.text);
                         if (!applied) {
-                          _showMessage(
-                              'Use SAVE5 to apply the demo promo code.');
+                          _showMessage(context.l10n.raw(
+                            'Use SAVE50K to apply the sample promo code.',
+                          ));
                           return;
                         }
                         FocusScope.of(context).unfocus();
-                        _showMessage('Promo code applied.');
+                        _showMessage(context.l10n.raw('Promo code applied.'));
                       },
                       onRemove: () {
                         runtime.removePromoCode();
@@ -159,31 +154,30 @@ class _CartScreenState extends State<CartScreen> {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.surface,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppTheme.borderColor),
+                        boxShadow: [AppTheme.softShadow(alpha: 0.045)],
                       ),
                       child: Column(
                         children: [
                           PriceRow(
-                            label: 'Subtotal',
-                            amount: '\$${formatCentavos(runtime.cartSubtotal)}',
+                            label: l10n.text('cart.subtotal'),
+                            amount: formatCustomerMoney(runtime.cartSubtotal),
                           ),
                           PriceRow(
-                            label: 'Delivery fee',
+                            label: l10n.text('cart.deliveryFee'),
                             amount:
-                                '\$${formatCentavos(runtime.cartDeliveryFee)}',
+                                formatCustomerMoney(runtime.cartDeliveryFee),
                           ),
                           PriceRow(
-                            label: 'Service fee',
-                            amount:
-                                '\$${formatCentavos(runtime.cartServiceFee)}',
+                            label: l10n.text('cart.serviceFee'),
+                            amount: formatCustomerMoney(runtime.cartServiceFee),
                           ),
                           if (runtime.hasPromoApplied)
                             PriceRow(
                               label: 'Promo (${runtime.promoCode})',
                               amount:
-                                  '-\$${formatCentavos(runtime.promoDiscount)}',
+                                  '-${formatCustomerMoney(runtime.promoDiscount)}',
                               isDiscount: true,
                             ),
                           const Padding(
@@ -191,8 +185,8 @@ class _CartScreenState extends State<CartScreen> {
                             child: Divider(),
                           ),
                           PriceRow(
-                            label: 'Total',
-                            amount: '\$${formatCentavos(runtime.cartTotal)}',
+                            label: l10n.text('cart.total'),
+                            amount: formatCustomerMoney(runtime.cartTotal),
                             isBold: true,
                           ),
                         ],
@@ -203,8 +197,12 @@ class _CartScreenState extends State<CartScreen> {
           bottomNavigationBar: items.isEmpty
               ? null
               : BottomCTABar(
-                  label: checkoutBlocked ? 'Menu Unavailable' : 'Checkout',
-                  trailingText: '\$${formatCentavos(runtime.cartTotal)}',
+                  label: checkoutBlocked
+                      ? l10n.text('cart.menuUnavailable')
+                      : l10n.text('cart.checkout'),
+                  sublabel:
+                      '${runtime.cartItemCount} item${runtime.cartItemCount == 1 ? '' : 's'}',
+                  trailingText: formatCustomerMoney(runtime.cartTotal),
                   onPressed: checkoutBlocked
                       ? null
                       : () => Navigator.of(context).pushNamed(
@@ -231,7 +229,6 @@ class _CartWarningCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppTheme.secondaryColor.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.borderColor),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -273,9 +270,10 @@ class _StoreContextCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppTheme.cardRadius),
         border: Border.all(color: AppTheme.borderColor),
+        boxShadow: [AppTheme.softShadow(alpha: 0.035)],
       ),
       child: Row(
         children: [
@@ -283,13 +281,13 @@ class _StoreContextCard extends StatelessWidget {
             width: 46,
             height: 46,
             decoration: BoxDecoration(
-              color: AppTheme.secondaryColor.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(14),
+              color: AppTheme.primaryColor.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(AppTheme.pillRadius),
             ),
             child: Icon(
               Icons.storefront_rounded,
               size: 22,
-              color: AppTheme.secondaryColor,
+              color: AppTheme.primaryColor,
             ),
           ),
           const SizedBox(width: 12),
@@ -316,7 +314,7 @@ class _StoreContextCard extends StatelessWidget {
           ),
           TextButton(
             onPressed: onAddMore,
-            child: const Text('Add more'),
+            child: Text(context.l10n.text('cart.addMore')),
           ),
         ],
       ),
@@ -444,7 +442,7 @@ class _CartItemRow extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            '\$${formatCentavos(item.total)}',
+                            formatCustomerMoney(item.total),
                             style: const TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w800,
@@ -496,9 +494,9 @@ class _PromoCodeRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.borderColor),
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [AppTheme.softShadow(alpha: 0.04)],
       ),
       child: Row(
         children: [
@@ -513,15 +511,15 @@ class _PromoCodeRow extends StatelessWidget {
                 ? Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Promo applied',
+                      Text(
+                        context.l10n.raw('Promo applied'),
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
                       Text(
-                        '${promoCode ?? 'SAVE5'} — \$5.00 off your order',
+                        '${promoCode ?? 'SAVE50K'} — ${formatCustomerMoney(50000)} ${context.l10n.raw('off your order')}',
                         style: TextStyle(
                           fontSize: 12,
                           color: AppTheme.successColor,
@@ -532,8 +530,8 @@ class _PromoCodeRow extends StatelessWidget {
                   )
                 : TextField(
                     controller: controller,
-                    decoration: const InputDecoration(
-                      hintText: 'Promo code',
+                    decoration: InputDecoration(
+                      hintText: context.l10n.raw('Promo code'),
                       border: InputBorder.none,
                       enabledBorder: InputBorder.none,
                       focusedBorder: InputBorder.none,
@@ -562,7 +560,7 @@ class _PromoCodeRow extends StatelessWidget {
                     minimumSize: const Size(0, 40),
                     padding: const EdgeInsets.symmetric(horizontal: 14),
                   ),
-                  child: const Text('Apply'),
+                  child: Text(context.l10n.text('cart.apply')),
                 ),
         ],
       ),

@@ -3,9 +3,11 @@ import { NextResponse } from "next/server";
 
 import {
   MERCHANT_ONBOARDING_COOKIE,
+  MERCHANT_PATHNAME_HEADER,
   MERCHANT_SESSION_COOKIE,
   MERCHANT_STORE_COOKIE,
 } from "./src/shared/auth/merchant-session";
+import { readMerchantAuthAuthority } from "./src/shared/supabase/config";
 
 const AUTH_PATHS = new Set(["/login", "/onboarding"]);
 
@@ -24,9 +26,25 @@ function isStoreScopedPath(pathname: string): boolean {
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set(MERCHANT_PATHNAME_HEADER, pathname);
 
   if (isStaticPath(pathname)) {
-    return NextResponse.next();
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
+  }
+
+  // Supabase-backed merchant access is resolved server-side through access helpers.
+  // Keep middleware permissive there so cookie-only demo guards do not override it.
+  if (readMerchantAuthAuthority() === "supabase") {
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
   }
 
   const session = request.cookies.get(MERCHANT_SESSION_COOKIE)?.value;
@@ -36,17 +54,27 @@ export function middleware(request: NextRequest) {
 
   if (AUTH_PATHS.has(pathname)) {
     if (!session) {
-      return NextResponse.next();
+      return NextResponse.next({
+        request: {
+          headers: requestHeaders,
+        },
+      });
     }
 
     if (!onboardingComplete) {
       return pathname === "/onboarding"
-          ? NextResponse.next()
+          ? NextResponse.next({
+              request: {
+                headers: requestHeaders,
+              },
+            })
           : NextResponse.redirect(new URL("/onboarding", request.url));
     }
 
     if (!selectedStore) {
-      return NextResponse.redirect(new URL("/select-store", request.url));
+      return NextResponse.redirect(
+        new URL("/select-store?reason=no_store_selected", request.url),
+      );
     }
 
     return NextResponse.redirect(
@@ -56,32 +84,55 @@ export function middleware(request: NextRequest) {
 
   if (pathname === "/select-store") {
     if (!session) {
-      return NextResponse.redirect(new URL("/login", request.url));
+      return NextResponse.redirect(
+        new URL("/login?error=session_required", request.url),
+      );
     }
 
     if (!onboardingComplete) {
-      return NextResponse.redirect(new URL("/onboarding", request.url));
+      return NextResponse.redirect(
+        new URL("/onboarding?reason=onboarding_required", request.url),
+      );
     }
 
-    return NextResponse.next();
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
   }
 
   if (isStoreScopedPath(pathname)) {
     if (!session) {
-      return NextResponse.redirect(new URL("/login", request.url));
+      return NextResponse.redirect(
+        new URL("/login?error=session_required", request.url),
+      );
     }
 
     if (!onboardingComplete) {
-      return NextResponse.redirect(new URL("/onboarding", request.url));
+      return NextResponse.redirect(
+        new URL("/onboarding?reason=onboarding_required", request.url),
+      );
     }
 
     const storeId = pathname.split("/").filter(Boolean)[0];
     if (!selectedStore || selectedStore != storeId) {
-      return NextResponse.redirect(new URL("/select-store", request.url));
+      return NextResponse.redirect(
+        new URL(
+          `/select-store?reason=${
+            selectedStore ? "store_scope_mismatch" : "no_store_selected"
+          }`,
+          request.url,
+        ),
+      );
     }
   }
 
-  return NextResponse.next();
+  return NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
 }
 
 export const config = {

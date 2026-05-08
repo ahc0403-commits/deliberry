@@ -26,4 +26,7 @@ class CustomerQueryServices {
   List<String> getSettingsSections() => _repository.getSettingsSections();
 }
 
-final customerQueryServices = CustomerQueryServices(customerRepository);
+final customerFixtureSectionsFacade = CustomerQueryServices(customerRepository);
+
+@Deprecated('Use customerFixtureSectionsFacade to make fixture ownership explicit.')
+final customerQueryServices = customerFixtureSectionsFacade;

@@ -24,6 +24,14 @@ type MerchantMembershipRow = {
   store_id: string;
   role: string;
   is_default: boolean;
+  stores:
+    | {
+        name: string | null;
+      }
+    | {
+        name: string | null;
+      }[]
+    | null;
 };
 
 function isMerchantActorType(value: unknown): value is MerchantActorType {
@@ -47,6 +55,9 @@ function mapMembershipRows(rows: MerchantMembershipRow[]): MerchantStoreMembersh
     .filter((row): row is MerchantMembershipRow & { role: MerchantActorType } => isMerchantActorType(row.role))
     .map((row) => ({
       storeId: row.store_id,
+      storeName:
+        (Array.isArray(row.stores) ? row.stores[0]?.name : row.stores?.name)?.trim() ||
+        row.store_id,
       actorType: row.role,
       isDefault: defaultStoreId != null && row.store_id === defaultStoreId,
     }));
@@ -114,7 +125,7 @@ async function readMerchantSnapshot(user: User): Promise<MerchantSessionSnapshot
         .maybeSingle<MerchantProfileRow>(),
       service
         .from("merchant_memberships")
-        .select("store_id, role, is_default")
+        .select("store_id, role, is_default, stores(name)")
         .eq("user_id", user.id)
         .returns<MerchantMembershipRow[]>(),
     ]);
@@ -227,8 +238,8 @@ export class SupabaseMerchantAuthAdapter implements MerchantAuthAdapter {
 
     const user = await readAuthenticatedMerchantUser();
 
-    const service = createMerchantServiceSupabaseClient();
-    const { error: updateError } = await service.rpc("set_merchant_default_store", {
+    const supabase = await createMerchantServerSupabaseClient();
+    const { error: updateError } = await supabase.rpc("set_merchant_default_store", {
         p_store_id: storeId,
       });
 

@@ -3,7 +3,7 @@ import "server-only";
 import {
   buildGovernedExternalLlmSinkWrite,
   type ExternalLlmTransmissionAuditRecord,
-} from "../domain";
+} from "../merchant-governed-domain";
 import { createMerchantServiceSupabaseClient } from "../supabase/client";
 
 export async function recordMerchantExternalLlmTransmissionAttempt(

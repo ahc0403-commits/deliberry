@@ -23,15 +23,24 @@ async function createAdminCookieStorage(): Promise<AuthStorage> {
       return store.get(key)?.value ?? null;
     },
     setItem(key: string, value: string) {
-      store.set(key, value, {
-        httpOnly: true,
-        sameSite: "lax",
-        secure: process.env.NODE_ENV === "production",
-        path: "/",
-      });
+      try {
+        store.set(key, value, {
+          httpOnly: true,
+          sameSite: "lax",
+          secure: process.env.NODE_ENV === "production",
+          path: "/",
+        });
+      } catch {
+        // Server-component reads may invoke auth helpers in a read-only cookie context.
+        // Ignore attempted persistence there and let server actions own real cookie mutation.
+      }
     },
     removeItem(key: string) {
-      store.delete(key);
+      try {
+        store.delete(key);
+      } catch {
+        // See setItem above: read-only render paths must not crash on auth storage cleanup.
+      }
     },
   };
 }

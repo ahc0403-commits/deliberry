@@ -59,7 +59,7 @@ Related files:
 **Definition**: Monetary values stored or computed as floating-point numbers, leading to rounding errors and inconsistent totals.
 
 **Symptoms**:
-- Mock data contains values like `18.5`, `8456.50` (floats, not centavos)
+- Mock data contains values like `18.5`, `8456.50` (floats, not integer minor money units)
 - Subtotal calculations produce values like `42.300000000000004`
 - Settlement totals do not reconcile with order totals
 
@@ -75,8 +75,8 @@ Related files:
 **Blocking Rule**: R-010, R-011
 
 **Recovery Path**:
-1. Change `MoneyAmount` to branded integer centavo type (Wave 1)
-2. Convert all mock data money values to integer centavos (Wave 2)
+1. Change `MoneyAmount` to a branded integer money type (Wave 1)
+2. Convert all mock data money values to integer minor money units (Wave 2)
 3. Add lint rule forbidding float literals in money contexts
 
 ---
@@ -85,10 +85,10 @@ Related files:
 
 **Status: AT RISK — No policy enforced, mock data uses informal strings**
 
-**Definition**: Timestamps stored in local Argentine time instead of UTC, causing incorrect time calculations across timezone boundaries.
+**Definition**: Timestamps stored in local Ho Chi Minh City time instead of UTC, causing incorrect time calculations across timezone boundaries.
 
 **Symptoms**:
-- Database timestamps show Buenos Aires time without offset
+- Database timestamps show Ho Chi Minh City time without offset
 - Settlement period calculations are off by hours
 - Scheduled delivery times are ambiguous
 - Sorting by timestamp produces unexpected order
@@ -307,7 +307,7 @@ Related files:
 
 ## 11. Currency Code Drift
 
-**Status: ACTIVE — VND in canonical, ARS missing**
+**Status: RESOLVED — canonical currency baseline aligned**
 
 **Definition**: Currency codes in the type system do not match the actual product currency, causing incorrect formatting, calculations, and display.
 
@@ -318,20 +318,20 @@ Related files:
 
 **Current Evidence**:
 - `CurrencyCode` type is `'USD' | 'VND'` — `shared/types/common.types.ts:4`
-- Product is Argentine (should be `'ARS' | 'USD'`)
+- Product baseline is Vietnam-first (should be `'VND' | 'USD'`)
 - Currency utility only formats USD and VND — `shared/utils/currency.ts`
 
 **Detection Method**:
-- Type check: `CurrencyCode` MUST include `'ARS'`
-- Grep for `'VND'` in production code (should not exist)
-- Currency display review: verify ARS formatting ($ symbol, 2 decimals)
+- Type check: `CurrencyCode` MUST include `'VND'`
+- Grep for undocumented currency literals in governed production code
+- Currency display review: verify VND formatting (₫ symbol, whole-dong display)
 
 **Blocking Rule**: R-012
 
 **Recovery Path**:
-1. Change `CurrencyCode` to `'ARS' | 'USD'` (Wave 1)
-2. Update currency utility to support ARS (Wave 1)
-3. Remove all VND references
+1. Change `CurrencyCode` to `'VND' | 'USD'` (Wave 1)
+2. Update currency utility to support VND (Wave 1)
+3. Remove stale ARS-first references
 
 ---
 

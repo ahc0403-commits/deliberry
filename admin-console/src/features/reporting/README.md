@@ -4,7 +4,7 @@ Status: Active
 Authority: Operational
 Surface: admin-console
 Domains: reporting, exports, admin
-Last updated: 2026-03-17
+Last updated: 2026-05-06
 Retrieve when:
 - editing the admin reporting route
 - checking whether reporting actions are live or presentation-only
@@ -29,7 +29,7 @@ Owns the platform reporting route and its fixture-backed report catalog and expo
 - Read-path truth flows through `admin-console/src/shared/data/admin-query-services.ts`
 - Repository truth lives in `admin-console/src/shared/data/admin-repository.ts`
 
-The route is access-enforced. Report definitions are fixture-backed and export controls are local UI only.
+The route is access-enforced. Report definitions are fixture-backed and export controls are local UI only, while the route-level explanatory copy now follows the admin locale layer rather than staying fixed in English.
 
 ## Key Files to Read First
 
@@ -64,5 +64,5 @@ The route is access-enforced. Report definitions are fixture-backed and export c
 ## What Not to Change Casually
 
 - Do not present export controls as live integrations.
-- Do not bypass `adminQueryServices`.
+- Do not bypass `adminFixtureFacade`.
 - Do not add persistence claims without real runtime support.

@@ -1,6 +1,8 @@
 import {
+  assertSettlementRuntimeEnabled,
   resolveAutoSettlementWindow,
   runSettlementGeneration,
+  SettlementRuntimeGuardError,
 } from "../_shared/settlement-core.ts";
 
 // CRON-only function: no browser CORS needed, restrict to same-origin/internal
@@ -52,6 +54,7 @@ Deno.serve(async (request) => {
   }
 
   try {
+    assertSettlementRuntimeEnabled();
     const window = resolveAutoSettlementWindow(new Date());
     const result = await runSettlementGeneration(window);
     return jsonResponse(200, {
@@ -60,10 +63,17 @@ Deno.serve(async (request) => {
       window,
     }, request);
   } catch (error) {
+    if (error instanceof SettlementRuntimeGuardError) {
+      return jsonResponse(503, {
+        error_code: error.code,
+        message: error.message,
+        details: error.details,
+      }, request);
+    }
+
     return jsonResponse(500, {
       error_code: "settlement_generation_failed",
       message: error instanceof Error ? error.message : String(error),
     }, request);
   }
 });
-

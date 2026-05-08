@@ -4,10 +4,16 @@ import {
   readMerchantAccessState,
   resolveMerchantAccessPath,
 } from "../../../shared/auth/merchant-session";
+import { readMerchantAuthAuthority } from "../../../shared/supabase/config";
 import { MerchantOnboardingScreen } from "../../../features/onboarding/presentation/onboarding-screen";
 
-export default async function MerchantOnboardingPage() {
+export default async function MerchantOnboardingPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ reason?: string }>;
+}) {
   const access = await readMerchantAccessState();
+  const params = await searchParams;
 
   if (!access.session) {
     redirect(
@@ -31,5 +37,10 @@ export default async function MerchantOnboardingPage() {
     );
   }
 
-  return <MerchantOnboardingScreen />;
+  return (
+    <MerchantOnboardingScreen
+      authority={access.authority === "none" ? readMerchantAuthAuthority() : access.authority}
+      reason={params?.reason ?? null}
+    />
+  );
 }

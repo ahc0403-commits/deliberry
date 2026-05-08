@@ -82,7 +82,7 @@ export function PublicPrivacyScreen() {
               </div>
 
               <h2>1. Who we are</h2>
-              <p>Deliberry is a food delivery platform connecting customers with local restaurants across Buenos Aires, Argentina. References to "Deliberry", "we", "us", or "our" in this policy refer to the Deliberry platform and its operators.</p>
+              <p>Deliberry is a food delivery platform connecting customers with local restaurants across Ho Chi Minh City, Vietnam. References to "Deliberry", "we", "us", or "our" in this policy refer to the Deliberry platform and its operators.</p>
 
               <h2>2. Data we collect</h2>
               <h3>Account information</h3>
@@ -109,7 +109,7 @@ export function PublicPrivacyScreen() {
               <ul>
                 <li><strong>Restaurants:</strong> Receive your name, delivery address, and order details to prepare and dispatch your order.</li>
                 <li><strong>Delivery couriers:</strong> Receive your delivery address and phone number to complete delivery.</li>
-                <li><strong>Payment processors:</strong> Process your payment securely. Governed by their own privacy terms.</li>
+                <li><strong>Payment processors:</strong> Receive payment-method context only when a live payment flow is enabled. In the current product phase, payment selection and sandbox testing do not imply live payment verification.</li>
                 <li><strong>Infrastructure providers:</strong> Cloud hosting, analytics, and operational tools that help us run the platform.</li>
               </ul>
               <p>We do not sell, rent, or trade your personal data with advertisers or data brokers.</p>
@@ -118,7 +118,7 @@ export function PublicPrivacyScreen() {
               <p>We retain your account data for as long as your account is active. Order records are retained for 5 years for tax and legal compliance. You may request deletion of your account at any time (see Section 7).</p>
 
               <h2>6. Security</h2>
-              <p>We use industry-standard encryption (TLS) for data in transit and encrypted storage for data at rest. Our payment provider is PCI-DSS certified. Access to personal data is restricted to authorised personnel only.</p>
+              <p>We use industry-standard encryption (TLS) for data in transit and encrypted storage for data at rest. Live card processing is outside the current product phase, so Deliberry does not claim active production payment verification on this public policy page. Access to personal data is restricted to authorised personnel only.</p>
 
               <h2>7. Your rights</h2>
               <p>You have the right to:</p>
@@ -138,7 +138,7 @@ export function PublicPrivacyScreen() {
               <p>We may update this policy from time to time. We will notify you of significant changes via email or in-app notification before they take effect.</p>
 
               <h2>10. Contact</h2>
-              <p>For any privacy-related questions, contact us at <strong>privacy@deliberry.com</strong> or write to: Deliberry, Buenos Aires, Argentina.</p>
+              <p>For any privacy-related questions, contact us at <strong>privacy@deliberry.com</strong> or write to: Deliberry, Ho Chi Minh City, Vietnam.</p>
             </div>
           </div>
         </div>

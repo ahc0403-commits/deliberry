@@ -1,15 +1,30 @@
 "use client";
 
 import { startTransition, useMemo, useState } from "react";
-import { ArrowRight, ClipboardList, Sparkles } from "lucide-react";
-import { formatMoney } from "../../../shared/domain";
+import { ArrowRight, Check, ClipboardList, Sparkles, X } from "lucide-react";
+import { formatMoney, toDisplayTime } from "../../../shared/domain";
 import type { OrdersData } from "../../../shared/data/merchant-repository";
 import { updateMerchantOrderStatusAction, loadMoreMerchantOrdersAction } from "../server/order-actions";
+import { useMerchantI18n } from "../../../shared/i18n/client";
 
 type MerchantOrdersScreenProps = {
   storeId: string;
   initialData: OrdersData;
   initialHasMore: boolean;
+};
+
+type OrderActionTone = "primary" | "success" | "danger";
+type OrderAction = {
+  label: string;
+  status:
+    | "confirmed"
+    | "preparing"
+    | "ready"
+    | "in_transit"
+    | "delivered"
+    | "cancelled";
+  tone: OrderActionTone;
+  icon: "advance" | "confirm" | "danger";
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -34,11 +49,64 @@ const TABS = [
   { key: "cancelled", label: "Cancelled", statuses: ["cancelled"] },
 ];
 
+function getOrderActions(status: string): { label: string; actions: OrderAction[] } {
+  if (status === "pending") {
+    return {
+      label: "Resolve intake decision",
+      actions: [
+        { label: "Accept Order", status: "confirmed", tone: "success", icon: "confirm" },
+        { label: "Reject", status: "cancelled", tone: "danger", icon: "danger" },
+      ],
+    };
+  }
+
+  if (status === "confirmed") {
+    return {
+      label: "Move kitchen workflow forward",
+      actions: [
+        { label: "Start Preparing", status: "preparing", tone: "primary", icon: "advance" },
+        { label: "Cancel Order", status: "cancelled", tone: "danger", icon: "danger" },
+      ],
+    };
+  }
+
+  if (status === "preparing") {
+    return {
+      label: "Confirm kitchen completion",
+      actions: [
+        { label: "Mark Ready", status: "ready", tone: "primary", icon: "advance" },
+        { label: "Cancel Order", status: "cancelled", tone: "danger", icon: "danger" },
+      ],
+    };
+  }
+
+  if (status === "ready") {
+    return {
+      label: "Confirm courier pickup",
+      actions: [
+        { label: "Mark Picked Up", status: "in_transit", tone: "primary", icon: "advance" },
+      ],
+    };
+  }
+
+  if (status === "in_transit") {
+    return {
+      label: "Close delivery lifecycle",
+      actions: [
+        { label: "Mark Delivered", status: "delivered", tone: "success", icon: "confirm" },
+      ],
+    };
+  }
+
+  return { label: "", actions: [] };
+}
+
 export function MerchantOrdersScreen({
   storeId,
   initialData,
   initialHasMore,
 }: MerchantOrdersScreenProps) {
+  const { locale, raw } = useMerchantI18n();
   const [activeTab, setActiveTab] = useState("active");
   const [orders, setOrders] = useState(initialData.orders);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
@@ -73,6 +141,10 @@ export function MerchantOrdersScreen({
   const readyCount = orders.filter((order) => order.status === "ready").length;
   const inPrepCount = orders.filter((order) => ["confirmed", "preparing"].includes(order.status)).length;
   const pendingCount = orders.filter((order) => order.status === "pending").length;
+  const detailActions = selectedOrder ? getOrderActions(selectedOrder.status) : { label: "", actions: [] };
+  const replaceCount = (value: string, count: number) => raw(value).replace("{count}", String(count));
+  const statusLabel = (status: string) => raw(STATUS_LABELS[status] ?? status);
+  const paymentLabel = (paymentMethod: string) => raw(PAYMENT_LABELS[paymentMethod] ?? paymentMethod);
 
   function handleOrderStatusUpdate(
     nextStatus:
@@ -152,11 +224,10 @@ export function MerchantOrdersScreen({
     <div className="merchant-surface">
       <section className="merchant-hero merchant-hero-orders">
         <div className="merchant-hero-copy">
-          <span className="merchant-eyebrow">Order operations</span>
-          <h1 className="merchant-hero-title">Orders</h1>
+          <span className="merchant-eyebrow">{raw("Order operations")}</span>
+          <h1 className="merchant-hero-title">{raw("Orders")}</h1>
           <p className="merchant-hero-subtitle">
-            Work the live queue for the current store and keep every order stage
-            visible from intake to pickup.
+            {raw("Work the live queue for the current store and keep every order stage visible from intake to pickup.")}
           </p>
           <div className="merchant-context-row">
             <span className="merchant-context-pill">
@@ -166,48 +237,50 @@ export function MerchantOrdersScreen({
             <span className="merchant-context-pill merchant-context-pill-muted">
               <Sparkles size={14} />
               {runtimeSource === "persisted"
-                ? "Status writes sync to persisted backend orders"
-                : "Status writes use the demo-safe local fallback"}
+                ? raw("Status writes sync to persisted backend orders")
+                : raw("Status writes stay in the local preview session")}
             </span>
           </div>
         </div>
-        <div className="merchant-hero-panel">
-          <div className="merchant-hero-panel-label">Queue focus</div>
-          <div className="merchant-hero-panel-value">{filteredOrders.length} in {currentTab.label.toLowerCase()}</div>
-          <div className="merchant-hero-panel-text">
-            Pending orders can be accepted or rejected here. In-transit orders can be completed without leaving this queue.
+          <div className="merchant-hero-panel">
+            <div className="merchant-hero-panel-label">{raw("Queue focus")}</div>
+            <div className="merchant-hero-panel-value">
+              {filteredOrders.length} · {raw(currentTab.label)}
+            </div>
+            <div className="merchant-hero-panel-text">
+              {raw("Pending orders can be accepted or rejected here. In-transit orders can be completed without leaving this queue.")}
           </div>
         </div>
       </section>
 
       <div className="merchant-summary-band">
         <div className="merchant-summary-card">
-          <div className="merchant-summary-label">Awaiting response</div>
-          <div className="merchant-summary-value">{pendingCount} new</div>
-          <div className="merchant-summary-meta">Order intake still needs action</div>
+          <div className="merchant-summary-label">{raw("Awaiting response")}</div>
+          <div className="merchant-summary-value">{replaceCount("{count} new", pendingCount)}</div>
+          <div className="merchant-summary-meta">{raw("Order intake still needs action")}</div>
         </div>
         <div className="merchant-summary-card">
-          <div className="merchant-summary-label">In kitchen</div>
-          <div className="merchant-summary-value">{inPrepCount} preparing</div>
-          <div className="merchant-summary-meta">Confirmed or currently being prepared</div>
+          <div className="merchant-summary-label">{raw("In kitchen")}</div>
+          <div className="merchant-summary-value">{replaceCount("{count} preparing", inPrepCount)}</div>
+          <div className="merchant-summary-meta">{raw("Confirmed or currently being prepared")}</div>
         </div>
         <div className="merchant-summary-card">
-          <div className="merchant-summary-label">Pickup queue</div>
-          <div className="merchant-summary-value">{readyCount} ready</div>
-          <div className="merchant-summary-meta">Can be marked picked up from the detail panel</div>
+          <div className="merchant-summary-label">{raw("Pickup queue")}</div>
+          <div className="merchant-summary-value">{replaceCount("{count} ready", readyCount)}</div>
+          <div className="merchant-summary-meta">{raw("Can be marked picked up from the detail panel")}</div>
         </div>
       </div>
 
       <div className="merchant-cluster-card">
         <div className="merchant-cluster-card-header">
           <div>
-            <div className="card-title">Order queue</div>
+            <div className="card-title">{raw("Order queue")}</div>
             <div className="card-subtitle">
-              Store-scoped order list with canonical progression and safe fallback
+              {raw("Store-scoped order list with canonical progression")}
             </div>
           </div>
           <div className="merchant-inline-note">
-            Open an order to update the visible queue state
+            {raw("Open an order to update the visible queue state")}
             <ArrowRight size={14} />
           </div>
         </div>
@@ -223,7 +296,7 @@ export function MerchantOrdersScreen({
               className={`tab ${activeTab === tab.key ? "active" : ""}`}
               onClick={() => setActiveTab(tab.key)}
             >
-              {tab.label}
+              {raw(tab.label)}
               <span className="tab-count">{count}</span>
             </button>
           );
@@ -234,14 +307,14 @@ export function MerchantOrdersScreen({
           <table className="data-table merchant-data-table">
             <thead>
               <tr>
-                <th>Order</th>
-                <th>Customer</th>
-                <th>Items</th>
-                <th>Total</th>
-                <th>Payment</th>
-                <th>Status</th>
-                <th>Time</th>
-                <th>Actions</th>
+                  <th>{raw("Order")}</th>
+                  <th>{raw("Customer")}</th>
+                  <th>{raw("Items")}</th>
+                  <th>{raw("Total")}</th>
+                  <th>{raw("Payment")}</th>
+                  <th>{raw("Status")}</th>
+                  <th>{raw("Time")}</th>
+                  <th>{raw("Actions")}</th>
               </tr>
             </thead>
             <tbody>
@@ -250,9 +323,9 @@ export function MerchantOrdersScreen({
                   <td colSpan={8}>
                     <div className="empty-state">
                       <div className="empty-state-icon">&#9776;</div>
-                      <div className="empty-state-title">No orders</div>
+                      <div className="empty-state-title">{raw("No orders")}</div>
                       <div className="empty-state-desc">
-                        No {activeTab} orders right now
+                        {raw("No {tab} orders right now").replace("{tab}", raw(currentTab.label).toLowerCase())}
                       </div>
                     </div>
                   </td>
@@ -270,23 +343,26 @@ export function MerchantOrdersScreen({
                       </div>
                     </td>
                     <td>
-                      {order.items.length} item{order.items.length !== 1 ? "s" : ""}
+                      {replaceCount(
+                        order.items.length === 1 ? "{count} item" : "{count} items",
+                        order.items.length,
+                      )}
                     </td>
                     <td className="mono">{formatMoney(order.total)}</td>
-                    <td>{PAYMENT_LABELS[order.paymentMethod] ?? order.paymentMethod}</td>
+                    <td>{paymentLabel(order.paymentMethod)}</td>
                     <td>
                       <span className={`status-badge ${order.status}`}>
                         <span className="status-dot" />
-                        {STATUS_LABELS[order.status] ?? order.status}
+                        {statusLabel(order.status)}
                       </span>
                     </td>
-                    <td>{order.createdAt}</td>
+                    <td>{toDisplayTime(order.createdAt, locale)}</td>
                     <td>
                       <button
                         className="btn btn-secondary btn-sm"
                         onClick={() => setSelectedOrderId(order.id)}
                       >
-                        View
+                        {raw("View")}
                       </button>
                     </td>
                   </tr>
@@ -302,14 +378,14 @@ export function MerchantOrdersScreen({
               onClick={handleLoadMore}
               disabled={isLoadingMore}
             >
-              {isLoadingMore ? "Loading…" : "Load more orders"}
+              {isLoadingMore ? raw("Loading…") : raw("Load more orders")}
             </button>
           </div>
         )}
         {loadMoreError ? (
           <div className="merchant-settings-intro">
-            <strong>Unable to load more orders</strong>
-            <p>{loadMoreError}</p>
+            <strong>{raw("Unable to load more orders")}</strong>
+            <p>{raw(loadMoreError)}</p>
           </div>
         ) : null}
       </div>
@@ -324,13 +400,13 @@ export function MerchantOrdersScreen({
           <div className="order-detail-panel merchant-order-detail-panel">
             <div className="order-detail-header">
               <div>
-                <div className="merchant-detail-eyebrow">Live queue detail</div>
+                <div className="merchant-detail-eyebrow">{raw("Live queue detail")}</div>
                 <div className="order-detail-title">
-                  Order {selectedOrder.orderNumber}
+                  {raw("Order {number}").replace("{number}", selectedOrder.orderNumber)}
                 </div>
                 <span className={`status-badge ${selectedOrder.status}`}>
                   <span className="status-dot" />
-                  {STATUS_LABELS[selectedOrder.status] ?? selectedOrder.status}
+                  {statusLabel(selectedOrder.status)}
                 </span>
               </div>
               <button
@@ -344,33 +420,40 @@ export function MerchantOrdersScreen({
             <div className="order-detail-body">
               <div className="merchant-detail-summary">
                 <div className="merchant-detail-summary-card">
-                  <span className="merchant-detail-summary-label">Customer</span>
+                  <span className="merchant-detail-summary-label">{raw("Customer")}</span>
                   <span className="merchant-detail-summary-value">{selectedOrder.customerName}</span>
                 </div>
                 <div className="merchant-detail-summary-card">
-                  <span className="merchant-detail-summary-label">Total</span>
+                  <span className="merchant-detail-summary-label">{raw("Total")}</span>
                   <span className="merchant-detail-summary-value">{formatMoney(selectedOrder.total)}</span>
                 </div>
                 <div className="merchant-detail-summary-card">
-                  <span className="merchant-detail-summary-label">ETA</span>
-                  <span className="merchant-detail-summary-value">{selectedOrder.estimatedDelivery}</span>
+                  <span className="merchant-detail-summary-label">{raw("ETA")}</span>
+                  <span className="merchant-detail-summary-value">{toDisplayTime(selectedOrder.estimatedDelivery, locale)}</span>
+                </div>
+              </div>
+
+              <div className="merchant-detail-callout">
+                <div className="merchant-detail-callout-label">{raw("Operator note")}</div>
+                <div className="merchant-detail-callout-copy">
+                  {raw("This drawer is the active store-side control point. Update the next visible queue stage here and keep customer timing expectations aligned with the kitchen pace.")}
                 </div>
               </div>
 
               <div className="order-detail-section">
-                <div className="order-detail-section-title">Customer</div>
+                <div className="order-detail-section-title">{raw("Customer")}</div>
                 <div className="order-info-grid">
-                  <span className="order-info-label">Name</span>
+                  <span className="order-info-label">{raw("Name")}</span>
                   <span className="order-info-value">{selectedOrder.customerName}</span>
-                  <span className="order-info-label">Phone</span>
+                  <span className="order-info-label">{raw("Phone")}</span>
                   <span className="order-info-value">{selectedOrder.customerPhone}</span>
-                  <span className="order-info-label">Address</span>
+                  <span className="order-info-label">{raw("Address")}</span>
                   <span className="order-info-value">{selectedOrder.deliveryAddress}</span>
-                  <span className="order-info-label">ETA</span>
-                  <span className="order-info-value">{selectedOrder.estimatedDelivery}</span>
+                  <span className="order-info-label">{raw("ETA")}</span>
+                  <span className="order-info-value">{toDisplayTime(selectedOrder.estimatedDelivery, locale)}</span>
                   {selectedOrder.notes ? (
                     <>
-                      <span className="order-info-label">Notes</span>
+                      <span className="order-info-label">{raw("Notes")}</span>
                       <span className="order-info-value" style={{ color: "var(--color-primary)" }}>
                         {selectedOrder.notes}
                       </span>
@@ -380,7 +463,7 @@ export function MerchantOrdersScreen({
               </div>
 
               <div className="order-detail-section">
-                <div className="order-detail-section-title">Items</div>
+                <div className="order-detail-section-title">{raw("Items")}</div>
                 {selectedOrder.items.map((item, idx) => (
                   <div key={idx} className="order-item-row">
                     <div>
@@ -401,70 +484,75 @@ export function MerchantOrdersScreen({
               </div>
 
               <div className="order-detail-section">
-                <div className="order-detail-section-title">Summary</div>
+                <div className="order-detail-section-title">{raw("Summary")}</div>
                 <div className="order-total-row">
-                  <span>Subtotal</span>
+                  <span>{raw("Subtotal")}</span>
                   <span>{formatMoney(selectedOrder.subtotal)}</span>
                 </div>
                 <div className="order-total-row">
-                  <span>Delivery fee</span>
+                  <span>{raw("Delivery fee")}</span>
                   <span>
                     {selectedOrder.deliveryFee === 0
-                      ? "Free"
+                      ? raw("Free")
                       : formatMoney(selectedOrder.deliveryFee)}
                   </span>
                 </div>
                 <div className="order-total-row final">
-                  <span>Total</span>
+                  <span>{raw("Total")}</span>
                   <span>{formatMoney(selectedOrder.total)}</span>
                 </div>
               </div>
 
               <div className="order-detail-section">
-                <div className="order-detail-section-title">Payment</div>
+                <div className="order-detail-section-title">{raw("Payment")}</div>
                 <div className="order-info-grid">
-                  <span className="order-info-label">Method</span>
-                  <span className="order-info-value">{PAYMENT_LABELS[selectedOrder.paymentMethod] ?? selectedOrder.paymentMethod}</span>
-                  <span className="order-info-label">Placed</span>
-                  <span className="order-info-value">{selectedOrder.createdAt}</span>
+                  <span className="order-info-label">{raw("Method")}</span>
+                  <span className="order-info-value">{paymentLabel(selectedOrder.paymentMethod)}</span>
+                  <span className="order-info-label">{raw("Placed")}</span>
+                  <span className="order-info-value">{toDisplayTime(selectedOrder.createdAt, locale)}</span>
                 </div>
               </div>
             </div>
 
-            {selectedOrder.status === "pending" ? (
-              <div className="order-detail-footer">
-                <button className="btn btn-success" onClick={() => handleOrderStatusUpdate("confirmed")} disabled={actionPending}>Accept Order</button>
-                <button className="btn btn-danger" onClick={() => handleOrderStatusUpdate("cancelled")} disabled={actionPending}>Reject</button>
-              </div>
-            ) : selectedOrder.status === "confirmed" ? (
-              <div className="order-detail-footer">
-                <button className="btn btn-primary" onClick={() => handleOrderStatusUpdate("preparing")} disabled={actionPending}>Start Preparing</button>
-                <button className="btn btn-danger" onClick={() => handleOrderStatusUpdate("cancelled")} disabled={actionPending}>Cancel Order</button>
-              </div>
-            ) : selectedOrder.status === "preparing" ? (
-              <div className="order-detail-footer">
-                <button className="btn btn-primary" onClick={() => handleOrderStatusUpdate("ready")} disabled={actionPending}>Mark Ready</button>
-                <button className="btn btn-danger" onClick={() => handleOrderStatusUpdate("cancelled")} disabled={actionPending}>Cancel Order</button>
-              </div>
-            ) : selectedOrder.status === "ready" ? (
-              <div className="order-detail-footer">
-                <button className="btn btn-primary" onClick={() => handleOrderStatusUpdate("in_transit")} disabled={actionPending}>Mark Picked Up</button>
-              </div>
-            ) : selectedOrder.status === "in_transit" ? (
-              <div className="order-detail-footer">
-                <button className="btn btn-success" onClick={() => handleOrderStatusUpdate("delivered")} disabled={actionPending}>Mark Delivered</button>
+            {detailActions.actions.length > 0 ? (
+              <div className="order-detail-footer order-detail-footer-action">
+                <div className="order-detail-footer-context">
+                  <span className="order-detail-footer-label">{raw("Next action")}</span>
+                  <span className="order-detail-footer-copy">{raw(detailActions.label)}</span>
+                </div>
+                <div className="order-detail-footer-actions">
+                  {detailActions.actions.map((action) => (
+                    <button
+                      key={action.label}
+                      className={`btn order-detail-action-btn order-detail-action-btn--${action.tone} ${
+                        action.tone === "success"
+                          ? "btn-success"
+                          : action.tone === "danger"
+                            ? "btn-danger"
+                            : "btn-primary"
+                      }`}
+                      onClick={() => handleOrderStatusUpdate(action.status)}
+                      disabled={actionPending}
+                    >
+                      {action.icon === "confirm" ? <Check size={14} /> : null}
+                      {action.icon === "advance" ? <ArrowRight size={14} /> : null}
+                      {action.icon === "danger" ? <X size={14} /> : null}
+                      {raw(action.label)}
+                    </button>
+                  ))}
+                </div>
               </div>
             ) : null}
             {actionError ? (
-              <div className="order-detail-footer" style={{ justifyContent: "flex-start" }}>
-                <span className="merchant-inline-note" style={{ color: "var(--color-danger)" }}>
-                  {actionError}
+              <div className="order-detail-footer order-detail-footer-note">
+                <span className="merchant-inline-note merchant-inline-note-danger">
+                  {raw(actionError)}
                 </span>
               </div>
             ) : null}
             {actionPending ? (
-              <div className="order-detail-footer" style={{ justifyContent: "flex-start" }}>
-                <span className="merchant-inline-note">Updating persisted order status...</span>
+              <div className="order-detail-footer order-detail-footer-note">
+                <span className="merchant-inline-note">{raw("Updating persisted order status...")}</span>
               </div>
             ) : null}
           </div>

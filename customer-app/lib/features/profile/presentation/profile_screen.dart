@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/router/route_names.dart';
+import '../../../core/data/customer_runtime_controller.dart';
+import '../../../core/data/mock_data.dart' show MockData, formatCustomerMoney;
+import '../../../core/i18n/app_localizations.dart';
 import '../../../core/session/customer_session_controller.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../common/presentation/widgets.dart';
@@ -8,48 +11,163 @@ import '../../common/presentation/widgets.dart';
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
-  void _showUnavailable(BuildContext context, String label) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$label is not available yet.'),
+  Future<void> _openOffersSheet(BuildContext context) async {
+    final l10n = context.l10n;
+    final runtime = CustomerRuntimeController.instance;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppTheme.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 42,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppTheme.borderColor,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                l10n.profileOffersTitle,
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                l10n.profileOffersSubtitle,
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyMedium!
+                    .copyWith(color: AppTheme.textSecondary),
+              ),
+              const SizedBox(height: 18),
+              if (runtime.promoCode != null)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: AppTheme.backgroundGrey,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppTheme.borderColor),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.profileOffersApplied,
+                        style: Theme.of(context).textTheme.labelLarge,
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        '${runtime.promoCode} · -${formatCustomerMoney(runtime.promoDiscount)}',
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium!
+                            .copyWith(fontWeight: FontWeight.w800),
+                      ),
+                    ],
+                  ),
+                ),
+              if (runtime.promoCode != null) const SizedBox(height: 14),
+              Text(
+                l10n.profileOffersAvailable,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 12),
+              if (MockData.promotions.isEmpty)
+                Text(
+                  l10n.profileOffersEmpty,
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium!
+                      .copyWith(color: AppTheme.textSecondary),
+                )
+              else
+                ...MockData.promotions.map(
+                  (promo) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: PromoBanner(
+                      title: l10n.raw(promo.title),
+                      subtitle: l10n.raw(promo.subtitle),
+                      discount: promo.discount,
+                      gradientColors: promo.gradientColors,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final session = CustomerSessionController.instance;
+    final runtime = CustomerRuntimeController.instance;
 
     return ListenableBuilder(
-      listenable: session,
+      listenable: Listenable.merge([session, runtime]),
       builder: (context, _) {
         final phone = session.phoneNumber;
+        final savedDisplayName = runtime.profileDisplayName?.trim();
+        final unreadNotifications = runtime.unreadNotificationCount;
         final digitsOnly = (phone ?? '').replaceAll(RegExp(r'[^0-9]'), '');
-        final initials = digitsOnly.isNotEmpty
-            ? digitsOnly
-                .substring(digitsOnly.length >= 2 ? digitsOnly.length - 2 : 0)
-            : (session.isGuest ? 'G' : 'D');
+        final displayName = savedDisplayName?.isNotEmpty == true
+            ? savedDisplayName!
+            : null;
+        final nameInitials = displayName == null
+            ? ''
+            : displayName
+                .split(RegExp(r'\s+'))
+                .where((part) => part.isNotEmpty)
+                .take(2)
+                .map((part) => part.substring(0, 1).toUpperCase())
+                .join();
+        final initials = nameInitials.isNotEmpty
+            ? nameInitials
+            : digitsOnly.isNotEmpty
+                ? digitsOnly.substring(
+                    digitsOnly.length >= 2 ? digitsOnly.length - 2 : 0,
+                  )
+                : (session.isGuest ? 'G' : 'D');
         final displayTitle = session.isSignedIn
-            ? (phone == null ? 'Signed-in customer' : 'Customer $phone')
+            ? (displayName ??
+                (phone == null
+                    ? l10n.profileDisplayNameFallback
+                    : l10n.customerWithPhone(phone)))
             : session.isGuest
-                ? 'Guest customer'
-                : 'Demo customer';
+                ? l10n.raw('Guest customer')
+                : l10n.raw('Customer account');
         final displaySubtitle = session.isSignedIn
-            ? 'Signed in with ${phone ?? 'saved phone number'}'
+            ? l10n.signedInWith(phone)
             : session.isGuest
-                ? 'Guest checkout session'
-                : 'Local demo session';
+                ? l10n.raw('Guest browsing session')
+                : l10n.raw('Session details are available after sign-in');
         final badgeLabel = session.isSignedIn
-            ? 'Phone sign-in'
+            ? l10n.raw('Signed-in session')
             : session.isGuest
-                ? 'Guest session'
-                : 'Demo account';
+                ? l10n.raw('Guest session')
+                : l10n.raw('Demo account');
 
         return Scaffold(
           backgroundColor: AppTheme.backgroundGrey,
           appBar: AppBar(
-            title: const Text('Profile'),
-            backgroundColor: Colors.white,
+            title: Text(l10n.raw('Profile')),
+            backgroundColor: AppTheme.white,
           ),
           body: ListView(
             padding: const EdgeInsets.only(bottom: 32),
@@ -58,9 +176,9 @@ class ProfileScreen extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                 child: FeatureHeroCard(
                   eyebrow: 'Account area',
-                  title: 'Manage your local account journey',
+                  title: 'Manage your account journey',
                   subtitle:
-                      'Addresses, notifications, and order-linked reviews all live here for this current session.',
+                      'Addresses, notifications, and order-linked reviews stay connected from here for this current session.',
                   icon: Icons.account_circle_rounded,
                   badge: badgeLabel,
                 ),
@@ -69,12 +187,12 @@ class ProfileScreen extends StatelessWidget {
                 margin: const EdgeInsets.all(16),
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppTheme.white,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: AppTheme.borderColor),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.03),
+                      color: AppTheme.inkColor.withValues(alpha: 0.03),
                       blurRadius: 16,
                       offset: const Offset(0, 8),
                     ),
@@ -105,7 +223,7 @@ class ProfileScreen extends StatelessWidget {
                                   .textTheme
                                   .headlineSmall!
                                   .copyWith(
-                                      color: Colors.white, letterSpacing: 1),
+                                      color: AppTheme.white, letterSpacing: 1),
                             ),
                           ),
                         ),
@@ -157,6 +275,12 @@ class ProfileScreen extends StatelessWidget {
                           icon: Icons.receipt_long_outlined,
                           label: 'Reviews stay order-linked',
                         ),
+                        InfoPill(
+                          icon: Icons.favorite_rounded,
+                          label: l10n.favoriteStoreCountLabel(
+                            runtime.favoriteStoreCount,
+                          ),
+                        ),
                       ],
                     ),
                   ],
@@ -177,6 +301,12 @@ class ProfileScreen extends StatelessWidget {
                     icon: Icons.notifications_outlined,
                     iconColor: AppTheme.secondaryColor,
                     label: 'Notifications',
+                    trailing: unreadNotifications > 0
+                        ? Text(
+                            l10n.unreadNotificationCountLabel(unreadNotifications),
+                            style: Theme.of(context).textTheme.labelMedium,
+                          )
+                        : null,
                     onTap: () =>
                         Navigator.pushNamed(context, RouteNames.notifications),
                   ),
@@ -186,7 +316,7 @@ class ProfileScreen extends StatelessWidget {
                     iconColor: AppTheme.primaryColor,
                     label: 'My Reviews',
                     trailing: Text(
-                      'From orders',
+                      l10n.raw('From orders'),
                       style: Theme.of(context).textTheme.labelMedium,
                     ),
                     onTap: () =>
@@ -217,12 +347,13 @@ class ProfileScreen extends StatelessWidget {
                     icon: Icons.local_offer_outlined,
                     iconColor: AppTheme.primaryColor,
                     label: 'Promotions & Offers',
-                    trailing: Text(
-                      'Unavailable',
-                      style: Theme.of(context).textTheme.labelMedium,
-                    ),
-                    onTap: () =>
-                        _showUnavailable(context, 'Promotions & Offers'),
+                    trailing: runtime.promoCode != null
+                        ? Text(
+                            runtime.promoCode!,
+                            style: Theme.of(context).textTheme.labelMedium,
+                          )
+                        : null,
+                    onTap: () => _openOffersSheet(context),
                   ),
                 ],
               ),
@@ -234,18 +365,21 @@ class ProfileScreen extends StatelessWidget {
                     final confirm = await showDialog<bool>(
                       context: context,
                       builder: (ctx) => AlertDialog(
-                        title: const Text('Sign out'),
-                        content:
-                            const Text('Are you sure you want to sign out?'),
+                        title: Text(context.l10n.raw('Sign out')),
+                        content: Text(
+                          context.l10n.raw(
+                            'Are you sure you want to sign out?',
+                          ),
+                        ),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(ctx, false),
-                            child: const Text('Cancel'),
+                            child: Text(context.l10n.raw('Cancel')),
                           ),
                           TextButton(
                             onPressed: () => Navigator.pop(ctx, true),
                             child: Text(
-                              'Sign out',
+                              context.l10n.raw('Sign out'),
                               style: TextStyle(color: AppTheme.errorColor),
                             ),
                           ),
@@ -262,7 +396,7 @@ class ProfileScreen extends StatelessWidget {
                     color: AppTheme.errorColor,
                   ),
                   label: Text(
-                    'Sign Out',
+                    context.l10n.raw('Sign out'),
                     style: TextStyle(color: AppTheme.errorColor),
                   ),
                   style: OutlinedButton.styleFrom(

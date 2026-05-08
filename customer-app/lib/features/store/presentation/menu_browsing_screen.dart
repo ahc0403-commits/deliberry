@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../app/router/route_names.dart';
 import '../../../core/data/customer_runtime_controller.dart';
 import '../../../core/data/mock_data.dart';
+import '../../../core/i18n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../common/presentation/widgets.dart';
 
@@ -55,8 +56,8 @@ class _MenuBrowsingScreenState extends State<MenuBrowsingScreen> {
         return Scaffold(
           backgroundColor: AppTheme.backgroundGrey,
           appBar: AppBar(
-            title: Text('${store.name} Menu'),
-            backgroundColor: Colors.white,
+            title: Text(store.name),
+            backgroundColor: AppTheme.white,
             leading: IconButton(
               icon: const Icon(Icons.arrow_back_rounded),
               onPressed: () => Navigator.of(context).pop(),
@@ -64,7 +65,7 @@ class _MenuBrowsingScreenState extends State<MenuBrowsingScreen> {
             actions: [
               IconButton(
                 icon: const Icon(Icons.search_rounded),
-                tooltip: 'Search all stores',
+                tooltip: context.l10n.raw('Search all stores'),
                 onPressed: () {
                   runtime.setSearchQuery(store.name);
                   Navigator.of(context).pushNamed(RouteNames.search);
@@ -74,14 +75,14 @@ class _MenuBrowsingScreenState extends State<MenuBrowsingScreen> {
             bottom: PreferredSize(
               preferredSize: const Size.fromHeight(70),
               child: Container(
-                color: Colors.white,
+                color: AppTheme.white,
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                 child: Column(
                   children: [
                     Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        'Browse by section',
+                        context.l10n.raw('Menu categories'),
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
@@ -105,24 +106,22 @@ class _MenuBrowsingScreenState extends State<MenuBrowsingScreen> {
           body: ListView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
             children: [
-              FeatureHeroCard(
-                eyebrow: 'Menu browsing',
-                title: 'Pick items and keep your cart in view',
-                subtitle:
-                    'Your cart stays attached to ${store.name} while you move between categories.',
-                icon: Icons.restaurant_menu_rounded,
-                badge: runtime.cartItemCount > 0
-                    ? '${runtime.cartItemCount} item${runtime.cartItemCount == 1 ? '' : 's'} ready'
-                    : 'No items added yet',
+              _StoreMenuHeader(
+                storeName: store.name,
+                deliveryTime: store.deliveryTime,
+                deliveryFee: store.deliveryFee,
+                rating: store.rating,
+                cartItemCount: runtime.cartItemCount,
               ),
               const SizedBox(height: 16),
               if (menuUnavailable)
                 EmptyState(
                   icon: Icons.menu_book_outlined,
-                  title: 'Menu unavailable right now',
-                  subtitle:
-                      'This store does not have a live orderable menu yet. Please try another store.',
-                  actionLabel: 'Browse Restaurants',
+                  title: context.l10n.raw('Menu unavailable right now'),
+                  subtitle: context.l10n.raw(
+                    'This store does not have a live orderable menu yet. Please try another store.',
+                  ),
+                  actionLabel: context.l10n.raw('Browse Restaurants'),
                   onAction: () =>
                       Navigator.of(context).pushNamed(RouteNames.home),
                 )
@@ -135,8 +134,10 @@ class _MenuBrowsingScreenState extends State<MenuBrowsingScreen> {
                   headerCount: filteredItems.length,
                   includeHeaderCount: true,
                   items: filteredItems,
-                  emptyTitle: 'No items here',
-                  emptySubtitle: 'This category has no items right now',
+                  emptyTitle: context.l10n.raw('No items here'),
+                  emptySubtitle: context.l10n.raw(
+                    'This category has no items right now',
+                  ),
                   onAddItem: (item) {
                     final outcome = runtime.addMenuItem(
                       storeId: store.id,
@@ -159,17 +160,17 @@ class _MenuBrowsingScreenState extends State<MenuBrowsingScreen> {
           ),
           bottomNavigationBar: BottomCTABar(
             label: runtime.cartItemCount > 0
-                ? 'View Cart'
+                ? context.l10n.raw('View cart')
                 : menuUnavailable
-                    ? 'Menu Unavailable'
-                    : 'Start Order',
+                    ? context.l10n.raw('Menu Unavailable')
+                    : context.l10n.raw('Add items'),
             sublabel: runtime.cartItemCount > 0
                 ? '${runtime.cartItemCount} items'
                 : menuUnavailable
-                    ? 'Try another store'
+                    ? context.l10n.raw('Try another store')
                     : store.name,
             trailingText: runtime.cartItemCount > 0
-                ? '\$${formatCentavos(runtime.cartTotal)}'
+                ? formatCustomerMoney(runtime.cartTotal)
                 : null,
             onPressed: runtime.cartItemCount > 0
                 ? () => Navigator.of(context).pushNamed(RouteNames.cart)
@@ -179,6 +180,87 @@ class _MenuBrowsingScreenState extends State<MenuBrowsingScreen> {
           ),
         );
       },
+    );
+  }
+}
+
+class _StoreMenuHeader extends StatelessWidget {
+  const _StoreMenuHeader({
+    required this.storeName,
+    required this.deliveryTime,
+    required this.deliveryFee,
+    required this.rating,
+    required this.cartItemCount,
+  });
+
+  final String storeName;
+  final String deliveryTime;
+  final int deliveryFee;
+  final double rating;
+  final int cartItemCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.white,
+        borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+        border: Border.all(color: AppTheme.borderColor),
+        boxShadow: [AppTheme.softShadow(alpha: 0.03)],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Icon(
+              Icons.restaurant_menu_rounded,
+              color: AppTheme.primaryColor,
+              size: 28,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  storeName,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                DeliveryMetaRow(
+                  rating: rating,
+                  deliveryTime: deliveryTime,
+                  deliveryFee: deliveryFee,
+                  compact: true,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  cartItemCount > 0
+                      ? '$cartItemCount item${cartItemCount == 1 ? '' : 's'} in cart'
+                      : 'Choose items to start your order',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.textSecondary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

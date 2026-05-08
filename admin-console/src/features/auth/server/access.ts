@@ -1,5 +1,4 @@
-"use server";
-
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import type { PermissionRole } from "../../../shared/domain";
 
@@ -8,7 +7,16 @@ import {
   isAdminRoleAllowed,
   resolveAdminHomePath,
 } from "../../../shared/auth/admin-access";
-import { readAdminRole, readAdminSession } from "../../../shared/auth/admin-session";
+import {
+  ADMIN_SESSION_COOKIE,
+  readAdminRole,
+  readAdminSession,
+} from "../../../shared/auth/admin-session";
+
+function withQuery(pathname: string, key: string, value: string) {
+  const separator = pathname.includes("?") ? "&" : "?";
+  return `${pathname}${separator}${key}=${encodeURIComponent(value)}`;
+}
 
 type AdminPlatformAccess = {
   role: PermissionRole | null;
@@ -16,10 +24,12 @@ type AdminPlatformAccess = {
 };
 
 export async function ensureAdminPlatformAccess(pathname: string): Promise<AdminPlatformAccess> {
+  const cookieStore = await cookies();
+  const hasSessionCookie = Boolean(cookieStore.get(ADMIN_SESSION_COOKIE)?.value);
   const session = await readAdminSession();
 
   if (!session) {
-    redirect("/login");
+    redirect(withQuery("/login", "error", hasSessionCookie ? "session_expired" : "session_required"));
   }
 
   const role = await readAdminRole();
@@ -36,11 +46,11 @@ export async function ensureAdminPlatformAccess(pathname: string): Promise<Admin
   }
 
   if (!isAdminRole(role)) {
-    redirect("/access-boundary");
+    redirect(withQuery("/access-boundary", "reason", "role_required"));
   }
 
   if (!isAdminRoleAllowed(role, pathname)) {
-    redirect(resolveAdminHomePath(role));
+    redirect(withQuery("/access-boundary", "reason", "access_denied"));
   }
 
   return {
@@ -59,6 +69,8 @@ export async function redirectAdminIfSessionExists() {
   const role = await readAdminRole();
 
   redirect(
-    isAdminRole(role) ? resolveAdminHomePath(role) : "/access-boundary",
+    isAdminRole(role)
+        ? resolveAdminHomePath(role)
+        : withQuery("/access-boundary", "reason", "role_required"),
   );
 }

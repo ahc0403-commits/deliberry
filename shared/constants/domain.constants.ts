@@ -49,10 +49,10 @@ export const PROMOTION_TYPES = [
 
 export const SETTLEMENT_STATES = [
   "pending",
-  "scheduled",
-  "processing",
-  "paid",
-  "failed",
+  "calculated",
+  "received",
+  "disputed",
+  "adjusted",
 ] as const;
 
 export const DISPUTE_STATUSES = [

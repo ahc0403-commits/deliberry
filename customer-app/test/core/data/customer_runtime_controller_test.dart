@@ -8,9 +8,12 @@ import 'package:flutter_test/flutter_test.dart';
 class _FakeCustomerRuntimeGateway implements CustomerRuntimeGateway {
   _FakeCustomerRuntimeGateway({
     this.onSaveAddress,
+    this.onSaveProfileIdentity,
   });
 
   final Future<List<MockAddress>> Function(MockAddress address)? onSaveAddress;
+  final Future<CustomerProfileIdentity> Function(CustomerProfileIdentity input)?
+      onSaveProfileIdentity;
 
   @override
   Future<List<MockAddress>> saveAddress(MockAddress address) async {
@@ -74,6 +77,10 @@ class _FakeCustomerRuntimeGateway implements CustomerRuntimeGateway {
       throw UnimplementedError();
 
   @override
+  Future<CustomerFavoriteStoresSnapshot> readFavoriteStores() async =>
+      throw UnimplementedError();
+
+  @override
   Future<CustomerOrderReview> saveOrderReview(
           CustomerOrderReview input) async =>
       throw UnimplementedError();
@@ -81,12 +88,23 @@ class _FakeCustomerRuntimeGateway implements CustomerRuntimeGateway {
   @override
   Future<CustomerProfileIdentity> saveProfileIdentity(
     CustomerProfileIdentity input,
-  ) async =>
+  ) async {
+    final handler = onSaveProfileIdentity;
+    if (handler == null) {
       throw UnimplementedError();
+    }
+    return handler(input);
+  }
 
   @override
   Future<CustomerSettingsPreferences> saveSettingsPreferences(
     CustomerSettingsPreferences input,
+  ) async =>
+      throw UnimplementedError();
+
+  @override
+  Future<CustomerFavoriteStoresSnapshot> saveFavoriteStores(
+    CustomerFavoriteStoresSnapshot input,
   ) async =>
       throw UnimplementedError();
 
@@ -187,6 +205,79 @@ void main() {
       expect(runtime.addresses.single.id, 'addr-persisted-1');
       expect(runtime.addresses.single.isDefault, isTrue);
       expect(runtime.lastRuntimeBlocker, isNull);
+    },
+  );
+
+  test(
+    'guest saveProfileIdentity keeps the display name in local runtime state',
+    () async {
+      session.debugSetTestState(
+        status: CustomerAuthStatus.guest,
+        identity: null,
+        phoneNumber: null,
+      );
+
+      await runtime.saveProfileIdentity(displayName: 'Alex Guest');
+
+      expect(runtime.profileDisplayName, 'Alex Guest');
+      expect(runtime.lastRuntimeBlocker, isNull);
+    },
+  );
+
+  test(
+    'signed-in saveProfileIdentity stays local when the runtime backend is not configured',
+    () async {
+      session.debugSetTestState(
+        status: CustomerAuthStatus.authenticated,
+        identity: const CustomerAuthIdentity(
+          actorId: 'customer-3',
+          actorType: 'customer',
+          provider: CustomerAuthProvider.google,
+        ),
+      );
+      runtime.debugSetGateway(
+        _FakeCustomerRuntimeGateway(
+          onSaveProfileIdentity: (_) async =>
+              const CustomerProfileIdentity(displayName: 'Persisted Alex'),
+        ),
+      );
+
+      await runtime.saveProfileIdentity(displayName: 'Alex Guest');
+
+      expect(runtime.profileDisplayName, 'Alex Guest');
+      expect(runtime.lastRuntimeBlocker, isNull);
+    },
+  );
+
+  test(
+    'createGroupOrderRoom creates a local room with a host participant',
+    () {
+      runtime.saveProfileIdentity(displayName: 'Alex Host');
+
+      final room = runtime.createGroupOrderRoom();
+
+      expect(room.code, startsWith('LOCAL-'));
+      expect(room.participants, hasLength(1));
+      expect(room.participants.single.name, 'Alex Host');
+      expect(room.participants.single.role, 'host');
+    },
+  );
+
+  test(
+    'joinGroupOrderRoom adds a local member only when the room code matches',
+    () async {
+      await runtime.saveProfileIdentity(displayName: 'Alex Member');
+      final room = runtime.createGroupOrderRoom();
+
+      final joined = runtime.joinGroupOrderRoom(room.code);
+      final failedJoin = runtime.joinGroupOrderRoom('LOCAL-9999');
+
+      expect(joined, isTrue);
+      expect(failedJoin, isFalse);
+      expect(runtime.groupOrderRoom, isNotNull);
+      expect(runtime.groupOrderRoom!.participants, hasLength(2));
+      expect(runtime.groupOrderRoom!.participants.last.name, 'Alex Member');
+      expect(runtime.groupOrderRoom!.participants.last.role, 'member');
     },
   );
 }

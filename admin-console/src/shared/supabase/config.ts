@@ -4,6 +4,10 @@ export type AdminSupabaseConfig = {
   serviceRoleKey: string | null;
 };
 
+export type AdminAuthAvailability =
+  | { available: true }
+  | { available: false; reason: "missing_public_config" | "missing_service_role" };
+
 function readEnv(name: string): string | null {
   const value = process.env[name]?.trim();
   return value ? value : null;
@@ -20,6 +24,25 @@ export function readAdminSupabaseConfig(): AdminSupabaseConfig {
 export function isAdminSupabaseConfigured(): boolean {
   const config = readAdminSupabaseConfig();
   return Boolean(config.url && config.serviceRoleKey);
+}
+
+export function isAdminSupabasePublicConfigured(): boolean {
+  const config = readAdminSupabaseConfig();
+  return Boolean(config.url && config.anonKey);
+}
+
+export function readAdminAuthAvailability(): AdminAuthAvailability {
+  const config = readAdminSupabaseConfig();
+
+  if (!config.url || !config.anonKey) {
+    return { available: false, reason: "missing_public_config" };
+  }
+
+  if (!config.serviceRoleKey) {
+    return { available: false, reason: "missing_service_role" };
+  }
+
+  return { available: true };
 }
 
 export function assertAdminSupabaseConfig(): {

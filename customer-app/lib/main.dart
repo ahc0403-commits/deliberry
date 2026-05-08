@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'app/app.dart';
+import 'core/i18n/app_locale_controller.dart';
 import 'core/session/customer_auth_adapter.dart';
 import 'core/session/customer_session_controller.dart';
 import 'core/session/web_auth_callback_location.dart';
@@ -11,6 +12,7 @@ import 'core/supabase/supabase_client.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await CustomerSupabaseClient.ensureInitialized();
+  await AppLocaleController.instance.restore();
   await CustomerSessionController.instance.restore();
   final startupWebCallback =
       kIsWeb ? detectCustomerAuthCallback(Uri.base) : null;

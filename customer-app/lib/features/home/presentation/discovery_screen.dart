@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../app/router/route_names.dart';
 import '../../../core/data/customer_runtime_controller.dart';
 import '../../../core/data/mock_data.dart';
+import '../../../core/i18n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../common/presentation/widgets.dart';
 
@@ -41,8 +42,8 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
             slivers: [
               SliverAppBar(
                 pinned: true,
-                backgroundColor: Colors.white,
-                surfaceTintColor: Colors.white,
+                backgroundColor: AppTheme.white,
+                surfaceTintColor: AppTheme.white,
                 elevation: 0,
                 scrolledUnderElevation: 0.5,
                 toolbarHeight: 60,
@@ -51,11 +52,11 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
                   onPressed: () => Navigator.of(context).pop(),
                 ),
                 title: const Text(
-                  'Explore',
+                  'Restaurants',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w800,
-                    letterSpacing: -0.3,
+                    letterSpacing: 0,
                   ),
                 ),
                 actions: [
@@ -70,7 +71,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
                 bottom: PreferredSize(
                   preferredSize: const Size.fromHeight(66),
                   child: Container(
-                    color: Colors.white,
+                    color: AppTheme.white,
                     padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
                     child: CategoryChipRow(
                       categories: _categoryLabels,
@@ -82,19 +83,11 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
                 ),
               ),
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                 sliver: SliverToBoxAdapter(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const FeatureHeroCard(
-                        eyebrow: 'Browse',
-                        title: 'Compare stores at a glance',
-                        subtitle:
-                            'Refine by category, then use filters to narrow the restaurants that still fit your session.',
-                        icon: Icons.store_mall_directory_rounded,
-                      ),
-                      const SizedBox(height: 16),
                       Wrap(
                         spacing: 8,
                         runSpacing: 8,
@@ -118,8 +111,8 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
                               size: 16,
                               color: AppTheme.primaryColor,
                             ),
-                            label: const Text('Adjust filters'),
-                            backgroundColor: Colors.white,
+                            label: Text(context.l10n.raw('Adjust filters')),
+                            backgroundColor: AppTheme.white,
                             side: BorderSide(color: AppTheme.borderColor),
                             labelStyle: const TextStyle(
                               fontSize: 13,
@@ -134,23 +127,25 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
                 ),
               ),
               if (stores.isEmpty)
-                const SliverFillRemaining(
+                SliverFillRemaining(
                   child: EmptyState(
                     icon: Icons.storefront_outlined,
-                    title: 'No restaurants found',
-                    subtitle: 'Try a different category or clear filters',
+                    title: context.l10n.raw('No restaurants found'),
+                    subtitle: context.l10n.raw(
+                      'Try another category or loosen your filters.',
+                    ),
                   ),
                 )
               else
                 SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 32),
                   sliver: SliverGrid.builder(
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
                       crossAxisSpacing: 12,
                       mainAxisSpacing: 12,
-                      childAspectRatio: 0.72,
+                      childAspectRatio: 0.62,
                     ),
                     itemCount: stores.length,
                     itemBuilder: (context, index) {
@@ -162,6 +157,7 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
                         deliveryTime: store.deliveryTime,
                         deliveryFee: store.deliveryFee,
                         imageColor: store.imageColor,
+                        compact: true,
                         promoText: store.promoText,
                         onTap: () => Navigator.of(context).pushNamed(
                           RouteNames.store,

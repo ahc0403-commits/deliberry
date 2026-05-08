@@ -15,11 +15,11 @@
     "total_centavos": {
       "type": "integer",
       "minimum": 0,
-      "description": "Order total in integer centavos. $42.50 = 4250."
+      "description": "Order total in integer minor money units. For VND, whole dong amounts are stored directly."
     },
     "currency": {
       "type": "string",
-      "enum": ["ARS", "USD"]
+      "enum": ["VND", "USD"]
     },
     "created_at": { "type": "string", "description": "UTC ISO 8601 timestamp" },
     "confirmed_at": { "type": "string", "description": "UTC ISO 8601 timestamp (optional)" },

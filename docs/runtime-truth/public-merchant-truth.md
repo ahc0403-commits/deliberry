@@ -4,7 +4,7 @@ Status: Active
 Authority: Operational
 Surface: public-website
 Domains: merchant, partner-acquisition, route-truth
-Last updated: 2026-03-17
+Last updated: 2026-04-18
 Retrieve when:
 - changing the live `/merchant` route
 - deciding whether merchant-acquisition copy or form behavior is route-owned, layout-owned, or only presentational
@@ -46,8 +46,6 @@ Authoritative:
 
 Derived or structural only:
 
-- [public-website/src/shared/data/content-service.ts](/Users/andremacmini/Deliberry/public-website/src/shared/data/content-service.ts)
-- [public-website/src/shared/data/public-content-repository.ts](/Users/andremacmini/Deliberry/public-website/src/shared/data/public-content-repository.ts)
 
 Those shared data files expose a structural content boundary, but they do not drive the live `/merchant` route today.
 
@@ -59,7 +57,6 @@ Those shared data files expose a structural content boundary, but they do not dr
 
 ## Known Risks
 
-- Editing [content-service.ts](/Users/andremacmini/Deliberry/public-website/src/shared/data/content-service.ts) will not change the live `/merchant` route unless the route is rewired.
 - The application form is still manual, not backend-connected.
 - Shared marketing-shell links in [layout.tsx](/Users/andremacmini/Deliberry/public-website/src/app/(marketing)/layout.tsx) can drift from in-screen CTAs if updated separately.
 

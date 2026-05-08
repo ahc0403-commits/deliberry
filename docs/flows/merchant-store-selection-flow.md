@@ -28,7 +28,7 @@ Describe how the merchant console moves from authenticated access into a selecte
 
 - completed onboarding with no selected store -> `/select-store`
 - `/select-store` -> if a selected store already exists, redirect to `/${selectedStoreId}/dashboard`
-- `selectDemoStoreAction()` -> set `MERCHANT_STORE_COOKIE` -> redirect to `/demo-store/dashboard`
+- `selectMerchantStoreAction()` -> persist selected store through `merchant-session.ts` -> redirect to `/${storeId}/dashboard`
 - any `/${storeId}/*` route -> `ensureMerchantStoreScope(storeId)` validates the selected-store cookie
 - mismatched store path -> redirect to `/${selectedStoreId}/dashboard`
 - missing selected store -> redirect to `/select-store`
@@ -50,8 +50,8 @@ Describe how the merchant console moves from authenticated access into a selecte
 ## What Is Authoritative vs Derived In This Flow
 
 - Authoritative:
-  - selected-store cookie value
-  - redirect target written by `selectDemoStoreAction()`
+  - selected-store state resolved by `merchant-session.ts`
+  - redirect target written by `selectMerchantStoreAction()`
   - route guard decisions in `ensureMerchantStoreScope()`
 - Derived:
   - visible store cards on the selection screen
@@ -60,10 +60,10 @@ Describe how the merchant console moves from authenticated access into a selecte
 
 ## Known Shallow, Partial, Fixture-Backed, or Local-Only Limits
 
-- The flow supports only one hardcoded demo store.
-- The selection screen is not repository-backed.
-- Store identity is cookie-local, not verified against a backend merchant/store relationship.
-- The add-store card is non-functional presentation only.
+- Under `demo-cookie` authority, the flow still supports one seeded demo store and local cookie persistence.
+- Under `supabase` authority, available stores come from merchant memberships and selected-store persistence flows through `set_merchant_default_store`.
+- The selection screen itself is still presentation-only on top of access-state truth.
+- There is no self-serve add-store or merchant-provisioning path here; partner assignment still happens outside the console.
 
 ## Common Edit Mistakes
 

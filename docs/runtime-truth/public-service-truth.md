@@ -4,10 +4,10 @@ Status: Active
 Authority: Operational
 Surface: public-website
 Domains: service, marketing, route-truth
-Last updated: 2026-03-17
+Last updated: 2026-04-18
 Retrieve when:
 - changing the live `/service` route
-- deciding whether service-route content comes from live screen code or structural content-service files
+- deciding whether service-route content comes from live screen code or shared marketing shell files
 Related files:
 - public-website/src/app/(marketing)/service/page.tsx
 - public-website/src/app/(marketing)/layout.tsx
@@ -43,22 +43,15 @@ Authoritative:
 - [page.tsx](/Users/andremacmini/Deliberry/public-website/src/app/(marketing)/service/page.tsx) for route ownership
 - [layout.tsx](/Users/andremacmini/Deliberry/public-website/src/app/(marketing)/layout.tsx) for shared marketing shell links
 
-Derived or structural only:
-
-- [public-website/src/shared/data/content-service.ts](/Users/andremacmini/Deliberry/public-website/src/shared/data/content-service.ts)
-- [public-website/src/shared/data/public-content-repository.ts](/Users/andremacmini/Deliberry/public-website/src/shared/data/public-content-repository.ts)
-
-Those shared data files expose a structural content boundary, but they do not drive the live `/service` route today.
-
 ## What Is Still Static, Hardcoded, Partial, or Retrieval-Shim-Only
 
 - `/service` content is hardcoded in the screen component.
 - Platform stats and neighborhood coverage are static marketing content.
 - There is no repository-backed or CMS-backed content path for this route today.
+- The unused shared public content seam was removed on 2026-04-18 so `/service` truth stays single-source.
 
 ## Known Risks
 
-- Editing [content-service.ts](/Users/andremacmini/Deliberry/public-website/src/shared/data/content-service.ts) will not change the live `/service` route unless the route is rewired.
 - Marketing-shell links in [layout.tsx](/Users/andremacmini/Deliberry/public-website/src/app/(marketing)/layout.tsx) can drift from in-screen CTAs if updated separately.
 - Static claims can go stale because they are maintained directly in screen code.
 
@@ -67,7 +60,7 @@ Those shared data files expose a structural content boundary, but they do not dr
 - Start in [page.tsx](/Users/andremacmini/Deliberry/public-website/src/app/(marketing)/service/page.tsx) to confirm route ownership.
 - Change live `/service` content in [service-introduction-screen.tsx](/Users/andremacmini/Deliberry/public-website/src/features/service-introduction/presentation/service-introduction-screen.tsx).
 - Change shared navigation/footer behavior in [layout.tsx](/Users/andremacmini/Deliberry/public-website/src/app/(marketing)/layout.tsx).
-- Treat [content-service.ts](/Users/andremacmini/Deliberry/public-website/src/shared/data/content-service.ts) and [public-content-repository.ts](/Users/andremacmini/Deliberry/public-website/src/shared/data/public-content-repository.ts) as structural only unless the live route is explicitly moved onto them.
+- Do not reintroduce a second public content source unless the route is migrated in the same pass.
 
 ## Related Filemaps
 

@@ -7,6 +7,7 @@ import {
   updateMerchantStoreManagementAction,
   type MerchantStoreManagementActionState,
 } from "../server/store-management-actions";
+import { useMerchantI18n } from "../../../shared/i18n/client";
 
 type MerchantStoreManagementScreenProps = {
   storeId: string;
@@ -23,6 +24,7 @@ export function MerchantStoreManagementScreen({
   storeId,
   initialData,
 }: MerchantStoreManagementScreenProps) {
+  const { raw } = useMerchantI18n();
   const [data, setData] = useState(initialData);
   const [store, setStore] = useState(initialData.store);
   const [actionState, formAction, isPending] = useActionState(
@@ -41,11 +43,10 @@ export function MerchantStoreManagementScreen({
     <div className="merchant-surface">
       <section className="merchant-hero merchant-hero-insights">
         <div className="merchant-hero-copy">
-          <span className="merchant-eyebrow">Store profile</span>
-          <h1 className="merchant-hero-title">Store Information</h1>
+          <span className="merchant-eyebrow">{raw("Store profile")}</span>
+          <h1 className="merchant-hero-title">{raw("Store Information")}</h1>
           <p className="merchant-hero-subtitle">
-            Update the active store profile, service settings, and weekly hours
-            from the merchant console.
+            {raw("Update the active store profile, service settings, and weekly hours from the merchant console.")}
           </p>
           <div className="merchant-context-row">
             <span className="merchant-context-pill">
@@ -53,41 +54,45 @@ export function MerchantStoreManagementScreen({
               {data.store.name}
             </span>
             <span className="merchant-context-pill merchant-context-pill-muted">
-              Persisted store-scoped profile
+              {raw("Persisted store-scoped profile")}
             </span>
           </div>
         </div>
         <div className="merchant-hero-panel">
-          <div className="merchant-hero-panel-label">Store status</div>
+          <div className="merchant-hero-panel-label">{raw("Store status")}</div>
           <div className="merchant-hero-panel-value">
-            {store.acceptingOrders ? "Accepting orders" : "Paused"}
+            {store.acceptingOrders ? raw("Accepting orders") : raw("Paused")}
           </div>
           <div className="merchant-hero-panel-text">
-            Profile updates reload against the persisted store record after save.
+            {raw("Profile updates reload against the persisted store record after save.")}
           </div>
         </div>
       </section>
 
       <div className="merchant-summary-band">
         <div className="merchant-summary-card">
-          <div className="merchant-summary-label">Customer rating</div>
+          <div className="merchant-summary-label">{raw("Customer rating")}</div>
           <div className="merchant-summary-value">{store.rating} / 5.0</div>
           <div className="merchant-summary-meta">
-            Based on {store.reviewCount} persisted review entr{store.reviewCount === 1 ? "y" : "ies"}
+            {raw(
+              store.reviewCount === 1
+                ? "Based on {count} persisted review entry"
+                : "Based on {count} persisted review entries",
+            ).replace("{count}", String(store.reviewCount))}
           </div>
         </div>
         <div className="merchant-summary-card">
-          <div className="merchant-summary-label">Delivery radius</div>
+          <div className="merchant-summary-label">{raw("Delivery radius")}</div>
           <div className="merchant-summary-value">{store.deliveryRadius}</div>
-          <div className="merchant-summary-meta">Current service radius for this store</div>
+          <div className="merchant-summary-meta">{raw("Current service radius for this store")}</div>
         </div>
         <div className="merchant-summary-card">
-          <div className="merchant-summary-label">Save status</div>
+          <div className="merchant-summary-label">{raw("Save status")}</div>
           <div className="merchant-summary-value">
-            {actionState.status === "success" ? "Saved" : "Ready"}
+            {actionState.status === "success" ? raw("Saved") : raw("Ready")}
           </div>
           <div className="merchant-summary-meta">
-            {actionState.message ?? "Store profile changes write back to persisted store data."}
+            {actionState.message ?? raw("Store profile changes write back to persisted store data.")}
           </div>
         </div>
       </div>
@@ -95,23 +100,23 @@ export function MerchantStoreManagementScreen({
       <form action={formAction} className="merchant-cluster-card">
         <div className="merchant-cluster-card-header">
           <div>
-            <div className="card-title">Store profile</div>
+            <div className="card-title">{raw("Store profile")}</div>
             <div className="card-subtitle">
-              Core identity, service configuration, and hours for the active store
+              {raw("Core identity, service configuration, and hours for the active store")}
             </div>
           </div>
           <div className="page-actions merchant-page-actions">
             <button className="btn btn-primary" type="submit" disabled={isPending}>
               <Save size={14} />
-              {isPending ? "Saving..." : "Save store profile"}
+              {isPending ? raw("Saving...") : raw("Save store profile")}
             </button>
           </div>
         </div>
 
         {actionState.message ? (
           <div className="merchant-settings-intro">
-            <strong>{actionState.status === "success" ? "Store profile updated" : "Save failed"}</strong>
-            <p>{actionState.message}</p>
+            <strong>{actionState.status === "success" ? raw("Store profile updated") : raw("Save failed")}</strong>
+            <p>{raw(actionState.message)}</p>
           </div>
         ) : null}
 
@@ -123,8 +128,8 @@ export function MerchantStoreManagementScreen({
           <div className="card merchant-card">
             <div className="card-header">
               <div>
-                <div className="card-title">Store Profile</div>
-                <div className="card-subtitle">Core identity and contact details</div>
+                <div className="card-title">{raw("Store Profile")}</div>
+                <div className="card-subtitle">{raw("Core identity and contact details")}</div>
               </div>
             </div>
             <div className="card-body">
@@ -172,17 +177,17 @@ export function MerchantStoreManagementScreen({
           <div className="card merchant-card">
             <div className="card-header">
               <div>
-                <div className="card-title">Store Status</div>
-                <div className="card-subtitle">Visibility and service defaults</div>
+                <div className="card-title">{raw("Store Status")}</div>
+                <div className="card-subtitle">{raw("Visibility and service defaults")}</div>
               </div>
             </div>
             <div className="card-body">
               <div className="form-section">
                 <div className="form-toggle-row">
                   <div>
-                    <div className="form-toggle-label">Accepting Orders</div>
+                    <div className="form-toggle-label">{raw("Accepting Orders")}</div>
                     <div className="form-toggle-desc">
-                      Pause or resume incoming orders for this store
+                      {raw("Pause or resume incoming orders for this store")}
                     </div>
                   </div>
                   <label className="toggle">
@@ -203,7 +208,7 @@ export function MerchantStoreManagementScreen({
               </div>
 
               <div className="form-section" style={{ marginTop: "var(--space-6)" }}>
-                <div className="form-section-title">Service Settings</div>
+                <div className="form-section-title">{raw("Service Settings")}</div>
                 <div className="form-row">
                   <LabeledInput
                     label="Delivery Radius"
@@ -229,7 +234,9 @@ export function MerchantStoreManagementScreen({
                 <div>
                   <div className="merchant-status-highlight-value">{store.rating} / 5.0</div>
                   <div className="merchant-status-highlight-copy">
-                    Based on {store.reviewCount} reviews
+                    {raw(
+                      store.reviewCount === 1 ? "Based on {count} review" : "Based on {count} reviews",
+                    ).replace("{count}", String(store.reviewCount))}
                   </div>
                 </div>
               </div>
@@ -240,8 +247,8 @@ export function MerchantStoreManagementScreen({
         <div className="card merchant-card">
           <div className="card-header">
             <div>
-              <div className="card-title">Operating Hours</div>
-              <div className="card-subtitle">Weekly hours saved with the store profile</div>
+              <div className="card-title">{raw("Operating Hours")}</div>
+              <div className="card-subtitle">{raw("Weekly hours saved with the store profile")}</div>
             </div>
           </div>
           <div className="card-body">
@@ -250,7 +257,7 @@ export function MerchantStoreManagementScreen({
                 {store.hours.map((hour, index) => (
                   <tr key={hour.day}>
                     <td>
-                      {hour.day}
+                      {raw(hour.day)}
                       <input type="hidden" name="hoursDay" value={hour.day} />
                     </td>
                     <td>
@@ -313,9 +320,10 @@ function LabeledInput({
   type?: string;
   onChange: (value: string) => void;
 }) {
+  const { raw } = useMerchantI18n();
   return (
     <div className="form-group">
-      <label className="form-label">{label}</label>
+      <label className="form-label">{raw(label)}</label>
       <input
         className="form-input"
         type={type}

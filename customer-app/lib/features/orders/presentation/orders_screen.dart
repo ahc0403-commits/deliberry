@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../app/router/route_names.dart';
 import '../../../core/data/customer_runtime_controller.dart';
 import '../../../core/data/mock_data.dart';
+import '../../../core/i18n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../common/presentation/widgets.dart';
 
@@ -31,6 +32,7 @@ class _OrdersListScreenState extends State<OrdersListScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final runtime = CustomerRuntimeController.instance;
 
     return ListenableBuilder(
@@ -39,8 +41,9 @@ class _OrdersListScreenState extends State<OrdersListScreen>
         return Scaffold(
           backgroundColor: AppTheme.backgroundGrey,
           appBar: AppBar(
-            title: const Text('My Orders'),
-            backgroundColor: Colors.white,
+            automaticallyImplyLeading: false,
+            title: Text(l10n.raw('Orders')),
+            backgroundColor: AppTheme.white,
             bottom: TabBar(
               controller: _tabController,
               labelColor: AppTheme.primaryColor,
@@ -55,28 +58,17 @@ class _OrdersListScreenState extends State<OrdersListScreen>
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
               ),
-              tabs: const [
-                Tab(text: 'Active'),
-                Tab(text: 'History'),
+              tabs: [
+                Tab(text: l10n.raw('Active')),
+                Tab(text: l10n.raw('History')),
               ],
             ),
           ),
           body: Column(
             children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                child: FeatureHeroCard(
-                  eyebrow: 'Orders',
-                  title: runtime.activeOrders.isNotEmpty
-                      ? 'Keep an eye on what is in motion'
-                      : 'Everything you order lands here',
-                  subtitle: runtime.activeOrders.isNotEmpty
-                      ? 'Open active orders for status updates, then use history to reorder from the same session.'
-                      : 'Keep active orders in one tab and revisit completed ones in history.',
-                  icon: Icons.delivery_dining_rounded,
-                  badge:
-                      '${runtime.activeOrders.length} active · ${runtime.pastOrders.length} past',
-                ),
+              _OrdersSummaryStrip(
+                activeCount: runtime.activeOrders.length,
+                historyCount: runtime.pastOrders.length,
               ),
               Expanded(
                 child: TabBarView(
@@ -84,9 +76,10 @@ class _OrdersListScreenState extends State<OrdersListScreen>
                   children: [
                     _OrderTab(
                       orders: runtime.activeOrders,
-                      emptyTitle: 'No active orders',
-                      emptySubtitle:
-                          'Order something delicious and follow its status here.',
+                      emptyTitle: l10n.raw('No active orders'),
+                      emptySubtitle: l10n.raw(
+                        'Order something delicious and follow its status here.',
+                      ),
                       emptyIcon: Icons.delivery_dining_outlined,
                       onTap: (order) => Navigator.pushNamed(
                         context,
@@ -96,8 +89,9 @@ class _OrdersListScreenState extends State<OrdersListScreen>
                     ),
                     _OrderTab(
                       orders: runtime.pastOrders,
-                      emptyTitle: 'No past orders',
-                      emptySubtitle: 'Your completed orders will appear here.',
+                      emptyTitle: l10n.raw('No past orders'),
+                      emptySubtitle:
+                          l10n.raw('Your completed orders will appear here.'),
                       emptyIcon: Icons.receipt_long_outlined,
                       onTap: (order) => Navigator.pushNamed(
                         context,
@@ -113,6 +107,85 @@ class _OrdersListScreenState extends State<OrdersListScreen>
           ),
         );
       },
+    );
+  }
+}
+
+class _OrdersSummaryStrip extends StatelessWidget {
+  const _OrdersSummaryStrip({
+    required this.activeCount,
+    required this.historyCount,
+  });
+
+  final int activeCount;
+  final int historyCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.white,
+        borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+        border: Border.all(color: AppTheme.borderColor),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _OrderSummaryMetric(
+              label: 'Active',
+              value: '$activeCount',
+              color: AppTheme.primaryColor,
+            ),
+          ),
+          Container(width: 1, height: 34, color: AppTheme.borderColor),
+          Expanded(
+            child: _OrderSummaryMetric(
+              label: 'History',
+              value: '$historyCount',
+              color: AppTheme.inkColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OrderSummaryMetric extends StatelessWidget {
+  const _OrderSummaryMetric({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  final String label;
+  final String value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.w900,
+            color: color,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          context.l10n.raw(label),
+          style: TextStyle(
+            fontSize: 12,
+            color: AppTheme.textSecondary,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -136,6 +209,7 @@ class _OrderTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final runtime = CustomerRuntimeController.instance;
 
     if (orders.isEmpty) {
@@ -143,7 +217,7 @@ class _OrderTab extends StatelessWidget {
         icon: emptyIcon,
         title: emptyTitle,
         subtitle: emptySubtitle,
-        actionLabel: 'Browse restaurants',
+        actionLabel: l10n.raw('Browse restaurants'),
         onAction: () => Navigator.pushNamed(context, RouteNames.home),
       );
     }
@@ -154,6 +228,11 @@ class _OrderTab extends StatelessWidget {
       separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final order = orders[index];
+        final record = runtime.findOrderRecordById(order.id);
+        final usesSandboxPayment = record?.paymentMethodCode == 'card' ||
+            record?.paymentMethodCode == 'digital_wallet';
+        final paymentStillPending =
+            (record?.paymentStatusCode ?? 'pending') == 'pending';
         return Column(
           children: [
             OrderCard(
@@ -164,12 +243,18 @@ class _OrderTab extends StatelessWidget {
               itemCount: order.itemCount,
               createdAt: order.createdAt,
               statusColor: order.statusColor,
+              paymentContextLabel: usesSandboxPayment && paymentStillPending
+                  ? '${record?.paymentLabel ?? l10n.raw('VNPAY test')} · ${record?.paymentStatusLabel ?? l10n.raw('Pending payment')}'
+                  : null,
+              paymentContextColor: usesSandboxPayment && paymentStillPending
+                  ? AppTheme.warningColor
+                  : null,
               onTap: () => onTap(order),
             ),
             if (showReorder)
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppTheme.white,
                   borderRadius: const BorderRadius.only(
                     bottomLeft: Radius.circular(14),
                     bottomRight: Radius.circular(14),

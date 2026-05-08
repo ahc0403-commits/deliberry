@@ -55,6 +55,7 @@ supabase db push
 Expected source migrations to apply:
 - `supabase/migrations/20260408113000_customer_security_boundary_hardening.sql`
 - `supabase/migrations/20260408140000_merchant_admin_security_hardening.sql`
+- `supabase/migrations/20260417120000_add_settlement_runtime_schema.sql`
 
 What migration `20260408113000` changes:
 - creates `customer_addresses` if missing
@@ -72,6 +73,14 @@ What migration `20260408140000` changes:
 - adds authorization check to `get_merchant_dashboard_kpi_snapshot`
 - adds merchant-scoped order read policy
 - drops old function signatures that accepted caller-supplied identity
+
+What migration `20260417120000` changes:
+- creates `delivery_settlements` if missing
+- creates `delivery_settlement_items` if missing
+- ensures `external_sales.settlement_id` exists
+- adds merchant/admin read policies for settlement tables
+- adds merchant own-store insert policy for `external_sales`
+- keeps settlement runtime disabled by config until a separate rollout approval
 
 ## 4. Public Website Production Redeploy
 
@@ -208,6 +217,55 @@ order by p.proname, args;
 4. Tampered order payloads from a modified client are no longer trusted server-side.
 5. Signed-in customer can write a review only for an owned order.
 6. Address save, delete, and default switching still work.
+
+### 5.5 Settlement schema verification before any runtime enablement
+
+Run in Supabase SQL editor or equivalent SQL client:
+
+```sql
+select
+  tablename
+from pg_tables
+where schemaname = 'public'
+  and tablename in (
+    'external_sales',
+    'delivery_settlements',
+    'delivery_settlement_items'
+  )
+order by tablename;
+```
+
+```sql
+select
+  table_name,
+  column_name,
+  data_type
+from information_schema.columns
+where table_schema = 'public'
+  and table_name = 'external_sales'
+  and column_name = 'settlement_id';
+```
+
+```sql
+select
+  tablename,
+  policyname,
+  cmd
+from pg_policies
+where schemaname = 'public'
+  and tablename in (
+    'external_sales',
+    'delivery_settlements',
+    'delivery_settlement_items'
+  )
+order by tablename, policyname;
+```
+
+Expected outcome:
+- all three tables exist
+- `external_sales.settlement_id` exists as `uuid`
+- settlement read/insert policies exist on all three tables
+- `ENABLE_SETTLEMENT_RUNTIME` remains unset until a separate rollout approval is recorded
 
 ## 6. Rollback Notes
 

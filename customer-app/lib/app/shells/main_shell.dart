@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/i18n/app_localizations.dart';
 import '../../core/theme/app_theme.dart';
 import '../router/route_names.dart';
 
@@ -48,6 +49,7 @@ class MainShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final selectedIndex = _selectedIndex();
     final activeIndex = selectedIndex >= 0 ? selectedIndex : 0;
 
@@ -56,16 +58,15 @@ class MainShell extends StatelessWidget {
       body: child,
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.surface,
           border: Border(
-            top: BorderSide(color: AppTheme.borderColor, width: 1),
+            top: BorderSide(
+              color: AppTheme.borderColor.withValues(alpha: 0.7),
+              width: 1,
+            ),
           ),
           boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 16,
-              offset: const Offset(0, -4),
-            ),
+            AppTheme.softShadow(alpha: 0.07),
           ],
         ),
         child: NavigationBar(
@@ -87,7 +88,13 @@ class MainShell extends StatelessWidget {
                     destination.selectedIcon,
                     color: AppTheme.primaryColor,
                   ),
-                  label: destination.label,
+                  label: switch (destination.routeName) {
+                    RouteNames.home => l10n.text('nav.home'),
+                    RouteNames.search => l10n.text('nav.search'),
+                    RouteNames.orders => l10n.text('nav.orders'),
+                    RouteNames.profile => l10n.text('nav.profile'),
+                    _ => destination.label,
+                  },
                 ),
               )
               .toList(),

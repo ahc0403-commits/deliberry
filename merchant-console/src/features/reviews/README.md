@@ -49,7 +49,7 @@ Owns the store-scoped merchant reviews route and its runtime-backed customer-fee
 
 - Review data is runtime-backed.
 - Response filtering is local UI state only.
-- `Write Response` persists through the merchant review runtime service, but the rest of the screen remains a read-heavy oversight surface.
+- `Write Response` now persists through a governed audited RPC path, but the rest of the screen remains a read-heavy oversight surface.
 
 ## Safe Modification Guidance
 

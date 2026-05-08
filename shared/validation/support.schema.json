@@ -5,7 +5,10 @@
   "properties": {
     "case_id": { "type": "string", "minLength": 1 },
     "channel": { "type": "string" },
-    "subject": { "type": "string", "minLength": 1 }
+    "subject": { "type": "string", "minLength": 1 },
+    "status": { "type": "string", "enum": ["open", "in_progress", "awaiting_reply", "resolved", "closed"] },
+    "next_status": { "type": "string", "enum": ["in_progress", "awaiting_reply", "resolved", "closed"] }
   },
-  "required": ["case_id", "channel", "subject"]
+  "required": ["case_id", "channel", "subject"],
+  "additionalProperties": false
 }

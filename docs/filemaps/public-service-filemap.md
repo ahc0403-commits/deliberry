@@ -22,7 +22,7 @@ Show the narrow file cluster for the live `/service` route, its screen owner, an
 
 - before changing `/service` copy, CTAs, or section ordering
 - before editing marketing-shell links from the service-route context
-- when the content-service layer looks relevant but may not be wired in
+- when an old shared content seam looks relevant but no longer exists in the live route
 
 ## Entry Files
 
@@ -34,8 +34,6 @@ Show the narrow file cluster for the live `/service` route, its screen owner, an
 - `public-website/src/features/service-introduction/presentation/service-introduction-screen.tsx`
 - `public-website/src/app/(marketing)/merchant/page.tsx`
 - `public-website/src/app/(marketing)/download/page.tsx`
-- `public-website/src/shared/data/content-service.ts`
-- `public-website/src/shared/data/public-content-repository.ts`
 
 ## Source-of-Truth Files
 
@@ -46,8 +44,6 @@ The live truth is split: service-route content is hardcoded in `service-introduc
 
 ## Files Often Mistaken as Source of Truth but Are Not
 
-- `public-website/src/shared/data/content-service.ts`
-- `public-website/src/shared/data/public-content-repository.ts`
 - `public-website/src/shared/domain.ts`
 
 These define a structural content boundary, but they do not currently drive the live `/service` route.
@@ -56,7 +52,7 @@ These define a structural content boundary, but they do not currently drive the 
 
 - in-screen CTA targets in `public-website/src/features/service-introduction/presentation/service-introduction-screen.tsx`
 - shared nav/footer links in `public-website/src/app/(marketing)/layout.tsx`
-- any partial attempt to wire content-service into only one section of the route
+- any partial attempt to add a second content source to only one section of the route
 
 ## Related Governance Docs
 

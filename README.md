@@ -21,6 +21,12 @@ Quick start:
 - Admin console: `cd admin-console && npm install && npm run dev`
 - Public website: `cd public-website && npm install && npm run dev`
 
+Deployment note:
+
+- Run Vercel commands from the owning surface directory only.
+- Keep one `.vercel` link per surface and avoid a repo-root `.vercel` link so deployments cannot collide across `customer-app`, `merchant-console`, `admin-console`, and `public-website`.
+- Keep settlement edge functions disabled by default. Only set `ENABLE_SETTLEMENT_RUNTIME=true` after the settlement schema migration has been applied to the linked Supabase project and the rollout is explicitly approved.
+
 More detailed bootstrap notes live in [docs/bootstrap.md](docs/bootstrap.md).
 
 Customer app UX/UI governance lives in [docs/ui-governance/README.md](docs/ui-governance/README.md).

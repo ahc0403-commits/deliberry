@@ -60,6 +60,7 @@ Guardrail smoke completed on 2026-05-04:
 - Evidence: `docs/operations/vnpay-sandbox-guardrail-smoke-2026-05-04.md`
 - Automation: `.github/workflows/phase1-vnpay-sandbox-guardrail-smoke.yml`
 - Reusable runner re-verified the same guardrail path on 2026-05-04 and produced `output/vnpay-guardrail-smoke/phase1-vnpay-guardrail-smoke-2026-05-04T05-56-17.237Z/summary.json`.
+- GitHub Actions re-verified the same guardrail path on `main` with run `25303735665` and artifact `6777507788`.
 
 ## Out of Scope Before Contract Go-Live
 

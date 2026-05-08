@@ -1,9 +1,26 @@
 {
   "domain": "settlement",
   "consumers": ["merchant-console", "admin-console"],
+  "production_scope": {
+    "status": "visibility_plus_limited_admin_received_acknowledgment",
+    "notes": [
+      "Merchant settlement remains visibility only.",
+      "Admin settlement mutation is limited to audited manual acknowledgment of calculated settlements as received.",
+      "No payout execution, refund handling, reversal, chargeback, or payment-state verification is approved."
+    ]
+  },
   "requests": [
     { "name": "list_settlements", "required": [] },
-    { "name": "get_settlement", "required": ["settlement_id"] }
+    { "name": "get_settlement", "required": ["settlement_id"] },
+    { "name": "acknowledge_settlement_received", "required": ["settlement_id"] }
   ],
-  "responses": ["settlement_summary", "payout_state"]
+  "responses": ["settlement_summary", "payout_state", "settlement_receipt_acknowledgment"],
+  "not_approved": [
+    "create_settlement",
+    "delete_settlement",
+    "mark_settlement_disputed",
+    "adjust_settlement_amount",
+    "execute_payout",
+    "refund_from_settlement"
+  ]
 }

@@ -36,15 +36,15 @@ Related files:
 - **Limitation**: Not enforced by tooling. Relies on PR review and manual scans.
 
 ### Money Integrity (R-010, R-011)
-- **Mechanism**: TypeScript branded type `MoneyAmount` / `Centavos`
+- **Mechanism**: TypeScript branded type `MoneyAmount`
 - **File**: `shared/types/common.types.ts`
-- **How**: `MoneyAmount = number & { readonly __brand: 'centavos' }` prevents accidental assignment of float values at compile time.
+- **How**: `MoneyAmount = number & { readonly __brand: 'minor_money_unit' }` prevents accidental assignment of float values at compile time.
 - **Limitation**: Runtime code can still bypass the brand with casts. No runtime assertion exists yet.
 
 ### Currency (R-012)
 - **Mechanism**: TypeScript literal union type `CurrencyCode`
 - **File**: `shared/types/common.types.ts`
-- **How**: `CurrencyCode = 'ARS' | 'USD'` — VND is excluded.
+- **How**: `CurrencyCode = 'VND' | 'USD'` keeps the market baseline explicit.
 - **Enforcement**: Compile-time only.
 
 ### Status Enums (R-040, R-041, R-042, R-043)
@@ -57,7 +57,7 @@ Related files:
 - **Mechanism**: `ISODateTimeUTC` branded type + utility functions
 - **Files**: `shared/types/common.types.ts`, `shared/utils/date.ts`
 - **How**: `isValidUTCTimestamp()` validates ISO 8601 UTC format. `toDisplayTime()` and `toBusinessDate()` convert for presentation.
-- **Limitation**: Mock data still uses informal date strings. API validation layer does not yet exist.
+- **Limitation**: API validation layer does not yet exist.
 
 ### Auth Actor Types (R-020)
 - **Mechanism**: `AUTH_ACTOR_TYPES` constant array
@@ -76,7 +76,7 @@ Related files:
 
 ### Runtime Money Assertion
 - **Rule**: R-010, R-011
-- **What's needed**: Runtime guard `assertCentavos(amount)` that verifies `amount % 1 === 0`
+- **What's needed**: Runtime guard `assertMoneyAmount(amount)` that verifies `amount % 1 === 0`
 - **Target wave**: Wave 2
 
 ### Mock Data Programmatic Derivation

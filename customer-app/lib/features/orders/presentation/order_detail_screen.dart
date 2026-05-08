@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../app/router/route_names.dart';
 import '../../../core/data/customer_runtime_controller.dart';
 import '../../../core/data/mock_data.dart';
+import '../../../core/i18n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../common/presentation/widgets.dart';
 
@@ -16,46 +17,51 @@ class OrderDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final runtime = CustomerRuntimeController.instance;
     final record = runtime.findOrderRecordById(orderId);
 
     if (record == null) {
-      return const Scaffold(
+      return Scaffold(
         body: EmptyState(
           icon: Icons.receipt_long_outlined,
-          title: 'Order not found',
-          subtitle: 'This order is no longer available in the current session.',
+          title: l10n.raw('Order not found'),
+          subtitle: l10n.raw(
+            'This order is no longer available in the current session.',
+          ),
         ),
       );
     }
 
     final order = record.order;
     final items = record.items;
+    final usesSandboxPayment = record.paymentMethodCode == 'card' ||
+        record.paymentMethodCode == 'digital_wallet';
+    final paymentStillPending =
+        (record.paymentStatusCode ?? 'pending') == 'pending';
+    final reviewAvailable = order.status == 'delivered';
+    final hasSubmittedReview = runtime.hasSubmittedReview(order.id);
+    final subtotalCentavos = record.subtotalCentavos > 0
+        ? record.subtotalCentavos
+        : (order.total - 29900 - 14900).clamp(0, order.total);
+    final deliveryFeeCentavos =
+        record.deliveryFeeCentavos > 0 ? record.deliveryFeeCentavos : 29900;
+    final serviceFeeCentavos =
+        record.serviceFeeCentavos > 0 ? record.serviceFeeCentavos : 14900;
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundGrey,
       appBar: AppBar(
-        title: const Text('Order Details'),
-        backgroundColor: Colors.white,
+        title: Text(l10n.raw('Order Details')),
+        backgroundColor: AppTheme.white,
       ),
       body: ListView(
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-            child: FeatureHeroCard(
-              eyebrow: 'Order details',
-              title: 'Review what you ordered',
-              subtitle:
-                  'This screen keeps the persisted order snapshot visible, including items, address, and payment label.',
-              icon: Icons.receipt_long_rounded,
-              badge: formatOrderStatus(order.status),
-            ),
-          ),
           Container(
             margin: const EdgeInsets.all(16),
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppTheme.white,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: AppTheme.borderColor),
             ),
@@ -98,14 +104,19 @@ class OrderDetailScreen extends StatelessWidget {
                           ),
                           InfoPill(
                             icon: Icons.shopping_bag_outlined,
-                            label:
-                                '${order.itemCount} item${order.itemCount == 1 ? '' : 's'}',
+                            label: formatItemCount(
+                              order.itemCount,
+                              languageCode: l10n.locale.languageCode,
+                            ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        formatOrderDate(order.createdAt),
+                        formatOrderDate(
+                          order.createdAt,
+                          languageCode: l10n.locale.languageCode,
+                        ),
                         style: TextStyle(
                           fontSize: 13,
                           color: AppTheme.textSecondary,
@@ -115,27 +126,77 @@ class OrderDetailScreen extends StatelessWidget {
                   ),
                 ),
                 StatusBadge(
-                  label: formatOrderStatus(order.status),
+                  label: formatOrderStatus(
+                    order.status,
+                    languageCode: l10n.locale.languageCode,
+                  ),
                   color: order.statusColor,
                 ),
               ],
             ),
           ),
+          if (usesSandboxPayment && paymentStillPending)
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppTheme.primarySoft,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppTheme.primaryTint),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.hourglass_top_rounded,
+                    size: 20,
+                    color: AppTheme.warningColor,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          l10n.raw('Payment pending in VNPAY sandbox'),
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                            color: AppTheme.inkColor,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          l10n.raw(
+                            'This test order was created before payment confirmation. No live charge or payment completion is recorded here.',
+                          ),
+                          style: TextStyle(
+                            fontSize: 13,
+                            height: 1.4,
+                            color: AppTheme.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppTheme.white,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: AppTheme.borderColor),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Padding(
-                  padding: EdgeInsets.fromLTRB(20, 18, 20, 8),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
                   child: Text(
-                    'Items Ordered',
-                    style: TextStyle(
+                    l10n.raw('Items Ordered'),
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
                     ),
@@ -192,7 +253,7 @@ class OrderDetailScreen extends StatelessWidget {
                               ),
                             ),
                             Text(
-                              '\$${formatCentavos(item.total)}',
+                              formatCustomerMoney(item.total),
                               style: const TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
@@ -218,40 +279,39 @@ class OrderDetailScreen extends StatelessWidget {
             margin: const EdgeInsets.all(16),
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppTheme.white,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: AppTheme.borderColor),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Order Summary',
-                  style: TextStyle(
+                Text(
+                  l10n.raw('Order Summary'),
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 14),
                 PriceRow(
-                  label: 'Subtotal',
-                  amount:
-                      '\$${formatCentavos((order.total - 299 - 149).clamp(0, order.total))}',
+                  label: l10n.text('cart.subtotal'),
+                  amount: formatCustomerMoney(subtotalCentavos),
                 ),
                 PriceRow(
-                  label: 'Delivery fee',
-                  amount: '\$${formatCentavos(299)}',
+                  label: l10n.text('cart.deliveryFee'),
+                  amount: formatCustomerMoney(deliveryFeeCentavos),
                 ),
                 PriceRow(
-                  label: 'Service fee',
-                  amount: '\$${formatCentavos(149)}',
+                  label: l10n.text('cart.serviceFee'),
+                  amount: formatCustomerMoney(serviceFeeCentavos),
                 ),
                 const SizedBox(height: 8),
                 const Divider(),
                 const SizedBox(height: 8),
                 PriceRow(
-                  label: 'Total',
-                  amount: '\$${formatCentavos(order.total)}',
+                  label: l10n.raw('Total'),
+                  amount: formatCustomerMoney(order.total),
                   isBold: true,
                 ),
               ],
@@ -261,16 +321,16 @@ class OrderDetailScreen extends StatelessWidget {
             margin: const EdgeInsets.symmetric(horizontal: 16),
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppTheme.white,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: AppTheme.borderColor),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Delivery Information',
-                  style: TextStyle(
+                Text(
+                  l10n.raw('Delivery Information'),
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                   ),
@@ -278,26 +338,26 @@ class OrderDetailScreen extends StatelessWidget {
                 const SizedBox(height: 14),
                 _InfoRow(
                   icon: Icons.location_on_rounded,
-                  label: 'Delivered to',
+                  label: l10n.raw('Delivered to'),
                   value: '${record.address.street}, ${record.address.detail}',
                 ),
                 const SizedBox(height: 12),
                 _InfoRow(
                   icon: Icons.payments_outlined,
-                  label: 'Payment method',
-                  value: record.paymentLabel,
+                  label: l10n.raw('Payment method'),
+                  value: l10n.raw(record.paymentLabel),
                 ),
                 const SizedBox(height: 12),
                 _InfoRow(
                   icon: Icons.receipt_long_outlined,
-                  label: 'Payment status',
-                  value: record.paymentStatusLabel,
+                  label: l10n.raw('Payment status'),
+                  value: l10n.raw(record.paymentStatusLabel),
                 ),
                 if (record.instructions.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   _InfoRow(
                     icon: Icons.sticky_note_2_outlined,
-                    label: 'Instructions',
+                    label: l10n.raw('Instructions'),
                     value: record.instructions,
                   ),
                 ],
@@ -310,13 +370,23 @@ class OrderDetailScreen extends StatelessWidget {
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: () => Navigator.pushNamed(
-                      context,
-                      RouteNames.reviews,
-                      arguments: order.id,
-                    ),
+                    onPressed: reviewAvailable
+                        ? () => Navigator.pushNamed(
+                              context,
+                              RouteNames.reviews,
+                              arguments: order.id,
+                            )
+                        : null,
                     icon: const Icon(Icons.star_outline_rounded, size: 18),
-                    label: const Text('Leave Review'),
+                    label: Text(
+                      l10n.raw(
+                        reviewAvailable
+                            ? hasSubmittedReview
+                                ? 'Edit Review'
+                                : 'Leave Review'
+                            : 'Review available after delivery',
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -327,7 +397,7 @@ class OrderDetailScreen extends StatelessWidget {
                       Navigator.pushNamed(context, RouteNames.cart);
                     },
                     icon: const Icon(Icons.replay_rounded, size: 18),
-                    label: const Text('Reorder'),
+                    label: Text(l10n.raw('Reorder')),
                   ),
                 ),
               ],
@@ -371,7 +441,7 @@ class _InfoRow extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                label,
+                context.l10n.raw(label),
                 style: TextStyle(
                   fontSize: 12,
                   color: AppTheme.textSecondary,

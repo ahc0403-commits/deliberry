@@ -4,6 +4,23 @@ export const ADMIN_PATHNAME_HEADER = "x-admin-pathname";
 
 type AdminNavLink = {
   href: string;
+  icon:
+    | "layout-dashboard"
+    | "users"
+    | "store"
+    | "map-pinned"
+    | "package"
+    | "shield-alert"
+    | "headset"
+    | "wallet"
+    | "chart-column"
+    | "megaphone"
+    | "message-square-text"
+    | "folders"
+    | "handshake"
+    | "chart-no-axes-combined"
+    | "file-text"
+    | "settings-2";
   label: string;
   badge?: string;
   warnBadge?: boolean;
@@ -55,37 +72,37 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
   {
     label: "Operations",
     links: [
-      { href: "/dashboard", label: "📊 Dashboard" },
-      { href: "/users", label: "👥 Users", badge: "24.8k" },
-      { href: "/merchants", label: "🏪 Merchants" },
-      { href: "/stores", label: "📍 Stores" },
-      { href: "/orders", label: "📦 Orders", badge: "1,247" },
-      { href: "/disputes", label: "⚠️ Disputes", badge: "14", warnBadge: true },
-      { href: "/customer-service", label: "🎧 Customer Service" },
+      { href: "/dashboard", icon: "layout-dashboard", label: "Dashboard" },
+      { href: "/users", icon: "users", label: "Users", badge: "24.8k" },
+      { href: "/merchants", icon: "store", label: "Merchants" },
+      { href: "/stores", icon: "map-pinned", label: "Stores" },
+      { href: "/orders", icon: "package", label: "Orders", badge: "1,247" },
+      { href: "/disputes", icon: "shield-alert", label: "Disputes", badge: "14", warnBadge: true },
+      { href: "/customer-service", icon: "headset", label: "Customer Service" },
     ],
   },
   {
     label: "Finance",
     links: [
-      { href: "/settlements", label: "💳 Settlements" },
-      { href: "/finance", label: "📈 Finance" },
+      { href: "/settlements", icon: "wallet", label: "Settlements" },
+      { href: "/finance", icon: "chart-column", label: "Finance" },
     ],
   },
   {
     label: "Content",
     links: [
-      { href: "/marketing", label: "📢 Marketing" },
-      { href: "/announcements", label: "📣 Announcements" },
-      { href: "/catalog", label: "📂 Catalog" },
-      { href: "/b2b", label: "🤝 B2B" },
+      { href: "/marketing", icon: "megaphone", label: "Marketing" },
+      { href: "/announcements", icon: "message-square-text", label: "Announcements" },
+      { href: "/catalog", icon: "folders", label: "Catalog" },
+      { href: "/b2b", icon: "handshake", label: "B2B" },
     ],
   },
   {
     label: "System",
     links: [
-      { href: "/analytics", label: "📉 Analytics" },
-      { href: "/reporting", label: "📋 Reporting" },
-      { href: "/system-management", label: "🛠 System Management" },
+      { href: "/analytics", icon: "chart-no-axes-combined", label: "Analytics" },
+      { href: "/reporting", icon: "file-text", label: "Reporting" },
+      { href: "/system-management", icon: "settings-2", label: "System Management" },
     ],
   },
 ];

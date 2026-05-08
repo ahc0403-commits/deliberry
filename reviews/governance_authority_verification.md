@@ -138,7 +138,7 @@ References checked:
 
 References checked:
 - Related files: `shared/constants/domain.constants.ts`, `shared/types/domain.types.ts`, `docs/governance/CONSTITUTION.md`. Code files listed as related, not as authority. CLEAN.
-- Line 162: "Settlement period cutoff is 23:59:59 Buenos Aires time (see DATE.md Law 9)." DATE.md is canonical. This is a cross-reference between canonical documents. CLEAN.
+- Line 162: "Settlement period cutoff is 23:59:59 Ho Chi Minh City time (see DATE.md Law 9)." DATE.md is canonical. This is a cross-reference between canonical documents. CLEAN.
 
 **Result: PASS.**
 
@@ -325,7 +325,7 @@ Checking all reference chains for circular dependency:
 | Criterion | Status | Evidence |
 |-----------|--------|----------|
 | No circular authority chains among canonical docs | VERIFIED | Full cross-reference graph built (Section 5). Mutual references (CONSTITUTION ↔ IDENTITY, CONSTITUTION ↔ DECAY_PATH) are hierarchical, not circular. |
-| FLOW.md → DATE.md reference is clean | VERIFIED | FLOW.md Section 3.3 says "Settlement period cutoff is 23:59:59 Buenos Aires time (see DATE.md Law 9)." This correctly cross-references without claiming authority over date rules. |
+| FLOW.md → DATE.md reference is clean | VERIFIED | FLOW.md Section 3.3 says "Settlement period cutoff is 23:59:59 Ho Chi Minh City time (see DATE.md Law 9)." This correctly cross-references without claiming authority over date rules. |
 | DATE.md → DECAY_PATH reference is clean | VERIFIED | DATE.md Law 3 says stale docs "must be reviewed. See DECAY_PATH.md for the staleness detection and review procedure." DECAY_PATH is the canonical owner of decay procedures. |
 | GLOSSARY → CONSTITUTION "Laws" references are broken | FAIL | See Gap 6.4 below. |
 | ENFORCEMENT_CHECKLIST → CONSTITUTION "Laws" references are broken | FAIL | See Gap 6.4 below. |

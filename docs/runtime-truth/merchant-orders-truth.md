@@ -4,7 +4,7 @@ Status: Active
 Authority: Operational
 Surface: merchant-console
 Domains: orders, query-read-model, store-scope
-Last updated: 2026-04-15
+Last updated: 2026-04-24
 Retrieve when:
 - changing merchant order data reads or display logic
 - checking whether order actions mutate real state
@@ -60,6 +60,8 @@ Identify where merchant orders data actually comes from and where the current sc
 - `storeId` is enforced and applied to persisted order reads.
 - `Accept Order`, `Reject`, `Mark Ready`, and `Mark Picked Up` update real order status in the persisted runtime.
 - The detail panel is local UI state only, not a durable route or persisted selection.
+- The store-scoped sidebar now reads a lightweight shell snapshot for store name and badge counts instead of reusing the full orders or reviews payload.
+- The dashboard overview route now also reads through the merchant runtime service, and its visible KPI cards/alerts were re-aligned to store-scoped runtime values on 2026-04-24.
 
 ## Known Risks
 

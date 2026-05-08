@@ -4,7 +4,7 @@ Status: Active
 Authority: Operational
 Surface: admin-console
 Domains: system-management, platform-config, admin
-Last updated: 2026-03-17
+Last updated: 2026-05-06
 Retrieve when:
 - editing the admin system-management route
 - checking whether system controls are local only or backed by platform truth
@@ -31,7 +31,7 @@ Owns the platform system-management route and its mixed operational oversight su
 - Live audit-log read-path truth flows through `admin-console/src/shared/data/supabase-admin-runtime-repository.ts`
 - Fixture repository truth for non-runtime-backed panels still lives in `admin-console/src/shared/data/admin-repository.ts`
 
-The route is access-enforced. Health and flag panels remain fixture-backed, while recent audit entries are read from the governed runtime store. Action controls remain local UI only.
+The route is access-enforced. Health and flag panels remain fixture-backed, while recent audit entries are read from the governed runtime store. Action controls remain local UI only, and audit timestamps now format against the current admin locale while staying explicit about UTC storage.
 
 ## Key Files to Read First
 
@@ -69,5 +69,5 @@ The route is access-enforced. Health and flag panels remain fixture-backed, whil
 ## What Not to Change Casually
 
 - Do not represent local controls as live infrastructure mutations.
-- Do not route audit visibility back through in-memory `adminQueryServices`.
+- Do not route audit visibility back through in-memory `adminFixtureFacade`.
 - Do not change platform access assumptions without checking admin auth docs first.

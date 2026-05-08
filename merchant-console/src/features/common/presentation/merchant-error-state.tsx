@@ -1,5 +1,7 @@
 "use client";
 
+import { useMerchantI18n } from "../../../shared/i18n/client";
+
 type MerchantErrorStateProps = {
   title: string;
   message: string;
@@ -13,11 +15,13 @@ export function MerchantErrorState({
   resetLabel = "Retry",
   onReset,
 }: MerchantErrorStateProps) {
+  const { raw } = useMerchantI18n();
+
   return (
     <div className="merchant-surface">
       <section className="merchant-hero merchant-hero-insights">
         <div className="merchant-hero-copy">
-          <span className="merchant-eyebrow">Unavailable</span>
+          <span className="merchant-eyebrow">{raw("Unavailable")}</span>
           <h1 className="merchant-hero-title">{title}</h1>
           <p className="merchant-hero-subtitle">{message}</p>
         </div>
@@ -25,13 +29,13 @@ export function MerchantErrorState({
 
       <div className="merchant-cluster-card">
         <div className="merchant-settings-intro">
-          <strong>Runtime load failed</strong>
+          <strong>{raw("Runtime load failed")}</strong>
           <p>{message}</p>
         </div>
         {onReset ? (
           <div className="page-actions merchant-page-actions">
             <button className="btn btn-primary" onClick={onReset}>
-              {resetLabel}
+              {raw(resetLabel)}
             </button>
           </div>
         ) : null}

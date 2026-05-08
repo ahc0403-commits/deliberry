@@ -176,9 +176,9 @@ References: CONSTITUTION.md, FLOW.md, IDENTITY.md
 ### 5.1 Money
 
 - [ ] All displayed prices use `formatMoney()` utility
-- [ ] Currency symbol matches ARS ($) for primary currency
+- [ ] Currency symbol matches VND (₫) for primary currency
 - [ ] Order totals are calculated correctly (sum of item prices)
-- [ ] No floating-point artifacts in displayed amounts (e.g., $42.300000000000004)
+- [ ] No floating-point artifacts in displayed amounts (e.g., ₫42.300000000000004)
 
 ### 5.2 Status Values
 
@@ -189,9 +189,9 @@ References: CONSTITUTION.md, FLOW.md, IDENTITY.md
 
 ### 5.3 Timestamps
 
-- [ ] All displayed timestamps show Buenos Aires time (UTC-3)
+- [ ] All displayed timestamps show Ho Chi Minh City time (UTC+7)
 - [ ] Sorting by date produces correct chronological order
-- [ ] Settlement period boundaries align with Buenos Aires business dates
+- [ ] Settlement period boundaries align with Ho Chi Minh City business dates
 
 ---
 
@@ -219,7 +219,7 @@ References: CONSTITUTION.md, FLOW.md, IDENTITY.md
 ## 8. Constitutional Compliance Spot-Checks
 
 - [ ] Pick 3 random mutation endpoints: verify actor attribution (R-020)
-- [ ] Pick 3 random money fields: verify integer centavo representation (R-010)
+- [ ] Pick 3 random money fields: verify integer minor money unit representation (R-010)
 - [ ] Pick 3 random timestamp fields: verify UTC ISO 8601 format (R-050)
 - [ ] Pick 3 random status usages: verify canonical enum membership (R-040)
 - [ ] Pick 1 random admin action: verify role enforcement (R-021)

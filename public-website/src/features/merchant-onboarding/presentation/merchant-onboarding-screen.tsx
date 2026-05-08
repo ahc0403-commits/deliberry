@@ -4,11 +4,12 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ArrowRight, BarChart3, Headphones, Megaphone, TrendingUp, Wallet, Wrench } from "lucide-react";
 import type { ReactNode } from "react";
+import { usePublicI18n } from "../../../shared/i18n/client";
 
 const benefits: { icon: ReactNode; title: string; desc: string }[] = [
-  { icon: <TrendingUp size={24} />, title: "Reach new customers", desc: "Get discovered by 24,000+ active users ordering delivery every day across Buenos Aires." },
+  { icon: <TrendingUp size={24} />, title: "Reach new customers", desc: "Get discovered by 24,000+ active users ordering delivery every day across Ho Chi Minh City." },
   { icon: <Wrench size={24} />, title: "Powerful merchant tools", desc: "Manage orders, update your menu, track performance, and view settlements — all from one dashboard." },
-  { icon: <Wallet size={24} />, title: "Weekly transparent payouts", desc: "We settle every Friday. You see exactly what you earned, what the commission was, and what we transferred." },
+  { icon: <Wallet size={24} />, title: "Transparent payout visibility", desc: "Deliberry is building toward weekly settlement operations. Today, merchants can review payout structure and commission expectations without implying live automated disbursement." },
   { icon: <Megaphone size={24} />, title: "Marketing & visibility", desc: "Featured placements, promotional campaigns, and app-wide visibility. We invest in growing the whole network." },
   { icon: <Headphones size={24} />, title: "Dedicated partner support", desc: "A real team that helps you onboard, troubleshoot, and grow. Not a ticket queue — a partnership." },
   { icon: <BarChart3 size={24} />, title: "Performance analytics", desc: "See your best-selling items, peak hours, average order values, and customer ratings over time." },
@@ -22,6 +23,7 @@ const steps = [
 ];
 
 export function PublicMerchantOnboardingScreen() {
+  const { raw } = usePublicI18n();
   const [form, setForm] = useState({
     restaurantName: "",
     ownerName: "",
@@ -71,8 +73,8 @@ export function PublicMerchantOnboardingScreen() {
               This route is for partner acquisition, not a live SaaS signup. You can understand the merchant value, prepare your details, and complete the inquiry through the manual team handoff that exists today.
             </p>
             <div className="hero-actions">
-              <a href="#apply" className="btn btn-primary btn-lg">Start the partner inquiry</a>
-              <Link href="/service" className="btn btn-secondary btn-lg">See the service model</Link>
+              <a href="#apply" className="btn btn-primary btn-lg">{raw("Start the partner inquiry")}</a>
+              <Link href="/service" className="btn btn-secondary btn-lg">{raw("See the service model")}</Link>
             </div>
             <div className="hero-social-proof">
               <div className="hero-proof-item"><span className="hero-proof-value">186</span><span className="hero-proof-label">Active partners</span></div>
@@ -89,15 +91,15 @@ export function PublicMerchantOnboardingScreen() {
               <a href="#apply" className="hero-route-card">
                 <ArrowRight size={16} />
                 <div>
-                  <strong>Prepare details here</strong>
-                  <span>Restaurant info stays on this page until you confirm the manual handoff</span>
+                  <strong>{raw("Prepare details here")}</strong>
+                  <span>{raw("Restaurant info stays on this page until you confirm the manual handoff")}</span>
                 </div>
               </a>
               <a href="mailto:partners@deliberry.com" className="hero-route-card">
                 <ArrowRight size={16} />
                 <div>
                   <strong>Email the partner team</strong>
-                  <span>Visible completion exists, but automatic submission does not</span>
+                  <span>{raw("Visible completion exists, but automatic submission does not")}</span>
                 </div>
               </a>
             </div>
@@ -155,7 +157,7 @@ export function PublicMerchantOnboardingScreen() {
                 { icon: "✅", text: "No setup fee" },
                 { icon: "✅", text: "Transparent 15% commission, no hidden charges" },
                 { icon: "✅", text: "Full control over your menu and pricing" },
-                { icon: "✅", text: "Weekly settlements, every Friday" },
+                { icon: "✅", text: "Payout structure and settlement visibility are shared clearly during onboarding" },
               ].map((item) => (
                 <div key={item.text} className="public-check-row">
                   <span style={{ color: "var(--color-primary)", fontWeight: 700, fontSize: "var(--text-sm)" }}>{item.icon}</span>
@@ -233,7 +235,7 @@ export function PublicMerchantOnboardingScreen() {
                   id="cuisine"
                   className="form-input"
                   type="text"
-                  placeholder="e.g. Argentine, Italian"
+                placeholder="e.g. Vietnamese, Korean"
                   value={form.cuisineType}
                   onChange={(event) => updateField("cuisineType", event.target.value)}
                   required
@@ -258,7 +260,7 @@ export function PublicMerchantOnboardingScreen() {
                 id="phone"
                 className="form-input"
                 type="tel"
-                placeholder="+54 11 xxxx-xxxx"
+                placeholder="+84 9x xxx xxxx"
                 value={form.phone}
                 onChange={(event) => updateField("phone", event.target.value)}
                 required
@@ -270,7 +272,7 @@ export function PublicMerchantOnboardingScreen() {
                 id="address"
                 className="form-input"
                 type="text"
-                placeholder="Street, neighbourhood, Buenos Aires"
+                placeholder="Street, ward, district, Ho Chi Minh City"
                 value={form.address}
                 onChange={(event) => updateField("address", event.target.value)}
                 required

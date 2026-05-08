@@ -17,6 +17,7 @@ export async function ensureMerchantConsoleAccess() {
         onboardingComplete: access.onboardingComplete,
         selectedStoreId: access.selectedStoreId,
         membershipCount: access.membershipCount,
+        reason: "session_required",
       }),
     );
   }
@@ -28,6 +29,7 @@ export async function ensureMerchantConsoleAccess() {
         onboardingComplete: false,
         selectedStoreId: access.selectedStoreId,
         membershipCount: access.membershipCount,
+        reason: "onboarding_required",
       }),
     );
   }
@@ -45,6 +47,10 @@ export async function ensureMerchantStoreScope(storeId: string) {
         onboardingComplete: access.onboardingComplete,
         selectedStoreId: null,
         membershipCount: access.membershipCount,
+        reason:
+          access.membershipCount === 0
+              ? "no_store_membership"
+              : "no_store_selected",
       }),
     );
   }
@@ -56,6 +62,7 @@ export async function ensureMerchantStoreScope(storeId: string) {
         onboardingComplete: access.onboardingComplete,
         selectedStoreId: access.selectedStoreId,
         membershipCount: access.membershipCount,
+        reason: "store_scope_mismatch",
       }),
     );
   }

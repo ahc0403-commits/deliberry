@@ -25,7 +25,7 @@
     },
     "resourceType": {
       "type": "string",
-      "enum": ["Order", "Payment", "Settlement", "User", "Merchant", "Store", "Dispute", "SupportTicket"],
+      "enum": ["Order", "Payment", "Settlement", "User", "Merchant", "Store", "Review", "Dispute", "SupportTicket"],
       "description": "Entity type being mutated"
     },
     "resourceId": {

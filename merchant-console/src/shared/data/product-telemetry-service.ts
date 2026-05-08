@@ -9,7 +9,7 @@ import {
   type ProductTelemetryFunnelSummary,
   type ProductTelemetryConversionSummary,
   type ProductTelemetryRouteViewSummary,
-} from "../domain";
+} from "../merchant-governed-domain";
 import { createMerchantServiceSupabaseClient } from "../supabase/client";
 
 export async function recordMerchantProductTelemetryEvent(

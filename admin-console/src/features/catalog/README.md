@@ -4,7 +4,7 @@ Status: Active
 Authority: Operational
 Surface: admin-console
 Domains: catalog, platform-content, admin
-Last updated: 2026-03-17
+Last updated: 2026-05-06
 Retrieve when:
 - editing the admin catalog route
 - tracing how catalog list data reaches the screen
@@ -54,6 +54,8 @@ The route is access-enforced. Catalog data is fixture-backed and read-only.
 - Catalog records are fixture-backed.
 - Moderation and edit actions are local UI affordances.
 - There is no live catalog management backend.
+- Route copy and category-status labels now follow the admin locale layer.
+- Snapshot category names now align with the Vietnam-market baseline, but the route still does not own a live catalog authoring backend.
 
 ## Safe Modification Guidance
 
@@ -64,5 +66,5 @@ The route is access-enforced. Catalog data is fixture-backed and read-only.
 ## What Not to Change Casually
 
 - Do not treat moderation controls as persisted platform actions.
-- Do not bypass `adminQueryServices`.
+- Do not bypass `adminFixtureFacade`.
 - Do not add fake mutation claims to catalog controls.

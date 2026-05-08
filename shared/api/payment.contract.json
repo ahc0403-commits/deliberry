@@ -1,0 +1,44 @@
+{
+  "domain": "payment",
+  "consumers": ["customer-app", "merchant-console", "admin-console"],
+  "status": "placeholder-governed",
+  "payment_methods": ["cash", "card", "digital_wallet"],
+  "payment_statuses": ["pending", "captured", "settled", "failed", "refunded", "partially_refunded"],
+  "current_scope": [
+    "checkout payment method selection",
+    "cash or offline-style order submission",
+    "VNPAY sandbox URL creation for test readiness",
+    "VNPAY sandbox return/IPN checksum plus server-side reference, amount, currency, and pending-order validation without payment completion",
+    "admin and merchant payment-state visibility"
+  ],
+  "excluded_until_guardrail_revision": [
+    "live payment verification",
+    "payment completion from Return URL",
+    "payment completion from sandbox IPN",
+    "refund automation",
+    "reversal automation",
+    "installment handling",
+    "chargeback handling",
+    "settlement automation based on gateway completion"
+  ],
+  "event_contract": {
+    "status": "defined-for-future-production-design",
+    "required_before_live_payment": [
+      "payment_event_id",
+      "order_id",
+      "provider",
+      "environment",
+      "event_type",
+      "provider_reference",
+      "amount_centavos",
+      "currency",
+      "checksum_valid",
+      "idempotency_key",
+      "received_at",
+      "processed_at",
+      "result",
+      "failure_reason"
+    ],
+    "rule": "Payment events may be designed in Phase 1, but payment state transitions remain forbidden until the binding payment guardrails are revised."
+  }
+}

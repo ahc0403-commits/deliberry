@@ -22,7 +22,7 @@ Show the narrow file cluster for the public landing route, the live landing scre
 
 - before changing homepage sections, CTAs, or acquisition links
 - before editing global marketing header/footer behavior from the landing context
-- when the content-service layer looks relevant but may not be wired in
+- when an old shared content seam looks relevant but no longer exists in the live route
 
 ## Entry Files
 
@@ -35,8 +35,6 @@ Show the narrow file cluster for the public landing route, the live landing scre
 - `public-website/src/app/(marketing)/download/page.tsx`
 - `public-website/src/app/(marketing)/service/page.tsx`
 - `public-website/src/app/(marketing)/merchant/page.tsx`
-- `public-website/src/shared/data/content-service.ts`
-- `public-website/src/shared/data/public-content-repository.ts`
 
 ## Source-of-Truth Files
 
@@ -47,8 +45,6 @@ The live truth is split: landing content is hardcoded in `landing-screen.tsx`, w
 
 ## Files Often Mistaken as Source of Truth but Are Not
 
-- `public-website/src/shared/data/content-service.ts`
-- `public-website/src/shared/data/public-content-repository.ts`
 - `public-website/src/shared/domain.ts`
 
 These define a structural content boundary, but they do not currently drive the live landing route.
@@ -57,7 +53,7 @@ These define a structural content boundary, but they do not currently drive the 
 
 - hero CTAs and route links in `public-website/src/features/landing/presentation/landing-screen.tsx`
 - shared nav and footer links in `public-website/src/app/(marketing)/layout.tsx`
-- any future attempt to partially wire content-service into only one landing section
+- any future attempt to add a second content source to only one landing section
 
 ## Related Governance Docs
 

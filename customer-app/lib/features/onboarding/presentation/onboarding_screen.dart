@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/router/route_names.dart';
+import '../../../core/i18n/app_localizations.dart';
 import '../../../core/session/customer_session_controller.dart';
 import '../../../core/theme/app_theme.dart';
 
@@ -21,24 +22,24 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       subtitle:
           'Browse hundreds of restaurants and stores near you. From local favourites to new discoveries.',
       emoji: '🍔',
-      gradientColors: [Color(0xFFFF4B3A), Color(0xFFFF7A35)],
-      accentColor: Color(0xFFFF4B3A),
+      gradientColors: [AppTheme.primaryColor, AppTheme.primaryDark],
+      accentColor: AppTheme.primaryColor,
     ),
     _OnboardingPage(
       title: 'Tell us what\nyou love',
       subtitle:
           'Set your food preferences and dietary needs so we can show you the best matches every time.',
       emoji: '❤️',
-      gradientColors: [Color(0xFF9C27B0), Color(0xFFE91E63)],
-      accentColor: Color(0xFF9C27B0),
+      gradientColors: [AppTheme.tomatoColor, AppTheme.primaryColor],
+      accentColor: AppTheme.tomatoColor,
     ),
     _OnboardingPage(
       title: 'Fast delivery\nto your door',
       subtitle:
           'Share your location for accurate delivery times and personalised restaurant suggestions nearby.',
       emoji: '📍',
-      gradientColors: [Color(0xFF2196F3), Color(0xFF00BCD4)],
-      accentColor: Color(0xFF2196F3),
+      gradientColors: [AppTheme.primaryDark, AppTheme.coralColor],
+      accentColor: AppTheme.primaryDark,
     ),
   ];
 
@@ -70,7 +71,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final isLast = _currentPage == _pages.length - 1;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppTheme.white,
       body: SafeArea(
         child: Column(
           children: [
@@ -108,8 +109,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           vertical: 6,
                         ),
                       ),
-                      child: const Text(
-                        'Skip',
+                      child: Text(
+                        context.l10n.raw('Skip'),
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
@@ -143,9 +144,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   onPressed: _onNext,
                   style: FilledButton.styleFrom(
                     backgroundColor: _pages[_currentPage].accentColor,
-                    foregroundColor: Colors.white,
+                    foregroundColor: AppTheme.white,
                   ),
-                  child: Text(isLast ? 'Get Started' : 'Next'),
+                  child: Text(
+                    context.l10n.raw(isLast ? 'Get Started' : 'Next'),
+                  ),
                 ),
               ),
             ),
@@ -192,7 +195,7 @@ class _OnboardingPageView extends StatelessWidget {
                       height: 120,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.white.withValues(alpha: 0.08),
+                        color: AppTheme.white.withValues(alpha: 0.08),
                       ),
                     ),
                   ),
@@ -204,7 +207,7 @@ class _OnboardingPageView extends StatelessWidget {
                       height: 80,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.white.withValues(alpha: 0.08),
+                        color: AppTheme.white.withValues(alpha: 0.08),
                       ),
                     ),
                   ),
@@ -226,18 +229,18 @@ class _OnboardingPageView extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  page.title,
+                  context.l10n.raw(page.title),
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.w800,
                     color: Theme.of(context).colorScheme.onSurface,
-                    letterSpacing: -0.8,
+                    letterSpacing: 0,
                     height: 1.18,
                   ),
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  page.subtitle,
+                  context.l10n.raw(page.subtitle),
                   style: TextStyle(
                     fontSize: 16,
                     color: AppTheme.textSecondary,

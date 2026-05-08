@@ -1,40 +1,48 @@
-import { merchantQueryServices } from "../../../shared/data/merchant-query-services";
+ "use client";
+
 import { formatMoney } from "../../../shared/domain";
 import { Sparkles, Store } from "lucide-react";
+import type { PromotionsData } from "../../../shared/data/merchant-repository";
+import { toDisplayTime } from "../../../shared/domain";
+import { useMerchantI18n } from "../../../shared/i18n/client";
 
 type MerchantPromotionsScreenProps = {
-  storeId: string;
+  initialData: PromotionsData;
+  source: "snapshot";
 };
 
 export function MerchantPromotionsScreen({
-  storeId,
+  initialData,
+  source,
 }: MerchantPromotionsScreenProps) {
-  const data = merchantQueryServices.getPromotionsData(storeId);
+  const { locale, raw } = useMerchantI18n();
+  const data = initialData;
 
   const typeLabels: Record<string, string> = {
-    percentage: "% Off",
-    fixed: "$ Off",
-    free_delivery: "Free Delivery",
+    percentage: raw("% Off"),
+    fixed: raw("₫ Off"),
+    free_delivery: raw("Free Delivery"),
   };
 
   const formatValue = (type: string, value: number) => {
     if (type === "percentage") return `${value}%`;
     if (type === "fixed") return formatMoney(value);
-    return "Free";
+    return raw("Free");
   };
 
   const activeCount = data.promotions.filter((p) => p.active).length;
   const inactiveCount = data.promotions.length - activeCount;
   const totalUsage = data.promotions.reduce((sum, promo) => sum + promo.usageCount, 0);
+  const replaceCount = (value: string, count: number) => raw(value).replace("{count}", String(count));
 
   return (
     <div className="merchant-surface">
       <section className="merchant-hero merchant-hero-insights">
         <div className="merchant-hero-copy">
-          <span className="merchant-eyebrow">Store marketing</span>
-          <h1 className="merchant-hero-title">Promotions</h1>
+          <span className="merchant-eyebrow">{raw("Store marketing")}</span>
+          <h1 className="merchant-hero-title">{raw("Promotions")}</h1>
           <p className="merchant-hero-subtitle">
-            Review campaign coverage, usage, and active status for the current store without implying live campaign creation or edits.
+            {raw("Review campaign coverage, usage, and active status for the current store through the current phase planning snapshot.")}
           </p>
           <div className="merchant-context-row">
             <span className="merchant-context-pill">
@@ -43,42 +51,44 @@ export function MerchantPromotionsScreen({
             </span>
             <span className="merchant-context-pill merchant-context-pill-muted">
               <Sparkles size={14} />
-              Create and edit controls remain preview-only
+              {source === "snapshot"
+                ? raw("Store identity is live, campaign rows remain snapshot-only")
+                : raw("Creation and edits are not yet available")}
             </span>
           </div>
         </div>
         <div className="merchant-hero-panel">
-          <div className="merchant-hero-panel-label">Campaign snapshot</div>
-          <div className="merchant-hero-panel-value">{activeCount} active offers</div>
+          <div className="merchant-hero-panel-label">{raw("Campaign snapshot")}</div>
+          <div className="merchant-hero-panel-value">{replaceCount("{count} active offers", activeCount)}</div>
           <div className="merchant-hero-panel-text">
-            Promotion data is fixture-backed, but active coverage and redemption progress still help explain the current marketing mix.
+            {raw("Campaign coverage and redemption progress are shown as a store-scoped planning snapshot in the current phase.")}
           </div>
         </div>
       </section>
 
       <div className="merchant-summary-band">
         <div className="merchant-summary-card">
-          <div className="merchant-summary-label">Active campaigns</div>
+          <div className="merchant-summary-label">{raw("Active campaigns")}</div>
           <div className="merchant-summary-value">{activeCount}</div>
-          <div className="merchant-summary-meta">Currently shown as running in this store scope</div>
+          <div className="merchant-summary-meta">{raw("Currently shown as running in this store scope")}</div>
         </div>
         <div className="merchant-summary-card">
-          <div className="merchant-summary-label">Completed or inactive</div>
+          <div className="merchant-summary-label">{raw("Completed or inactive")}</div>
           <div className="merchant-summary-value">{inactiveCount}</div>
-          <div className="merchant-summary-meta">Kept visible here for historical campaign context</div>
+          <div className="merchant-summary-meta">{raw("Kept visible here for historical campaign context")}</div>
         </div>
         <div className="merchant-summary-card">
-          <div className="merchant-summary-label">Recorded uses</div>
+          <div className="merchant-summary-label">{raw("Recorded uses")}</div>
           <div className="merchant-summary-value">{totalUsage}</div>
-          <div className="merchant-summary-meta">Fixture-backed redemption counts across the current list</div>
+          <div className="merchant-summary-meta">{raw("Snapshot redemption counts across the current list")}</div>
         </div>
       </div>
 
       <div className="merchant-cluster-card">
         <div className="merchant-cluster-card-header">
           <div>
-            <div className="card-title">Campaign library</div>
-            <div className="card-subtitle">Store-scoped promotion list and current usage snapshot</div>
+            <div className="card-title">{raw("Campaign library")}</div>
+            <div className="card-subtitle">{raw("Store-scoped promotion list and current usage snapshot")}</div>
           </div>
           <div className="page-actions merchant-page-actions">
           <button
@@ -86,7 +96,7 @@ export function MerchantPromotionsScreen({
             disabled
             aria-disabled="true"
           >
-            Create Preview Only
+            {raw("Creation Not Yet Available")}
           </button>
         </div>
         </div>
@@ -95,14 +105,14 @@ export function MerchantPromotionsScreen({
           <table className="data-table merchant-data-table">
             <thead>
               <tr>
-                <th>Name</th>
-                <th>Code</th>
-                <th>Type</th>
-                <th>Discount</th>
-                <th>Min. Order</th>
-                <th>Usage</th>
-                <th>Period</th>
-                <th>Status</th>
+                <th>{raw("Name")}</th>
+                <th>{raw("Code")}</th>
+                <th>{raw("Type")}</th>
+                <th>{raw("Discount")}</th>
+                <th>{raw("Min. Order")}</th>
+                <th>{raw("Usage")}</th>
+                <th>{raw("Period")}</th>
+                <th>{raw("Status")}</th>
               </tr>
             </thead>
             <tbody>
@@ -134,7 +144,7 @@ export function MerchantPromotionsScreen({
                     </td>
                     <td>
                       <div style={{ fontSize: "var(--text-xs)" }}>
-                        {promo.startsAt}
+                        {toDisplayTime(promo.startsAt, locale)}
                       </div>
                       <div
                         style={{
@@ -142,7 +152,7 @@ export function MerchantPromotionsScreen({
                           color: "var(--color-text-muted)",
                         }}
                       >
-                        to {promo.expiresAt}
+                        {raw("to {time}").replace("{time}", toDisplayTime(promo.expiresAt, locale))}
                       </div>
                     </td>
                     <td>
@@ -150,7 +160,7 @@ export function MerchantPromotionsScreen({
                         className={`status-badge ${promo.active ? "active" : "inactive"}`}
                       >
                         <span className="status-dot" />
-                        {promo.active ? "Active" : "Expired"}
+                        {promo.active ? raw("Active") : raw("Expired")}
                       </span>
                     </td>
                   </tr>

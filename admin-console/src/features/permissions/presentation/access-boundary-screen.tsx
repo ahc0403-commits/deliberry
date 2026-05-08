@@ -9,7 +9,19 @@ const roles = [
   { value: "support_admin", title: "Support Admin", icon: "🎧", desc: "Customer service operations and dispute resolution" },
 ];
 
-export function AdminAccessBoundaryScreen() {
+const REASON_COPY: Record<string, string> = {
+  role_required:
+    "Pick the admin role for this session before entering protected platform routes.",
+  access_denied:
+    "The last route you opened is not available for the current admin role. Choose the right oversight lens and continue.",
+};
+
+export function AdminAccessBoundaryScreen({
+  reason,
+}: {
+  reason?: string | null;
+}) {
+  const reasonCopy = reason ? REASON_COPY[reason] ?? null : null;
   return (
     <div className="auth-entry-shell">
       <div className="auth-entry-intro">
@@ -24,6 +36,11 @@ export function AdminAccessBoundaryScreen() {
           <span className="auth-entry-pill">Role-specific nav</span>
           <span className="auth-entry-pill">Snapshot oversight only</span>
         </div>
+        {reasonCopy ? (
+          <p className="auth-form-subtitle auth-entry-copy" style={{ marginTop: 12 }}>
+            {reasonCopy}
+          </p>
+        ) : null}
       </div>
 
       <div className="auth-entry-panel">

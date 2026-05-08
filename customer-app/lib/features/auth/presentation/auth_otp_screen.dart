@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../app/router/route_names.dart';
+import '../../../core/i18n/app_localizations.dart';
 import '../../../core/session/customer_session_controller.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../common/presentation/widgets.dart';
@@ -26,6 +27,7 @@ class _AuthOtpScreenState extends State<AuthOtpScreen> {
   bool _isLoading = false;
   int _resendSeconds = 30;
   Timer? _resendTimer;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -84,24 +86,54 @@ class _AuthOtpScreenState extends State<AuthOtpScreen> {
 
   Future<void> _onVerify() async {
     if (!_isComplete || _isLoading) return;
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
 
-    await Future.delayed(const Duration(milliseconds: 800));
-
-    await CustomerSessionController.instance.verifyOtp();
-
-    if (mounted) {
+    try {
+      await CustomerSessionController.instance.verifyOtp(
+        token: _enteredCode,
+      );
+      if (!mounted) return;
       Navigator.of(context).pushReplacementNamed(RouteNames.onboarding);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = context.l10n.authOtpError(error);
+      });
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
-  void _onResend() {
+  Future<void> _onResend() async {
     if (_resendSeconds > 0) return;
     for (final c in _controllers) {
       c.clear();
     }
     _focusNodes[0].requestFocus();
-    _startResendTimer();
+    setState(() {
+      _errorMessage = null;
+    });
+    try {
+      final phoneNumber = CustomerSessionController.instance.phoneNumber;
+      if (phoneNumber == null || phoneNumber.isEmpty) {
+        throw StateError('Customer phone number is unavailable for resend.');
+      }
+      await CustomerSessionController.instance.requestOtp(
+        phoneNumber: phoneNumber,
+      );
+      if (!mounted) return;
+      _startResendTimer();
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = context.l10n.authPhoneError(error, isResend: true);
+      });
+    }
   }
 
   String _maskedPhone() {
@@ -113,9 +145,9 @@ class _AuthOtpScreenState extends State<AuthOtpScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppTheme.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppTheme.white,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
@@ -128,19 +160,21 @@ class _AuthOtpScreenState extends State<AuthOtpScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Verify your\nphone number',
+              context.l10n.raw('Verify your\nphone number'),
               style: TextStyle(
                 fontSize: 30,
                 fontWeight: FontWeight.w800,
                 color: Theme.of(context).colorScheme.onSurface,
-                letterSpacing: -0.8,
+                letterSpacing: 0,
                 height: 1.15,
               ),
             ),
             const SizedBox(height: 10),
             RichText(
               text: TextSpan(
-                text: 'Enter the 6-digit fallback code sent to ',
+                text: context.l10n.raw(
+                  'Enter the 6-digit verification code sent to ',
+                ),
                 style: TextStyle(
                   fontSize: 15,
                   color: AppTheme.textSecondary,
@@ -157,6 +191,25 @@ class _AuthOtpScreenState extends State<AuthOtpScreen> {
                 ],
               ),
             ),
+            if (_errorMessage != null) ...[
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppTheme.primarySoft,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppTheme.primaryTint),
+                ),
+                child: Text(
+                  _errorMessage!,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppTheme.errorColor,
+                    height: 1.35,
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: 40),
 
             // OTP digit boxes
@@ -177,7 +230,7 @@ class _AuthOtpScreenState extends State<AuthOtpScreen> {
             Center(
               child: _resendSeconds > 0
                   ? Text(
-                      'Resend code in ${_resendSeconds}s',
+                      '${context.l10n.raw('Resend code')} ${_resendSeconds}s',
                       style: TextStyle(
                         fontSize: 14,
                         color: AppTheme.textSecondary,
@@ -185,8 +238,8 @@ class _AuthOtpScreenState extends State<AuthOtpScreen> {
                     )
                   : GestureDetector(
                       onTap: _onResend,
-                      child: const Text(
-                        'Resend code',
+                      child: Text(
+                        context.l10n.raw('Resend code'),
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
@@ -202,7 +255,7 @@ class _AuthOtpScreenState extends State<AuthOtpScreen> {
               style: FilledButton.styleFrom(
                 backgroundColor:
                     _isComplete ? AppTheme.primaryColor : AppTheme.borderColor,
-                foregroundColor: Colors.white,
+                foregroundColor: AppTheme.white,
               ),
               child: _isLoading
                   ? const SizedBox(
@@ -210,10 +263,10 @@ class _AuthOtpScreenState extends State<AuthOtpScreen> {
                       width: 22,
                       child: CircularProgressIndicator(
                         strokeWidth: 2.5,
-                        color: Colors.white,
+                        color: AppTheme.white,
                       ),
                     )
-                  : const Text('Verify'),
+                  : Text(context.l10n.raw('Verify')),
             ),
             const SizedBox(height: 16),
             Center(
@@ -222,14 +275,14 @@ class _AuthOtpScreenState extends State<AuthOtpScreen> {
                     .pushReplacementNamed(RouteNames.authPhone),
                 child: RichText(
                   text: TextSpan(
-                    text: 'Wrong number? ',
+                    text: context.l10n.raw('Wrong number? '),
                     style: TextStyle(
                       fontSize: 14,
                       color: AppTheme.textSecondary,
                     ),
-                    children: const [
+                    children: [
                       TextSpan(
-                        text: 'Change it',
+                        text: context.l10n.raw('Change it'),
                         style: TextStyle(
                           color: AppTheme.primaryColor,
                           fontWeight: FontWeight.w700,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/data/customer_runtime_controller.dart';
 import '../../../core/data/mock_data.dart';
+import '../../../core/i18n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 
 class FilterScreen extends StatefulWidget {
@@ -61,24 +62,24 @@ class _FilterScreenState extends State<FilterScreen> {
     return Scaffold(
       backgroundColor: AppTheme.backgroundGrey,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
+        backgroundColor: AppTheme.white,
+        surfaceTintColor: AppTheme.white,
         elevation: 0,
         scrolledUnderElevation: 0.5,
         leading: IconButton(
           icon: const Icon(Icons.close_rounded, size: 22),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(
-          'Filters',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+        title: Text(
+          context.l10n.raw('Filters'),
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
         ),
         centerTitle: true,
         actions: [
           TextButton(
             onPressed: _resetAll,
             child: Text(
-              'Reset${_activeFilterCount > 0 ? ' ($_activeFilterCount)' : ''}',
+              '${context.l10n.raw('Reset')}${_activeFilterCount > 0 ? ' ($_activeFilterCount)' : ''}',
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -137,7 +138,7 @@ class _FilterSection extends StatelessWidget {
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppTheme.borderColor),
       ),
@@ -145,7 +146,7 @@ class _FilterSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            title,
+            context.l10n.raw(title),
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
@@ -160,11 +161,11 @@ class _FilterSection extends StatelessWidget {
               return FilterChip(
                 selected: isSelected,
                 onSelected: (_) => onSelected(index),
-                label: Text(options[index]),
+                label: Text(context.l10n.raw(options[index])),
                 labelStyle: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: isSelected ? Colors.white : const Color(0xFF1A1A2E),
+                  color: isSelected ? AppTheme.white : AppTheme.inkColor,
                 ),
                 showCheckmark: false,
                 backgroundColor: AppTheme.backgroundGrey,
@@ -204,11 +205,11 @@ class _ApplyBar extends StatelessWidget {
         bottom: MediaQuery.of(context).padding.bottom + 16,
       ),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.white,
         border: Border(top: BorderSide(color: AppTheme.borderColor)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
+            color: AppTheme.inkColor.withValues(alpha: 0.06),
             blurRadius: 12,
             offset: const Offset(0, -4),
           ),
@@ -218,8 +219,8 @@ class _ApplyBar extends StatelessWidget {
         onPressed: onApply,
         child: Text(
           activeCount > 0
-              ? 'Apply $activeCount filter${activeCount != 1 ? 's' : ''}'
-              : 'Apply Filters',
+              ? '${context.l10n.raw('Apply Filters')} ($activeCount)'
+              : context.l10n.raw('Apply Filters'),
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
         ),
       ),

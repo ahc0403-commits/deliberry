@@ -13,7 +13,7 @@
 
 | File | Purpose |
 | --- | --- |
-| `merchant-console/src/shared/data/merchant-mock-data.ts` | Rich mock data with 20+ types and realistic Argentine food delivery instances (store, orders, menu items, reviews, promotions, settlements, analytics) |
+| `merchant-console/src/shared/data/merchant-mock-data.ts` | Rich mock data with 20+ types and realistic Vietnam-market food delivery instances (store, orders, menu items, reviews, promotions, settlements, analytics) |
 
 ## Updated Data Layer
 

@@ -11,6 +11,10 @@ import {
   recordMerchantRuntimeObservabilityEvent,
 } from "./runtime-observability-service";
 import { supabaseMerchantRuntimeRepository } from "./supabase-merchant-runtime-repository";
+import {
+  canMerchantFallbackToFixtureAfterFailure,
+  getMerchantRuntimeCompatibility,
+} from "./merchant-runtime-compatibility";
 
 export type MerchantDashboardRuntimeResult = {
   data: DashboardData;
@@ -25,6 +29,7 @@ export type MerchantOrdersRuntimeResult = {
 export async function getMerchantDashboardRuntimeData(
   storeId: string,
 ): Promise<MerchantDashboardRuntimeResult> {
+  const compatibility = getMerchantRuntimeCompatibility("dashboard.read");
   const traceId = randomUUID();
   const startedAt = Date.now();
   try {
@@ -100,23 +105,29 @@ export async function getMerchantDashboardRuntimeData(
           }),
         );
       }
-      await recordMerchantRuntimeObservabilityEvent(
-        buildMerchantRuntimeEvent({
-          surface: "merchant-console",
-          layer: "service",
-          operation: "runtime.fallback_activated",
-          outcome: "fallback_activated",
-          traceId,
-          attemptSource: "fallback",
-          failureClass,
-          storeId,
-          durationMs: Date.now() - startedAt,
-          metadata: {
-            triggeringOperation: "merchant.dashboard.read",
-          },
-        }),
-      );
+      if (canMerchantFallbackToFixtureAfterFailure(compatibility)) {
+        await recordMerchantRuntimeObservabilityEvent(
+          buildMerchantRuntimeEvent({
+            surface: "merchant-console",
+            layer: "service",
+            operation: "runtime.fallback_activated",
+            outcome: "fallback_activated",
+            traceId,
+            attemptSource: "fallback",
+            failureClass,
+            storeId,
+            durationMs: Date.now() - startedAt,
+            metadata: {
+              triggeringOperation: "merchant.dashboard.read",
+            },
+          }),
+        );
+      }
     } catch {}
+    if (!canMerchantFallbackToFixtureAfterFailure(compatibility)) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`merchant.dashboard.read failed (${failureClass}): ${message}`);
+    }
     return {
       data: merchantRepository.getDashboardData(storeId),
       source: "fallback",

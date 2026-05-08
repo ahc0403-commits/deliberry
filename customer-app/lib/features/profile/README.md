@@ -4,7 +4,7 @@ Status: Active
 Authority: Operational
 Surface: customer-app
 Domains: profile, account-hub, customer
-Last updated: 2026-03-17
+Last updated: 2026-05-05
 Retrieve when:
 - editing the customer profile hub
 - checking whether profile actions are route-real, runtime-real, or presentation-only
@@ -27,7 +27,7 @@ Owns the customer profile hub and its handoffs into account-side routes such as 
 - Session truth lives in `customer-app/lib/core/session/customer_session_controller.dart`
 - Route ownership lives in `customer-app/lib/app/router/app_router.dart`
 - Supporting local runtime state lives in `customer-app/lib/core/data/customer_runtime_controller.dart`
-- Most profile row taps are route handoffs or honest local/demo-safe actions
+- Most profile row taps are route handoffs, while summary badges now reflect runtime-backed favorites and notification state
 
 ## Key Files to Read First
 
@@ -53,11 +53,14 @@ Owns the customer profile hub and its handoffs into account-side routes such as 
 - Some rows hand off to local/demo-safe surfaces rather than live account systems.
 - Signed-in truth is local-session only.
 - Profile identity now derives from the local session phone number when available; richer account identity fields are still not persisted.
+- Favorite-store count, unread notification count, and display-name state now derive from `CustomerRuntimeController`.
+- Promotions & Offers now opens a customer-local offer sheet backed by home promo fixtures plus current cart promo state.
 
 ## Safe Modification Guidance
 
 - Change route handoffs in `profile_screen.dart` and `app_router.dart`.
 - Change session-dependent display in `customer_session_controller.dart`.
+- Change runtime-backed profile badges/counts in `customer_runtime_controller.dart`.
 - Reuse existing account-row patterns instead of creating a new one-off layout.
 
 ## What Not to Change Casually

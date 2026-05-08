@@ -4,7 +4,7 @@ Status: Active
 Authority: Operational
 Surface: merchant-console
 Domains: store-selection, selected-store, store-scope
-Last updated: 2026-03-17
+Last updated: 2026-04-24
 Retrieve when:
 - changing `/select-store` behavior or post-onboarding handoff
 - debugging selected-store redirects or wrong store-scope routing
@@ -13,6 +13,8 @@ Related files:
 - merchant-console/src/shared/auth/merchant-session.ts
 - merchant-console/src/features/store-selection/server/store-selection-actions.ts
 - merchant-console/src/features/auth/server/access.ts
+- merchant-console/src/shared/auth/supabase-merchant-auth-adapter.ts
+- docs/operations/merchant-registration-first-use-audit-2026-04-22.md
 
 ## Purpose
 
@@ -20,13 +22,14 @@ Identify where the merchant console stores selected-store truth and how that tru
 
 ## Real Source-of-Truth Locations
 
-- Selected-store cookie read: `merchant-console/src/shared/auth/merchant-session.ts`
+- Selected-store resolution: `merchant-console/src/shared/auth/merchant-session.ts`
 - Selected-store write and redirect: `merchant-console/src/features/store-selection/server/store-selection-actions.ts`
 - Store-scope enforcement: `merchant-console/src/features/auth/server/access.ts`
+- Supabase-authority selected-store persistence: `merchant-console/src/shared/auth/supabase-merchant-auth-adapter.ts`
 
 ## What State Is Owned There
 
-- `MERCHANT_STORE_COOKIE`
+- selected-store state resolved in `merchant-session.ts`
 - Redirect target after store selection
 - Route access decision for `/${storeId}/*` pages
 
@@ -40,8 +43,7 @@ Identify where the merchant console stores selected-store truth and how that tru
 ## What Is Authoritative vs Derived
 
 - Authoritative:
-  - selected-store cookie value from `readSelectedStoreId()`
-  - selected-store cookie write in `selectDemoStoreAction()`
+  - selected-store persistence resolved by `selectMerchantStoreSession()`
   - route guard decision in `ensureMerchantStoreScope()`
 - Derived:
   - store badge text and store name shown in console layouts
@@ -50,11 +52,11 @@ Identify where the merchant console stores selected-store truth and how that tru
 
 ## What Is Still Shallow, Partial, Fixture-Backed, or Local-Only
 
-- The only selectable store is a hardcoded demo store.
-- There is no repository-backed store list.
-- Selected-store persistence is cookie-only and local to the current browser session context.
-- The add-store card is presentational only.
-- Store scope is now enforced consistently as a single supported demo-store path across both routing and repository-backed merchant reads.
+- Under `demo-cookie` authority, the only selectable store is still the seeded demo store.
+- Under `supabase` authority, memberships are repository-backed through `merchant_memberships` and selected-store persistence flows through `set_merchant_default_store`.
+- The add-store/self-provision path is still absent from the console.
+- Store scope remains enforced consistently by the auth access helpers across routing and merchant reads.
+- The first post-selection landing can still be a fixture-backed dashboard even when the route handoff is runtime-real.
 
 ## Known Risks
 
@@ -64,7 +66,7 @@ Identify where the merchant console stores selected-store truth and how that tru
 
 ## Safe Modification Guidance
 
-- Change selected-store read and write behavior together in `merchant-session.ts` and `store-selection-actions.ts`.
+- Change selected-store read and write behavior together in `merchant-session.ts`, `store-selection-actions.ts`, and `supabase-merchant-auth-adapter.ts` when Supabase authority is active.
 - Keep `ensureMerchantStoreScope()` aligned with any store ID path changes.
 - Treat the selection screen as presentation on top of cookie truth, not as the truth owner.
 

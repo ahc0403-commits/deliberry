@@ -2,7 +2,7 @@ import { merchantRepository } from "./merchant-repository";
 
 // Legacy fixture-backed read layer. Do not treat this as the live owner for
 // routes already migrated to runtime services.
-export class MerchantQueryServices {
+export class MerchantFixtureFacade {
   getDashboardData(storeId: string) {
     return merchantRepository.getDashboardData(storeId);
   }
@@ -44,4 +44,6 @@ export class MerchantQueryServices {
   }
 }
 
-export const merchantQueryServices = new MerchantQueryServices();
+export const merchantFixtureFacade = new MerchantFixtureFacade();
+/** @deprecated Use merchantFixtureFacade to make fixture ownership explicit. */
+export const merchantQueryServices = merchantFixtureFacade;

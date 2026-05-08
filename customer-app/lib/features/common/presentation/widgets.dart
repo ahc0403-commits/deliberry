@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../../core/data/mock_data.dart';
+import '../../../core/i18n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 
 class ScrollableSafeContent extends StatelessWidget {
@@ -69,10 +70,10 @@ class SectionHeader extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            title,
+            context.l10n.raw(title),
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w800,
-                  letterSpacing: -0.2,
+                  letterSpacing: 0,
                 ),
           ),
           if (trailing != null) trailing!,
@@ -85,7 +86,7 @@ class SectionHeader extends StatelessWidget {
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
               child: Text(
-                'See all',
+                context.l10n.raw('See all'),
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -120,23 +121,16 @@ class FeatureHeroCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final content = Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppTheme.primaryColor,
-            const Color(0xFFFF7A59),
-          ],
+        gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
+          colors: [AppTheme.primaryColor, AppTheme.primaryDark],
         ),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppTheme.cardRadius),
         boxShadow: [
-          BoxShadow(
-            color: AppTheme.primaryColor.withValues(alpha: 0.18),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
-          ),
+          AppTheme.softShadow(alpha: 0.10),
         ],
       ),
       child: Row(
@@ -146,33 +140,37 @@ class FeatureHeroCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  eyebrow.toUpperCase(),
+                  context.l10n.raw(eyebrow).toUpperCase(),
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
-                    letterSpacing: 1.1,
-                    color: Colors.white.withValues(alpha: 0.74),
+                    letterSpacing: 0.8,
+                    color: AppTheme.white.withValues(alpha: 0.82),
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  title,
+                  context.l10n.raw(title),
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w900,
-                    letterSpacing: -0.5,
-                    color: Colors.white,
+                    letterSpacing: 0,
+                    color: AppTheme.white,
                     height: 1.05,
                   ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  subtitle,
+                  context.l10n.raw(subtitle),
                   style: TextStyle(
                     fontSize: 14,
                     height: 1.35,
-                    color: Colors.white.withValues(alpha: 0.88),
+                    color: AppTheme.white.withValues(alpha: 0.88),
                   ),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 if (badge != null) ...[
                   const SizedBox(height: 14),
@@ -182,18 +180,18 @@ class FeatureHeroCard extends StatelessWidget {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.14),
-                      borderRadius: BorderRadius.circular(999),
+                      color: AppTheme.white.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(AppTheme.pillRadius),
                       border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.18),
+                        color: AppTheme.white.withValues(alpha: 0.20),
                       ),
                     ),
                     child: Text(
-                      badge!,
+                      context.l10n.raw(badge!),
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
-                        color: Colors.white,
+                        color: AppTheme.white,
                       ),
                     ),
                   ),
@@ -206,11 +204,11 @@ class FeatureHeroCard extends StatelessWidget {
             width: 68,
             height: 68,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.14),
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+              color: AppTheme.white.withValues(alpha: 0.09),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppTheme.white.withValues(alpha: 0.14)),
             ),
-            child: Icon(icon, color: Colors.white, size: 34),
+            child: Icon(icon, color: AppTheme.white, size: 34),
           ),
         ],
       ),
@@ -220,13 +218,90 @@ class FeatureHeroCard extends StatelessWidget {
 
     return Material(
       color: Colors.transparent,
-      borderRadius: BorderRadius.circular(24),
+      borderRadius: BorderRadius.circular(AppTheme.cardRadius),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppTheme.cardRadius),
         child: content,
       ),
+    );
+  }
+}
+
+class DeliveryMetaRow extends StatelessWidget {
+  const DeliveryMetaRow({
+    required this.rating,
+    required this.deliveryTime,
+    required this.deliveryFee,
+    this.distance,
+    this.compact = false,
+    super.key,
+  });
+
+  final double rating;
+  final String deliveryTime;
+  final int deliveryFee;
+  final String? distance;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final deliveryLabel = deliveryFee == 0
+        ? context.l10n.text('home.freeDelivery')
+        : context.l10n.deliveryFeeLabel(formatCustomerMoney(deliveryFee));
+    final style = TextStyle(
+      fontSize: compact ? 11 : 12,
+      color: AppTheme.textSecondary,
+      fontWeight: FontWeight.w600,
+    );
+
+    return Wrap(
+      spacing: 6,
+      runSpacing: 4,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        _MetaItem(
+          icon: Icons.star_rounded,
+          label: rating.toStringAsFixed(1),
+          style: style.copyWith(color: AppTheme.inkColor),
+          iconColor: AppTheme.secondaryColor,
+        ),
+        Text('•', style: style),
+        Text(context.l10n.deliveryWindow(deliveryTime), style: style),
+        Text('•', style: style),
+        Text(deliveryLabel, style: style),
+        if (distance != null) ...[
+          Text('•', style: style),
+          Text(distance!, style: style),
+        ],
+      ],
+    );
+  }
+}
+
+class _MetaItem extends StatelessWidget {
+  const _MetaItem({
+    required this.icon,
+    required this.label,
+    required this.style,
+    required this.iconColor,
+  });
+
+  final IconData icon;
+  final String label;
+  final TextStyle style;
+  final Color iconColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: iconColor),
+        const SizedBox(width: 2),
+        Text(context.l10n.raw(label), style: style),
+      ],
     );
   }
 }
@@ -251,8 +326,8 @@ class InfoPill extends StatelessWidget {
       decoration: BoxDecoration(
         color: highlight
             ? AppTheme.primaryColor.withValues(alpha: 0.08)
-            : Colors.white,
-        borderRadius: BorderRadius.circular(999),
+            : AppTheme.white,
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: highlight
               ? AppTheme.primaryColor.withValues(alpha: 0.15)
@@ -265,7 +340,7 @@ class InfoPill extends StatelessWidget {
           Icon(icon, size: 15, color: color),
           const SizedBox(width: 6),
           Text(
-            label,
+            context.l10n.raw(label),
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w700,
@@ -291,6 +366,7 @@ class StoreCard extends StatelessWidget {
     this.isDirect = false,
     this.promoText,
     this.onTap,
+    this.compact = false,
     super.key,
   });
 
@@ -303,67 +379,68 @@ class StoreCard extends StatelessWidget {
   final bool isDirect;
   final String? promoText;
   final VoidCallback? onTap;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
+    final radius = compact ? 14.0 : AppTheme.cardRadius;
+    final heroHeight = compact ? 108.0 : 146.0;
+    final heroIconSize = compact ? 38.0 : 50.0;
+    final contentPadding = compact
+        ? const EdgeInsets.fromLTRB(10, 9, 10, 10)
+        : const EdgeInsets.fromLTRB(14, 12, 14, 14);
+    final titleFontSize = compact ? 14.0 : 17.0;
+    final cuisineMaxLines = compact ? 2 : 1;
+    final detailGap = compact ? 6.0 : 8.0;
+
     return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(22),
+      color: Theme.of(context).colorScheme.surface,
+      borderRadius: BorderRadius.circular(radius),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(radius),
         child: Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(22),
+            borderRadius: BorderRadius.circular(radius),
             border: Border.all(color: AppTheme.borderColor),
             boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
-              ),
+              AppTheme.softShadow(alpha: 0.045),
             ],
           ),
           clipBehavior: Clip.antiAlias,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Stack(
                 children: [
                   Container(
-                    height: 154,
+                    height: heroHeight,
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          imageColor.withValues(alpha: 0.22),
-                          imageColor.withValues(alpha: 0.65),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
+                      color: imageColor.withValues(alpha: 0.13),
                     ),
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
                         Positioned(
                           right: -28,
-                          top: -18,
+                          bottom: -22,
                           child: Container(
-                            width: 110,
-                            height: 110,
+                            width: compact ? 86 : 122,
+                            height: compact ? 86 : 122,
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.18),
+                              color: AppTheme.white.withValues(alpha: 0.18),
                               shape: BoxShape.circle,
                             ),
                           ),
                         ),
                         Center(
                           child: Icon(
-                            Icons.storefront_rounded,
-                            size: 52,
-                            color: imageColor.withValues(alpha: 0.78),
+                            Icons.restaurant_rounded,
+                            size: heroIconSize,
+                            color: imageColor,
                           ),
                         ),
                       ],
@@ -374,19 +451,20 @@ class StoreCard extends StatelessWidget {
                       top: 12,
                       left: 12,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 6,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: compact ? 8 : 10,
+                          vertical: compact ? 4 : 6,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(999),
+                          color: AppTheme.primaryColor,
+                          borderRadius:
+                              BorderRadius.circular(AppTheme.pillRadius),
                         ),
                         child: Text(
-                          promoText!,
-                          style: const TextStyle(
-                            color: AppTheme.primaryColor,
-                            fontSize: 11,
+                          context.l10n.raw(promoText!),
+                          style: TextStyle(
+                            color: AppTheme.white,
+                            fontSize: compact ? 10 : 11,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
@@ -395,14 +473,15 @@ class StoreCard extends StatelessWidget {
                 ],
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(14, 14, 14, 16),
+                padding: contentPadding,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       name,
-                      style: const TextStyle(
-                        fontSize: 16,
+                      style: TextStyle(
+                        fontSize: titleFontSize,
                         fontWeight: FontWeight.w700,
                       ),
                       maxLines: 1,
@@ -410,33 +489,21 @@ class StoreCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      cuisine,
+                      context.l10n.raw(cuisine),
                       style: TextStyle(
                         fontSize: 13,
                         color: AppTheme.textSecondary,
+                        height: 1.25,
                       ),
+                      maxLines: cuisineMaxLines,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        InfoPill(
-                          icon: Icons.star_rounded,
-                          label: rating.toStringAsFixed(1),
-                          highlight: true,
-                        ),
-                        InfoPill(
-                          icon: Icons.schedule_rounded,
-                          label: deliveryTime,
-                        ),
-                        InfoPill(
-                          icon: Icons.delivery_dining_rounded,
-                          label: deliveryFee == 0
-                              ? 'Free delivery'
-                              : '\$${(deliveryFee / 100).toStringAsFixed(2)}',
-                        ),
-                      ],
+                    SizedBox(height: detailGap),
+                    DeliveryMetaRow(
+                      rating: rating,
+                      deliveryTime: deliveryTime,
+                      deliveryFee: deliveryFee,
+                      compact: compact,
                     ),
                   ],
                 ),
@@ -472,9 +539,9 @@ class CompactStoreCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 160,
+      width: 178,
       child: Material(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(14),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -482,8 +549,7 @@ class CompactStoreCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           child: Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppTheme.borderColor),
+              borderRadius: BorderRadius.circular(16),
             ),
             clipBehavior: Clip.antiAlias,
             child: Column(
@@ -493,16 +559,14 @@ class CompactStoreCard extends StatelessWidget {
                   height: 90,
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        imageColor.withValues(alpha: 0.2),
-                        imageColor.withValues(alpha: 0.5),
-                      ],
+                    color: imageColor.withValues(alpha: 0.12),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(16),
                     ),
                   ),
                   child: Center(
-                    child: Icon(Icons.storefront_rounded,
-                        size: 32, color: imageColor.withValues(alpha: 0.7)),
+                    child: Icon(Icons.restaurant_rounded,
+                        size: 32, color: imageColor),
                   ),
                 ),
                 Padding(
@@ -518,26 +582,11 @@ class CompactStoreCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 3),
-                      Row(
-                        children: [
-                          const Icon(Icons.star_rounded,
-                              size: 13, color: AppTheme.secondaryColor),
-                          const SizedBox(width: 2),
-                          Text(
-                            rating.toStringAsFixed(1),
-                            style: const TextStyle(
-                                fontSize: 11, fontWeight: FontWeight.w600),
-                          ),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: Text(
-                              deliveryTime,
-                              style: TextStyle(
-                                  fontSize: 11, color: AppTheme.textSecondary),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
+                      DeliveryMetaRow(
+                        rating: rating,
+                        deliveryTime: deliveryTime,
+                        deliveryFee: 0,
+                        compact: true,
                       ),
                     ],
                   ),
@@ -575,15 +624,16 @@ class MenuItemCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppTheme.cardRadius),
         border: Border.all(color: AppTheme.borderColor),
+        boxShadow: [AppTheme.softShadow(alpha: 0.035)],
       ),
       child: Row(
         children: [
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -595,10 +645,11 @@ class MenuItemCard extends StatelessWidget {
                             horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
                           color: Theme.of(context).colorScheme.primaryContainer,
-                          borderRadius: BorderRadius.circular(6),
+                          borderRadius:
+                              BorderRadius.circular(AppTheme.pillRadius),
                         ),
                         child: Text(
-                          'Popular',
+                          context.l10n.raw('Popular'),
                           style:
                               Theme.of(context).textTheme.labelSmall!.copyWith(
                                     fontWeight: FontWeight.w700,
@@ -610,7 +661,9 @@ class MenuItemCard extends StatelessWidget {
                   Text(
                     name,
                     style: const TextStyle(
-                        fontSize: 15, fontWeight: FontWeight.w700),
+                        fontSize: 16, fontWeight: FontWeight.w800),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -622,9 +675,9 @@ class MenuItemCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    '\$${(price / 100).toStringAsFixed(2)}',
+                    formatCustomerMoney(price),
                     style: const TextStyle(
-                      fontSize: 15,
+                      fontSize: 16,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
@@ -638,19 +691,14 @@ class MenuItemCard extends StatelessWidget {
               alignment: Alignment.bottomCenter,
               children: [
                 Container(
-                  width: 90,
-                  height: 90,
+                  width: 96,
+                  height: 96,
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        imageColor.withValues(alpha: 0.2),
-                        imageColor.withValues(alpha: 0.5),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(12),
+                    color: imageColor.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(14),
                   ),
                   child: Icon(Icons.restaurant_rounded,
-                      size: 32, color: imageColor.withValues(alpha: 0.7)),
+                      size: 32, color: imageColor),
                 ),
                 Transform.translate(
                   offset: const Offset(0, 10),
@@ -670,7 +718,7 @@ class MenuItemCard extends StatelessWidget {
                             height: 32,
                             decoration: BoxDecoration(
                               color: AppTheme.primaryColor,
-                              shape: BoxShape.circle,
+                              borderRadius: BorderRadius.circular(11),
                               boxShadow: [
                                 BoxShadow(
                                   color: AppTheme.primaryColor
@@ -681,7 +729,7 @@ class MenuItemCard extends StatelessWidget {
                               ],
                             ),
                             child: const Icon(Icons.add_rounded,
-                                color: Colors.white, size: 20),
+                                color: AppTheme.white, size: 20),
                           ),
                         ),
                       ),
@@ -715,9 +763,8 @@ class QuantityControl extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppTheme.backgroundGrey,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppTheme.borderColor),
+        color: AppTheme.surfaceMuted,
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -813,7 +860,7 @@ class CategoryChipRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 40,
+      height: 46,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: categories.length,
@@ -821,17 +868,19 @@ class CategoryChipRow extends StatelessWidget {
         itemBuilder: (context, index) {
           final isSelected = index == selectedIndex;
           return Material(
-            color: isSelected ? AppTheme.primaryColor : Colors.white,
-            borderRadius: BorderRadius.circular(24),
+            color: isSelected
+                ? AppTheme.primaryColor
+                : Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(AppTheme.pillRadius),
             clipBehavior: Clip.antiAlias,
             child: InkWell(
               onTap: () => onSelected?.call(index),
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(AppTheme.pillRadius),
               child: Container(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                    const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(AppTheme.pillRadius),
                   border: Border.all(
                     color: isSelected
                         ? AppTheme.primaryColor
@@ -842,8 +891,8 @@ class CategoryChipRow extends StatelessWidget {
                   categories[index],
                   style: TextStyle(
                     fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: isSelected ? Colors.white : AppTheme.textSecondary,
+                    fontWeight: FontWeight.w800,
+                    color: isSelected ? AppTheme.white : AppTheme.textSecondary,
                   ),
                 ),
               ),
@@ -976,50 +1025,75 @@ class PromoBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: Colors.transparent,
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(AppTheme.cardRadius),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(AppTheme.cardRadius),
         child: Container(
-          width: 280,
-          padding: const EdgeInsets.all(20),
+          width: 302,
+          padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: gradientColors,
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
+              colors: gradientColors,
             ),
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+            boxShadow: [AppTheme.softShadow(alpha: 0.075)],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              Text(
-                discount,
-                style: const TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.white,
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: AppTheme.white.withValues(alpha: 0.16),
+                  borderRadius: BorderRadius.circular(AppTheme.pillRadius),
+                  border: Border.all(
+                    color: AppTheme.white.withValues(alpha: 0.16),
+                  ),
+                ),
+                child: Text(
+                  context.l10n.raw('Limited'),
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.white,
+                  ),
                 ),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 10),
+              Text(
+                context.l10n.raw(discount),
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w900,
+                  color: AppTheme.white,
+                ),
+              ),
+              const SizedBox(height: 4),
               Text(
                 title,
                 style: const TextStyle(
-                  fontSize: 16,
+                  fontSize: 15,
                   fontWeight: FontWeight.w700,
-                  color: Colors.white,
+                  color: AppTheme.white,
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 2),
               Text(
                 subtitle,
                 style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.white.withValues(alpha: 0.85),
+                  fontSize: 12,
+                  color: AppTheme.white.withValues(alpha: 0.86),
                 ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
@@ -1046,8 +1120,8 @@ class StatusBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(8),
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(9),
       ),
       child: Text(
         label,
@@ -1090,25 +1164,25 @@ class EmptyState extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: AppTheme.backgroundGrey,
-                shape: BoxShape.circle,
+                color: AppTheme.surfaceMuted,
+                borderRadius: BorderRadius.circular(18),
               ),
               child: Icon(icon, size: 48, color: AppTheme.textSecondary),
             ),
             const SizedBox(height: 20),
             Text(
-              title,
+              context.l10n.raw(title),
               style: const TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.w800,
-                letterSpacing: -0.3,
+                letterSpacing: 0,
               ),
               textAlign: TextAlign.center,
             ),
             if (subtitle != null) ...[
               const SizedBox(height: 8),
               Text(
-                subtitle!,
+                context.l10n.raw(subtitle!),
                 style: TextStyle(
                   fontSize: 14,
                   color: AppTheme.textSecondary,
@@ -1123,11 +1197,34 @@ class EmptyState extends StatelessWidget {
                 style: FilledButton.styleFrom(
                   minimumSize: const Size(200, 48),
                 ),
-                child: Text(actionLabel!),
+                child: Text(context.l10n.raw(actionLabel!)),
               ),
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+class LoadingSkeleton extends StatelessWidget {
+  const LoadingSkeleton({
+    this.height = 96,
+    this.radius = AppTheme.cardRadius,
+    super.key,
+  });
+
+  final double height;
+  final double radius;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: height,
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceMuted,
+        borderRadius: BorderRadius.circular(radius),
+        border: Border.all(color: AppTheme.borderColor),
       ),
     );
   }
@@ -1159,12 +1256,14 @@ class BottomCTABar extends StatelessWidget {
         bottom: MediaQuery.of(context).padding.bottom + 14,
       ),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: AppTheme.borderColor)),
+        color: Theme.of(context).colorScheme.surface,
+        border: Border(
+            top:
+                BorderSide(color: AppTheme.borderColor.withValues(alpha: 0.7))),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 20,
+            color: AppTheme.inkColor.withValues(alpha: 0.10),
+            blurRadius: 18,
             offset: const Offset(0, -6),
           ),
         ],
@@ -1174,7 +1273,7 @@ class BottomCTABar extends StatelessWidget {
         style: FilledButton.styleFrom(
           minimumSize: const Size(double.infinity, 60),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(12),
           ),
         ),
         child: Row(
@@ -1193,7 +1292,7 @@ class BottomCTABar extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
-                          color: Colors.white.withValues(alpha: 0.82),
+                          color: AppTheme.white.withValues(alpha: 0.82),
                         ),
                       ),
                     ),
@@ -1204,8 +1303,8 @@ class BottomCTABar extends StatelessWidget {
               Text(
                 trailingText!,
                 style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
                 ),
               ),
           ],
@@ -1238,17 +1337,14 @@ class AppSearchBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final inner = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      constraints: const BoxConstraints(minHeight: 56),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        color: AppTheme.surfaceMuted,
+        borderRadius: BorderRadius.circular(AppTheme.pillRadius),
         border: Border.all(color: AppTheme.borderColor),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 14,
-            offset: const Offset(0, 6),
-          ),
+          AppTheme.softShadow(alpha: 0.025),
         ],
       ),
       child: Row(
@@ -1258,9 +1354,10 @@ class AppSearchBar extends StatelessWidget {
           Expanded(
             child: readOnly
                 ? Text(
-                    hint,
+                    context.l10n.raw(hint),
                     style: TextStyle(
                       fontSize: 15,
+                      fontWeight: FontWeight.w600,
                       color: AppTheme.textSecondary,
                     ),
                   )
@@ -1269,7 +1366,7 @@ class AppSearchBar extends StatelessWidget {
                     onChanged: onChanged,
                     autofocus: autofocus,
                     decoration: InputDecoration(
-                      hintText: hint,
+                      hintText: context.l10n.raw(hint),
                       border: InputBorder.none,
                       enabledBorder: InputBorder.none,
                       focusedBorder: InputBorder.none,
@@ -1277,7 +1374,10 @@ class AppSearchBar extends StatelessWidget {
                       isDense: true,
                       filled: false,
                     ),
-                    style: const TextStyle(fontSize: 15),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
           ),
         ],
@@ -1288,11 +1388,11 @@ class AppSearchBar extends StatelessWidget {
 
     return Material(
       color: Colors.transparent,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(AppTheme.pillRadius),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppTheme.pillRadius),
         child: inner,
       ),
     );
@@ -1317,12 +1417,23 @@ class AddressPill extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(14),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.location_on_rounded,
-              size: 20, color: AppTheme.primaryColor),
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(AppTheme.pillRadius),
+            ),
+            child: Icon(
+              Icons.location_on_rounded,
+              size: 18,
+              color: AppTheme.primaryColor,
+            ),
+          ),
           const SizedBox(width: 6),
           Flexible(
             child: Column(
@@ -1423,6 +1534,8 @@ class OrderCard extends StatelessWidget {
     required this.itemCount,
     required this.createdAt,
     required this.statusColor,
+    this.paymentContextLabel,
+    this.paymentContextColor,
     this.onTap,
     super.key,
   });
@@ -1434,12 +1547,14 @@ class OrderCard extends StatelessWidget {
   final int itemCount;
   final String createdAt;
   final Color statusColor;
+  final String? paymentContextLabel;
+  final Color? paymentContextColor;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white,
+      color: AppTheme.white,
       borderRadius: BorderRadius.circular(18),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -1452,7 +1567,7 @@ class OrderCard extends StatelessWidget {
             border: Border.all(color: AppTheme.borderColor),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
+                color: AppTheme.inkColor.withValues(alpha: 0.04),
                 blurRadius: 16,
                 offset: const Offset(0, 8),
               ),
@@ -1475,7 +1590,11 @@ class OrderCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 12),
                   StatusBadge(
-                      label: formatOrderStatus(status), color: statusColor),
+                      label: formatOrderStatus(
+                        status,
+                        languageCode: context.l10n.locale.languageCode,
+                      ),
+                      color: statusColor),
                 ],
               ),
               const SizedBox(height: 12),
@@ -1489,20 +1608,37 @@ class OrderCard extends StatelessWidget {
                   ),
                   InfoPill(
                     icon: Icons.shopping_bag_outlined,
-                    label: '$itemCount item${itemCount == 1 ? '' : 's'}',
+                    label: formatItemCount(
+                      itemCount,
+                      languageCode: context.l10n.locale.languageCode,
+                    ),
                   ),
                   InfoPill(
                     icon: Icons.payments_outlined,
-                    label: '\$${formatCentavos(total)}',
+                    label: formatCustomerMoney(total),
                     highlight: true,
                   ),
                 ],
               ),
               const SizedBox(height: 10),
               Text(
-                formatOrderDate(createdAt),
+                formatOrderDate(
+                  createdAt,
+                  languageCode: context.l10n.locale.languageCode,
+                ),
                 style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
               ),
+              if (paymentContextLabel != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  paymentContextLabel!,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: paymentContextColor ?? AppTheme.warningColor,
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -1524,7 +1660,7 @@ class AccountSectionLabel extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 10),
       child: Text(
-        label.toUpperCase(),
+        context.l10n.raw(label).toUpperCase(),
         style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w800,
@@ -1551,12 +1687,12 @@ class AccountActionGroup extends StatelessWidget {
     return Container(
       margin: margin,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppTheme.borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
+            color: AppTheme.inkColor.withValues(alpha: 0.03),
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
@@ -1624,7 +1760,7 @@ class AccountActionTile extends StatelessWidget {
             const SizedBox(width: 14),
             Expanded(
               child: Text(
-                label,
+                context.l10n.raw(label),
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
@@ -1681,7 +1817,7 @@ class AccountToggleTile extends StatelessWidget {
           const SizedBox(width: 14),
           Expanded(
             child: Text(
-              label,
+              context.l10n.raw(label),
               style: const TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w500,

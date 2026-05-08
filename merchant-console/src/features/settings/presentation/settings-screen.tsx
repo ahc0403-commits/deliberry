@@ -8,6 +8,7 @@ import {
   updateMerchantSettingsAction,
   type MerchantSettingsActionState,
 } from "../server/settings-actions";
+import { useMerchantI18n } from "../../../shared/i18n/client";
 
 type MerchantSettingsScreenProps = {
   storeId: string;
@@ -30,6 +31,7 @@ export function MerchantSettingsScreen({
   storeId,
   initialData,
 }: MerchantSettingsScreenProps) {
+  const { raw } = useMerchantI18n();
   const [data, setData] = useState(initialData);
   const [draftToggles, setDraftToggles] = useState(initialData.toggles);
   const [actionState, formAction, isPending] = useActionState(
@@ -56,16 +58,16 @@ export function MerchantSettingsScreen({
     "settlementNotifications",
     "lowStockAlerts",
   ]);
+  const replaceCount = (value: string, count: number) => raw(value).replace("{count}", String(count));
 
   return (
     <div className="merchant-surface">
       <section className="merchant-hero merchant-hero-insights">
         <div className="merchant-hero-copy">
-          <span className="merchant-eyebrow">Store configuration</span>
-          <h1 className="merchant-hero-title">Settings</h1>
+          <span className="merchant-eyebrow">{raw("Store configuration")}</span>
+          <h1 className="merchant-hero-title">{raw("Settings")}</h1>
           <p className="merchant-hero-subtitle">
-            Update persisted operating preferences and notification defaults for the
-            active store.
+            {raw("Update persisted operating preferences and notification defaults for the active store.")}
           </p>
           <div className="merchant-context-row">
             <span className="merchant-context-pill">
@@ -74,42 +76,41 @@ export function MerchantSettingsScreen({
             </span>
             <span className="merchant-context-pill merchant-context-pill-muted">
               <Settings2 size={14} />
-              Persisted store-scoped settings
+              {raw("Persisted store-scoped settings")}
             </span>
           </div>
         </div>
         <div className="merchant-hero-panel">
-          <div className="merchant-hero-panel-label">Current route truth</div>
-          <div className="merchant-hero-panel-value">Persisted</div>
+          <div className="merchant-hero-panel-label">{raw("Current route truth")}</div>
+          <div className="merchant-hero-panel-value">{raw("Persisted")}</div>
           <div className="merchant-hero-panel-text">
-            Changes on this route write back to the store settings record and are
-            reloaded after save.
+            {raw("Changes on this route write back to the store settings record and are reloaded after save.")}
           </div>
         </div>
       </section>
 
       <div className="merchant-summary-band">
         <div className="merchant-summary-card">
-          <div className="merchant-summary-label">Operations controls</div>
-          <div className="merchant-summary-value">{operationsEnabled} enabled</div>
+          <div className="merchant-summary-label">{raw("Operations controls")}</div>
+          <div className="merchant-summary-value">{replaceCount("{count} enabled", operationsEnabled)}</div>
           <div className="merchant-summary-meta">
-            Auto-accept, alerts, rush mode, and special instructions
+            {raw("Auto-accept, alerts, rush mode, and special instructions")}
           </div>
         </div>
         <div className="merchant-summary-card">
-          <div className="merchant-summary-label">Notification defaults</div>
-          <div className="merchant-summary-value">{notificationsEnabled} enabled</div>
+          <div className="merchant-summary-label">{raw("Notification defaults")}</div>
+          <div className="merchant-summary-value">{replaceCount("{count} enabled", notificationsEnabled)}</div>
           <div className="merchant-summary-meta">
-            Email, reviews, settlements, and stock alerts
+            {raw("Email, reviews, settlements, and stock alerts")}
           </div>
         </div>
         <div className="merchant-summary-card">
-          <div className="merchant-summary-label">Save status</div>
+          <div className="merchant-summary-label">{raw("Save status")}</div>
           <div className="merchant-summary-value">
-            {actionState.status === "success" ? "Saved" : "Ready"}
+            {actionState.status === "success" ? raw("Saved") : raw("Ready")}
           </div>
           <div className="merchant-summary-meta">
-            {actionState.message ?? "No unsignaled fallback writes are allowed on this route."}
+            {actionState.message ?? raw("No unsignaled fallback writes are allowed on this route.")}
           </div>
         </div>
       </div>
@@ -117,23 +118,23 @@ export function MerchantSettingsScreen({
       <form action={formAction} className="merchant-cluster-card">
         <div className="merchant-cluster-card-header">
           <div>
-            <div className="card-title">Store settings</div>
+            <div className="card-title">{raw("Store settings")}</div>
             <div className="card-subtitle">
-              Persisted operational controls for the active store
+              {raw("Persisted operational controls for the active store")}
             </div>
           </div>
           <div className="page-actions merchant-page-actions">
             <button className="btn btn-primary" type="submit" disabled={isPending}>
               <Save size={14} />
-              {isPending ? "Saving..." : "Save settings"}
+              {isPending ? raw("Saving...") : raw("Save settings")}
             </button>
           </div>
         </div>
 
         {actionState.message ? (
           <div className="merchant-settings-intro">
-            <strong>{actionState.status === "success" ? "Settings updated" : "Save failed"}</strong>
-            <p>{actionState.message}</p>
+            <strong>{actionState.status === "success" ? raw("Settings updated") : raw("Save failed")}</strong>
+            <p>{raw(actionState.message)}</p>
           </div>
         ) : null}
 
@@ -141,8 +142,8 @@ export function MerchantSettingsScreen({
           <div className="card merchant-card">
             <div className="card-header">
               <div>
-                <div className="card-title">Operations</div>
-                <div className="card-subtitle">Order-handling defaults for this store</div>
+                <div className="card-title">{raw("Operations")}</div>
+                <div className="card-subtitle">{raw("Order-handling defaults for this store")}</div>
               </div>
             </div>
             <div className="card-body">
@@ -200,8 +201,8 @@ export function MerchantSettingsScreen({
           <div className="card merchant-card">
             <div className="card-header">
               <div>
-                <div className="card-title">Notifications</div>
-                <div className="card-subtitle">Merchant-facing alerts and summary delivery</div>
+                <div className="card-title">{raw("Notifications")}</div>
+                <div className="card-subtitle">{raw("Merchant-facing alerts and summary delivery")}</div>
               </div>
             </div>
             <div className="card-body">
@@ -261,22 +262,22 @@ export function MerchantSettingsScreen({
       <div className="card merchant-card">
         <div className="card-header">
           <div>
-            <div className="card-title">Related routes</div>
+            <div className="card-title">{raw("Related routes")}</div>
             <div className="card-subtitle">
-              Continue into other store-scoped operational screens
+              {raw("Continue into other store-scoped operational screens")}
             </div>
           </div>
         </div>
         <div className="card-body">
           <div className="merchant-link-grid">
             <Link href={`/${storeId}/store`} className="btn btn-secondary" style={{ justifyContent: "center" }}>
-              Edit Store Profile
+              {raw("Edit Store Profile")}
             </Link>
             <Link href={`/${storeId}/orders`} className="btn btn-secondary" style={{ justifyContent: "center" }}>
-              View Orders
+              {raw("View Orders")}
             </Link>
             <Link href={`/${storeId}/reviews`} className="btn btn-secondary" style={{ justifyContent: "center" }}>
-              Review Feedback
+              {raw("Review Feedback")}
             </Link>
           </div>
         </div>
@@ -298,11 +299,12 @@ function SettingsToggle({
   checked: boolean;
   onChange: (checked: boolean) => void;
 }) {
+  const { raw } = useMerchantI18n();
   return (
     <div className="form-toggle-row">
       <div>
-        <div className="form-toggle-label">{label}</div>
-        <div className="form-toggle-desc">{description}</div>
+        <div className="form-toggle-label">{raw(label)}</div>
+        <div className="form-toggle-desc">{raw(description)}</div>
       </div>
       <label className="toggle">
         <input

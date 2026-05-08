@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Dispute Contract",
+  "type": "object",
+  "properties": {
+    "dispute_id": { "type": "string", "minLength": 1 },
+    "case_number": { "type": "string", "minLength": 1 },
+    "status": { "type": "string", "enum": ["open", "investigating", "escalated", "resolved"] },
+    "next_status": { "type": "string", "enum": ["investigating", "escalated", "resolved"] }
+  },
+  "required": ["dispute_id", "status"],
+  "additionalProperties": false
+}

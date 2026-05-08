@@ -1,9 +1,9 @@
 # Merchant Console — Go-Live Operational Verification Checklist
 
-**Date:** 2026-03-21
-**Commit:** ed6bf22
+**Date:** 2026-05-06
+**Commit:** working tree
 **Surface:** merchant-console
-**Status:** Operational verification — not a release signoff
+**Status:** Operational verification — Tranche 1 runtime truth checkpoint, not a release signoff
 
 ---
 
@@ -93,6 +93,20 @@
 
 ---
 
+## Menu Runtime
+
+| Item | Status | Evidence |
+|---|---|---|
+| Menu read: `getMenuData` via supabase-aware repository | PROVEN | `supabase-merchant-runtime-repository.ts` resolves store-scoped menu/runtime content |
+| Menu mutation: `saveMenuItem` via server action | PROVEN | `menu-actions.ts` persists through the merchant runtime repository |
+| Menu server action calls `ensureMerchantStoreScope` | PROVEN | `menu-actions.ts` gates access before any read or write |
+| Save feedback uses localized action-state messages | PROVEN | `menu-screen.tsx` routes `actionState.message` through `raw(...)`; `messages.ts` contains `Menu item saved.` and error translations |
+| Build output: route compiles | PROVEN | `[storeId]/menu` compiles in local type/build verification and is included in live merchant QA sweep |
+
+**Current limitation:** Menu content is runtime-backed and store-scoped, but copy inside persisted demo content can still be authored in one language at a time. Locale switching localizes the console shell and operational labels, not merchant-authored menu prose.
+
+---
+
 ## Secret Hygiene
 
 | Item | Status | Evidence |
@@ -159,7 +173,10 @@ The following are explicitly **not claimed** as production-ready:
 - Multi-tenant RLS policies — not verified against cross-tenant access
 - Rate limiting — not implemented at application layer
 - Session refresh/rotation — server component cookie writes are caught-and-ignored (`client.ts:45-48`)
-- Analytics, promotions, settlement, menu routes — not verified in this checklist (build compiles but runtime not DB-backed for all)
+- Real payment processing — placeholder only
+- Cross-store RLS hardening beyond current store-scope checks — not verified here
+- Analytics trend provenance as a fully governed BI surface — not claimed
+- Promotions and settlement as mutation-complete financial workflows — not claimed
 
 ---
 
@@ -173,3 +190,11 @@ The following are explicitly **not claimed** as production-ready:
 | 4 | Session cookie refresh silently swallowed | **LOW** | `client.ts:45-48` catches `setAll` errors. If Supabase rotates the session token during a server component render, the new token is lost. User must re-authenticate. |
 | 5 | `SUPABASE_SERVICE_ROLE_KEY` optional in config | **LOW** | `assertMerchantSupabaseConfig()` only requires URL + anon key. If service role key is missing, service client calls will throw at runtime, not at startup. |
 | 6 | No health check endpoint | **LOW** | No `/api/health` or equivalent to verify DB connectivity post-deploy. |
+
+---
+
+## Tranche 1 Notes (2026-05-06)
+
+- Orders, reviews, settings, store management, and menu now have verified store-scoped mutation paths with localized success/error feedback in the merchant surface.
+- Live merchant QA has covered `/login`, `/onboarding`, `/select-store`, `/{storeId}/dashboard`, `/{storeId}/orders`, `/{storeId}/menu`, `/{storeId}/reviews`, `/{storeId}/store`, and `/{storeId}/settings` against the current local runtime baseline.
+- Analytics, promotions, and settlement remain honest partial-runtime surfaces. They are visible and localized, but this checklist does not claim full financial workflow completeness for those routes.

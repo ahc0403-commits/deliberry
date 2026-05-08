@@ -1,9 +1,21 @@
 {
   "domain": "review",
   "consumers": ["customer-app", "merchant-console", "admin-console"],
+  "production_scope": {
+    "status": "runtime_persisted_with_audited_merchant_response",
+    "notes": [
+      "Customer review writes use the governed customer review RPC path.",
+      "Merchant review response writes use a governed audited RPC path with store membership enforcement and duplicate-response replay behavior.",
+      "Review response does not expand payment, settlement, or other excluded feature scope."
+    ]
+  },
   "requests": [
     { "name": "list_reviews", "required": [] },
-    { "name": "respond_to_review", "required": ["review_id"] }
+    {
+      "name": "respond_to_review",
+      "required": ["review_id"],
+      "production_status": "governed_audited_rpc"
+    }
   ],
   "responses": ["review_summary", "merchant_response_summary"]
 }

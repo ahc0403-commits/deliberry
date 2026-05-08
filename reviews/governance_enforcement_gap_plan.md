@@ -19,12 +19,12 @@ Companion document: reviews/governance_surface_mapping_matrix.md
 
 ## CRITICAL -- Fix Before Any Live Integration
 
-### GAP-C01: Customer-app mock data uses float dollars instead of integer centavos
+### GAP-C01: Customer-app mock data uses float display amounts instead of integer money units
 
 - **Domain**: Payment / Money integrity
-- **Rules violated**: R-010 (integer centavos), R-011 (no floats for money)
-- **Current state**: All money values in `customer-app/lib/core/data/mock_data.dart` are float dollars: `price: 12.99`, `deliveryFee: 2.99`, `total: 33.47`, `cartDeliveryFee => 2.99`, `cartServiceFee => 1.49`
-- **Required state**: All money fields must be integer centavos. `price: 12.99` must become `price: 1299`. The `MockMenuItem.price` field type must change from `double` to `int`. The `MockCartItem.total` getter must compute integer centavos. `MockOrder.total` must be `int`.
+- **Rules violated**: R-010 (integer money units), R-011 (no floats for money)
+- **Current state**: All money values in `customer-app/lib/core/data/mock_data.dart` are float display amounts: `price: 12.99`, `deliveryFee: 2.99`, `total: 33.47`, `cartDeliveryFee => 2.99`, `cartServiceFee => 1.49`
+- **Required state**: All money fields must be integer money values. The `MockMenuItem.price` field type must change from `double` to `int`. The `MockCartItem.total` getter must compute integer money values. `MockOrder.total` must be `int`.
 - **Files to change**:
   - `customer-app/lib/core/data/mock_data.dart` (all money literals and types)
   - `customer-app/lib/features/cart/` (any cart total computation)
@@ -239,7 +239,7 @@ Companion document: reviews/governance_surface_mapping_matrix.md
 - **Domain**: Money / Display
 - **Rules violated**: R-013 (all money display must use formatMoney())
 - **Current state**: Merchant mock KPIs use `"$2,847"`, `"$8,456"`, `"$45.22"`. Admin mock finance summary uses `"$284,600"`, `"$42,690"`, etc. These are inline-formatted display strings, not the result of `formatMoney()`.
-- **Required state**: KPI `value` fields should store integer centavos and be formatted via `formatMoney()` at presentation time. If KPI values must be pre-formatted strings (display-only), this should be documented as a display-layer concern with a comment referencing R-013 compliance.
+- **Required state**: KPI `value` fields should store integer money values and be formatted via `formatMoney()` at presentation time. If KPI values must be pre-formatted strings (display-only), this should be documented as a display-layer concern with a comment referencing R-013 compliance.
 - **Files to change**:
   - `merchant-console/src/shared/data/merchant-mock-data.ts` (KPI and analytics values)
   - `admin-console/src/shared/data/admin-mock-data.ts` (finance summary and analytics values)
@@ -315,9 +315,9 @@ Companion document: reviews/governance_surface_mapping_matrix.md
 ### GAP-M08: Admin mock PlatformOrder total values are ambiguously sized
 
 - **Domain**: Money / Contracts
-- **Rules violated**: R-010 (integer centavos)
-- **Current state**: Admin mock `PlatformOrder` totals are: 5600, 3250, 7800, 4550, 2800, 4100, 6250. These could be centavos ($56.00, $32.50...) or they could be display-scale integers. There is no type annotation enforcing `MoneyAmount` branded type.
-- **Required state**: `PlatformOrder.total` type should be `MoneyAmount` (branded centavo integer). Values should be documented with comments confirming centavo interpretation. If these represent display-scale amounts, multiply by 100.
+- **Rules violated**: R-010 (integer money units)
+- **Current state**: Admin mock `PlatformOrder` totals are: 5600, 3250, 7800, 4550, 2800, 4100, 6250. There is no type annotation enforcing `MoneyAmount` branded type.
+- **Required state**: `PlatformOrder.total` type should be `MoneyAmount` (branded integer money value). Values should be documented with comments confirming the intended money-unit interpretation.
 - **Files to change**:
   - `admin-console/src/shared/data/admin-mock-data.ts` (type PlatformOrder.total as MoneyAmount, verify/adjust values)
   - `admin-console/src/shared/domain.ts` (ensure MoneyAmount is re-exported -- already is)
@@ -388,7 +388,7 @@ The recommended execution order accounts for dependencies between gaps:
 - Update AUTH_ACTOR_TYPES for merchant_staff
 
 ### Wave 2: Customer-App Data Model Compliance (GAP-C01, GAP-C02, GAP-C03)
-- Fix float money to integer centavos
+- Fix float money to integer money units
 - Fix status display strings to canonical enum values
 - Fix relative timestamps to UTC ISO 8601
 
@@ -397,7 +397,7 @@ The recommended execution order accounts for dependencies between gaps:
 - Remove excluded feature flag reference
 - Fix inline dollar formatting
 - Fix settlement period display formats
-- Clarify admin order total centavo values
+- Clarify admin order total money-unit values
 
 ### Wave 4: Identity and Session Type Hardening (GAP-H03, GAP-H04, GAP-M07)
 - Extend AdminSession and MerchantSession types with governance-required fields

@@ -22,7 +22,7 @@ Show the narrow file cluster for the live `/merchant` route, its screen owner, a
 
 - before changing `/merchant` copy, CTAs, or form wording
 - before editing shared marketing-shell links from the merchant-route context
-- when the content-service layer looks relevant but may not be wired in
+- when an old shared content seam looks relevant but no longer exists in the live route
 
 ## Entry Files
 
@@ -33,8 +33,6 @@ Show the narrow file cluster for the live `/merchant` route, its screen owner, a
 
 - `public-website/src/features/merchant-onboarding/presentation/merchant-onboarding-screen.tsx`
 - `public-website/src/app/(marketing)/service/page.tsx`
-- `public-website/src/shared/data/content-service.ts`
-- `public-website/src/shared/data/public-content-repository.ts`
 
 ## Source-of-Truth Files
 
@@ -45,8 +43,6 @@ The live truth is split: merchant-route content and form copy are hardcoded in `
 
 ## Files Often Mistaken as Source of Truth but Are Not
 
-- `public-website/src/shared/data/content-service.ts`
-- `public-website/src/shared/data/public-content-repository.ts`
 - `public-website/src/shared/domain.ts`
 
 These define a structural content boundary, but they do not currently drive the live `/merchant` route.

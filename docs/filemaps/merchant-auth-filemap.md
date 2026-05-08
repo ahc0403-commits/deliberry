@@ -4,7 +4,7 @@ Status: Active
 Authority: Operational
 Surface: merchant-console
 Domains: auth, session, onboarding, access-boundary
-Last updated: 2026-03-16
+Last updated: 2026-04-22
 Retrieve when:
 - changing merchant login, sign-out, or onboarding redirects
 - debugging why a merchant route redirects to login, onboarding, or store selection
@@ -43,8 +43,9 @@ Shows the smallest file cluster for merchant auth, cookie session state, and onb
 - `merchant-console/src/shared/auth/merchant-session.ts`
 - `merchant-console/src/features/auth/server/access.ts`
 - `merchant-console/src/features/auth/server/auth-actions.ts`
+- `merchant-console/src/shared/auth/supabase-merchant-auth-adapter.ts`
 
-The source of truth is split: cookie/session reads live in `merchant-session.ts`, while redirect policy and write paths live in `access.ts` and `auth-actions.ts`.
+The source of truth is split: access-state resolution lives in `merchant-session.ts`, redirect policy lives in `access.ts`, write paths live in `auth-actions.ts`, and Supabase-authority session/onboarding persistence lives in `supabase-merchant-auth-adapter.ts`.
 
 ## Files Often Mistaken as Source of Truth but Are Not
 
@@ -59,6 +60,8 @@ These files describe or render auth UI, but they do not own session truth.
 - Cookie names and parsing in `merchant-console/src/shared/auth/merchant-session.ts`
 - Redirect decisions in `merchant-console/src/features/auth/server/access.ts`
 - Cookie writes and redirect targets in `merchant-console/src/features/auth/server/auth-actions.ts`
+- Supabase session reads/writes in `merchant-console/src/shared/auth/supabase-merchant-auth-adapter.ts`
+- `merchant-console/middleware.ts` when auth authority branching changes
 - Layout-level guards in `merchant-console/src/app/(console)/layout.tsx`
 - Store-scope enforcement in `merchant-console/src/app/(console)/[storeId]/layout.tsx`
 
@@ -77,8 +80,9 @@ These files describe or render auth UI, but they do not own session truth.
 
 ## Safe Edit Sequence
 
-1. Read `merchant-session.ts` to confirm current cookie truth.
+1. Read `merchant-session.ts` to confirm current access-state truth.
 2. Read `access.ts` to confirm redirect expectations.
-3. Update `auth-actions.ts` if write behavior must change.
-4. Verify affected route pages and layouts still use the same guard path.
-5. Only then adjust presentation files if the UI needs to match new behavior.
+3. Read `supabase-merchant-auth-adapter.ts` if the current authority is `supabase`.
+4. Update `auth-actions.ts` if write behavior must change.
+5. Verify affected route pages, layouts, and middleware still use the same guard path.
+6. Only then adjust presentation files if the UI needs to match new behavior.

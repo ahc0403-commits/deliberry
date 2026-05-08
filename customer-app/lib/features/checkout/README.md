@@ -4,8 +4,8 @@ Status: active
 Authority: operational
 Surface: customer-app
 Domains: checkout, order-submission, address-handoff
-Last updated: 2026-04-15
-Last verified: 2026-04-15
+Last updated: 2026-04-28
+Last verified: 2026-04-28
 Retrieve when:
 - editing checkout submission, payment selection, or address/order handoff
 - changing the transition from cart to order status
@@ -17,6 +17,15 @@ Related files:
 ## Purpose
 
 Own the final order-confirmation step from cart snapshot to authenticated persisted order creation.
+
+## Payment strategy boundary
+
+- `Cash` remains the non-PG checkout path.
+- `VNPAY Card Test` creates a sandbox payment URL after order creation and sends the customer to the VNPAY hosted flow.
+- Card checkout may omit `bank_code` so VNPAY owns the issuing-bank selection step instead of Deliberry hardcoding one bank UX.
+- `VNPAY Pay Test` remains a sandbox-only QR/mobile-banking path using `VNPAYQR`.
+- All VNPAY paths are pre-contract readiness only. They must not mark payment complete or mutate order payment state.
+- Sandbox payment attempts are now recorded server-side so Return/IPN callbacks can be checked against the expected reference, amount, currency, and pending-order boundary without enabling live payment completion.
 
 ## Primary routes/screens
 
@@ -53,11 +62,14 @@ Own the final order-confirmation step from cart snapshot to authenticated persis
 
 ## Known limitations / partial-support truth
 
-- Payment is intentionally placeholder-only by product rule.
+- Payment is intentionally non-live by product rule. VNPAY options may open
+  sandbox payment pages for contract readiness, but they must not complete live
+  payment or update order payment state.
+- Bank-specific card authentication is intentionally delegated to the VNPAY hosted flow. Deliberry does not implement separate issuer-bank screens for cards such as Shinhan Vietnam or Woori Vietnam.
 - Guest users are redirected to [auth_screen.dart](/Users/andremacmini/Deliberry/customer-app/lib/features/auth/presentation/auth_screen.dart) before order submission can proceed; carts stay intact across that handoff.
 - `_placeOrder()` still uses a short artificial submit delay for local feedback before calling `submitOrder`.
 - Order creation is persisted for authenticated customers.
-- Payment verification remains intentionally unimplemented.
+- Payment verification remains intentionally unimplemented for live orders.
 
 ## Safe modification guidance
 
@@ -68,5 +80,6 @@ Own the final order-confirmation step from cart snapshot to authenticated persis
 ## What not to change casually
 
 - Do not bypass cart emptiness guards.
-- Do not present card/payment options as live payment processing.
+- Do not present card/payment options as live payment processing. VNPAY copy
+  must say sandbox/test until the contract go-live guardrails are revised.
 - Do not send checkout straight into `/orders` if the current flow contract is `/checkout` -> `/orders/status`.

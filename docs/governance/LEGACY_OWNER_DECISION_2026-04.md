@@ -6,7 +6,7 @@ Last updated: 2026-04-15
 
 ## Decision
 
-`adminQueryServices` and `merchantQueryServices` remain in the repo, but they are no longer treated as authoritative owners for routes already migrated to runtime-backed reads.
+The legacy fixture facades (`adminFixtureFacade` / deprecated `adminQueryServices`, `merchantFixtureFacade` / deprecated `merchantQueryServices`) remain in the repo, but they are no longer treated as authoritative owners for routes already migrated to runtime-backed reads.
 
 The canonical rule is:
 
@@ -15,7 +15,7 @@ The canonical rule is:
 
 ## Admin Decision
 
-`adminQueryServices` is retained as a legacy fixture abstraction for dashboard-style and placeholder domains that still read from `admin-repository.ts`.
+`adminFixtureFacade` is retained as a legacy fixture abstraction for dashboard-style and placeholder domains that still read from `admin-repository.ts`.
 
 It is not authoritative for:
 
@@ -28,7 +28,7 @@ Those paths now read from `supabase-admin-runtime-repository.ts` directly.
 
 ## Merchant Decision
 
-`merchantQueryServices` is retained as a legacy fixture abstraction for routes that are still intentionally fixture-backed, such as menu, promotions, settlement, analytics, and any remaining placeholder screens that have not yet migrated.
+`merchantFixtureFacade` is retained as a legacy fixture abstraction for routes that are still intentionally fixture-backed, such as menu, promotions, settlement, analytics, and any remaining placeholder screens that have not yet migrated.
 
 It is not authoritative for:
 
@@ -45,6 +45,7 @@ Those paths now read from dedicated runtime services or runtime repositories.
 - New docs must not describe query-service layers as live owners for migrated routes.
 - New runtime-backed routes should not be wired through these query-service classes unless the class itself is deliberately migrated to a real runtime abstraction.
 - Fixture-backed routes may continue to use query-service layers, but that status must be documented honestly.
+- Deprecated aliases (`adminQueryServices`, `merchantQueryServices`) remain compatibility shims only and should not appear as canonical names in new docs.
 
 ## Follow-up
 

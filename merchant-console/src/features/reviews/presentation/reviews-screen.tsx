@@ -9,6 +9,8 @@ import {
   type MerchantReviewReplyActionState,
 } from "../server/review-actions";
 import type { MerchantReview } from "../../../shared/data/merchant-mock-data";
+import { useMerchantI18n } from "../../../shared/i18n/client";
+import { toDisplayTime } from "../../../shared/domain";
 
 type MerchantReviewsScreenProps = {
   data: ReviewsData;
@@ -32,6 +34,7 @@ export function MerchantReviewsScreen({
   const [hasMore, setHasMore] = useState(initialHasMore);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
+  const { locale, raw } = useMerchantI18n();
 
   function handleReviewSaved(nextReview: MerchantReview) {
     setReviews((current) =>
@@ -77,11 +80,10 @@ export function MerchantReviewsScreen({
     <div className="merchant-surface">
       <section className="merchant-hero merchant-hero-insights">
         <div className="merchant-hero-copy">
-          <span className="merchant-eyebrow">Customer feedback</span>
-          <h1 className="merchant-hero-title">Reviews</h1>
+          <span className="merchant-eyebrow">{raw("Customer feedback")}</span>
+          <h1 className="merchant-hero-title">{raw("Reviews")}</h1>
           <p className="merchant-hero-subtitle">
-            Monitor store feedback and post persisted merchant replies without
-            leaving the store review queue.
+            {raw("Monitor store feedback and post persisted merchant replies without leaving the store review queue.")}
           </p>
           <div className="merchant-context-row">
             <span className="merchant-context-pill">
@@ -90,49 +92,53 @@ export function MerchantReviewsScreen({
             </span>
             <span className="merchant-context-pill merchant-context-pill-muted">
               <MessageSquareQuote size={14} />
-              Persisted review read and reply flow
+              {raw("Persisted review read and reply flow")}
             </span>
           </div>
         </div>
         <div className="merchant-hero-panel">
-          <div className="merchant-hero-panel-label">Feedback focus</div>
-          <div className="merchant-hero-panel-value">{pendingCount} awaiting reply</div>
+          <div className="merchant-hero-panel-label">{raw("Feedback focus")}</div>
+          <div className="merchant-hero-panel-value">
+            {pendingCount} · {raw("Awaiting reply")}
+          </div>
           <div className="merchant-hero-panel-text">
-            Review records and merchant replies both stay attached to the active
-            store scope.
+            {raw("Review records and merchant replies stay attached to the active store scope.")}
           </div>
         </div>
       </section>
 
       <div className="merchant-summary-band">
         <div className="merchant-summary-card">
-          <div className="merchant-summary-label">Average rating</div>
+          <div className="merchant-summary-label">{raw("Average rating")}</div>
           <div className="merchant-summary-value">{avgRating.toFixed(1)}</div>
           <div className="merchant-summary-meta">
-            {reviews.length} total review entr{reviews.length === 1 ? "y" : "ies"}
+            {raw(reviews.length === 1 ? "1 total review entry" : "{count} total review entries").replace(
+              "{count}",
+              String(reviews.length),
+            )}
           </div>
         </div>
         <div className="merchant-summary-card">
-          <div className="merchant-summary-label">Needs response</div>
+          <div className="merchant-summary-label">{raw("Needs response")}</div>
           <div className="merchant-summary-value">{pendingCount}</div>
-          <div className="merchant-summary-meta">Highest-priority queue for this store</div>
+          <div className="merchant-summary-meta">{raw("Highest-priority queue for this store")}</div>
         </div>
         <div className="merchant-summary-card">
-          <div className="merchant-summary-label">Already answered</div>
+          <div className="merchant-summary-label">{raw("Already answered")}</div>
           <div className="merchant-summary-value">{respondedCount}</div>
-          <div className="merchant-summary-meta">Persisted merchant responses</div>
+          <div className="merchant-summary-meta">{raw("Persisted merchant responses")}</div>
         </div>
       </div>
 
       <div className="merchant-cluster-card">
         <div className="merchant-cluster-card-header">
           <div>
-            <div className="card-title">Review queue</div>
-            <div className="card-subtitle">Filter customer feedback by response state</div>
+            <div className="card-title">{raw("Review queue")}</div>
+            <div className="card-subtitle">{raw("Filter customer feedback by response state")}</div>
           </div>
           <div className="merchant-inline-note">
             <MessageSquareQuote size={14} />
-            Replies save against persisted review records
+            {raw("Replies save against persisted review records")}
           </div>
         </div>
 
@@ -141,19 +147,19 @@ export function MerchantReviewsScreen({
             className={`tab ${filter === "all" ? "active" : ""}`}
             onClick={() => setFilter("all")}
           >
-            All<span className="tab-count">{reviews.length}</span>
+            {raw("All")}<span className="tab-count">{reviews.length}</span>
           </button>
           <button
             className={`tab ${filter === "pending" ? "active" : ""}`}
             onClick={() => setFilter("pending")}
           >
-            Needs Response<span className="tab-count">{pendingCount}</span>
+            {raw("Needs Response")}<span className="tab-count">{pendingCount}</span>
           </button>
           <button
             className={`tab ${filter === "responded" ? "active" : ""}`}
             onClick={() => setFilter("responded")}
           >
-            Responded<span className="tab-count">{respondedCount}</span>
+            {raw("Responded")}<span className="tab-count">{respondedCount}</span>
           </button>
         </div>
 
@@ -162,8 +168,8 @@ export function MerchantReviewsScreen({
             <div className="card merchant-card">
               <div className="empty-state">
                 <div className="empty-state-icon">{"\u2605"}</div>
-                <div className="empty-state-title">No reviews</div>
-                <div className="empty-state-desc">No reviews match this filter.</div>
+                <div className="empty-state-title">{raw("No reviews")}</div>
+                <div className="empty-state-desc">{raw("No reviews match this filter.")}</div>
               </div>
             </div>
           ) : (
@@ -178,7 +184,7 @@ export function MerchantReviewsScreen({
                     <div>
                       <div className="review-name">{review.customerName}</div>
                       <div className="review-meta">
-                        Order {review.orderId} &middot; {review.date}
+                        {raw("Order {number}").replace("{number}", review.orderId)} &middot; {toDisplayTime(review.date, locale)}
                       </div>
                     </div>
                   </div>
@@ -202,9 +208,11 @@ export function MerchantReviewsScreen({
 
                 {review.responded && review.response ? (
                   <div className="review-response">
-                    <div className="review-response-label">Your Response</div>
+                    <div className="review-response-label">{raw("Your Response")}</div>
                     <div className="review-response-text">{review.response}</div>
-                    <div className="review-response-date">{review.responseDate}</div>
+                    <div className="review-response-date">
+                      {review.responseDate ? toDisplayTime(review.responseDate, locale) : ""}
+                    </div>
                   </div>
                 ) : (
                   <ReviewReplyForm
@@ -220,8 +228,8 @@ export function MerchantReviewsScreen({
 
         {loadMoreError ? (
           <div className="merchant-settings-intro">
-            <strong>Unable to load more reviews</strong>
-            <p>{loadMoreError}</p>
+            <strong>{raw("Unable to load more reviews")}</strong>
+            <p>{raw(loadMoreError)}</p>
           </div>
         ) : null}
 
@@ -232,7 +240,7 @@ export function MerchantReviewsScreen({
               onClick={handleLoadMore}
               disabled={isLoadingMore}
             >
-              {isLoadingMore ? "Loading..." : "Load more reviews"}
+              {isLoadingMore ? raw("Loading...") : raw("Load more reviews")}
             </button>
           </div>
         )}
@@ -250,6 +258,7 @@ function ReviewReplyForm({
   storeId: string;
   onSaved: (review: MerchantReview) => void;
 }) {
+  const { raw } = useMerchantI18n();
   const [draft, setDraft] = useState("");
   const [actionState, formAction, isPending] = useActionState(
     replyToMerchantReviewAction.bind(null, storeId),
@@ -269,7 +278,7 @@ function ReviewReplyForm({
       <textarea
         className="form-input"
         name="responseText"
-        placeholder="Write a public response for this customer review"
+        placeholder={raw("Write a public response for this customer review")}
         value={draft}
         onChange={(event) => setDraft(event.target.value)}
         rows={3}
@@ -286,13 +295,13 @@ function ReviewReplyForm({
                   : "var(--color-success)",
             }}
           >
-            {actionState.message}
+            {raw(actionState.message)}
           </span>
         ) : (
-          <span className="merchant-inline-note">Replies are visible to customers once saved.</span>
+          <span className="merchant-inline-note">{raw("Replies are visible to customers once saved.")}</span>
         )}
         <button className="btn btn-primary btn-sm" type="submit" disabled={isPending || draft.trim().length === 0}>
-          {isPending ? "Saving..." : "Save Response"}
+          {isPending ? raw("Saving...") : raw("Save Response")}
         </button>
       </div>
     </form>

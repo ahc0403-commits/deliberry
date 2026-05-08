@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../../app/router/route_names.dart';
 import '../../../core/data/customer_runtime_controller.dart';
-import '../../../core/data/mock_data.dart' show MockData, formatCentavos;
+import '../../../core/data/mock_data.dart' show MockData, formatCustomerMoney;
+import '../../../core/i18n/app_localizations.dart';
+import '../../../core/session/customer_session_controller.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../common/presentation/widgets.dart';
 
@@ -11,6 +13,8 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
     return ListenableBuilder(
       listenable: CustomerRuntimeController.instance,
       builder: (context, _) {
@@ -19,35 +23,42 @@ class HomeScreen extends StatelessWidget {
         final nearbyStores = runtime.getDiscoveryResults();
         final address = runtime.deliveryAddress;
         final activeOrders = runtime.activeOrders.length;
+        final unreadNotifications = runtime.unreadNotificationCount;
+        final isGuest = CustomerSessionController.instance.isGuest;
 
         return Scaffold(
           backgroundColor: AppTheme.backgroundGrey,
           floatingActionButton: runtime.cartItemCount > 0
-              ? FloatingActionButton.extended(
-                  onPressed: () =>
-                      Navigator.of(context).pushNamed(RouteNames.cart),
-                  icon: const Icon(Icons.shopping_cart_rounded, size: 20),
-                  label: Text(
-                    '${runtime.cartItemCount} item${runtime.cartItemCount == 1 ? '' : 's'} · \$${formatCentavos(runtime.cartTotal)}',
-                    style: const TextStyle(fontWeight: FontWeight.w700),
+              ? Padding(
+                  padding: const EdgeInsets.only(bottom: 80),
+                  child: FloatingActionButton.extended(
+                    onPressed: () =>
+                        Navigator.of(context).pushNamed(RouteNames.cart),
+                    icon: const Icon(Icons.shopping_cart_rounded, size: 20),
+                    label: Text(
+                      '${l10n.cartItemCount(runtime.cartItemCount)} · ${formatCustomerMoney(runtime.cartTotal)}',
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    backgroundColor: AppTheme.primaryColor,
+                    foregroundColor: AppTheme.white,
                   ),
-                  backgroundColor: AppTheme.primaryColor,
-                  foregroundColor: Colors.white,
                 )
               : null,
           body: CustomScrollView(
             slivers: [
               SliverAppBar(
+                automaticallyImplyLeading: false,
                 pinned: true,
                 floating: false,
-                backgroundColor: Colors.white,
-                surfaceTintColor: Colors.white,
+                backgroundColor: AppTheme.backgroundGrey,
+                surfaceTintColor: AppTheme.backgroundGrey,
                 elevation: 0,
                 scrolledUnderElevation: 0.5,
                 toolbarHeight: 68,
                 title: AddressPill(
-                  label: address?.label ?? 'Add address',
-                  address: address?.street ?? 'Tap to add a delivery address',
+                  label: address?.label ?? l10n.raw('Add address'),
+                  address: address?.street ??
+                      l10n.raw('Tap to add a delivery address'),
                   onTap: () =>
                       Navigator.of(context).pushNamed(RouteNames.addresses),
                 ),
@@ -62,18 +73,19 @@ class HomeScreen extends StatelessWidget {
                             const Icon(Icons.notifications_outlined, size: 26),
                         color: Theme.of(context).colorScheme.onSurface,
                       ),
-                      Positioned(
-                        top: 8,
-                        right: 8,
-                        child: Container(
-                          width: 9,
-                          height: 9,
-                          decoration: const BoxDecoration(
-                            color: AppTheme.primaryColor,
-                            shape: BoxShape.circle,
+                      if (unreadNotifications > 0)
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: Container(
+                            width: 9,
+                            height: 9,
+                            decoration: const BoxDecoration(
+                              color: AppTheme.primaryColor,
+                              shape: BoxShape.circle,
+                            ),
                           ),
                         ),
-                      ),
                     ],
                   ),
                   const SizedBox(width: 4),
@@ -84,62 +96,32 @@ class HomeScreen extends StatelessWidget {
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                   child: Column(
                     children: [
+                      _DeliveryHeaderCard(
+                        addressLabel:
+                            address?.label ?? l10n.text('home.noAddressYet'),
+                        activeOrders: activeOrders,
+                        isGuest: isGuest,
+                        onTap: () => Navigator.of(context).pushNamed(
+                            address == null
+                                ? RouteNames.addresses
+                                : RouteNames.orders),
+                      ),
+                      const SizedBox(height: 14),
                       AppSearchBar(
                         readOnly: true,
-                        hint: 'Search stores or cuisines',
+                        hint: l10n.text('home.searchHint'),
                         onTap: () =>
                             Navigator.of(context).pushNamed(RouteNames.search),
-                      ),
-                      const SizedBox(height: 14),
-                      FeatureHeroCard(
-                        eyebrow: 'Customer journey',
-                        title: 'Find your next order fast',
-                        subtitle: activeOrders > 0
-                            ? 'You have $activeOrders active order${activeOrders == 1 ? '' : 's'} and can jump back into order status any time.'
-                            : 'Browse featured spots, jump into search, and move from discovery to cart without losing context.',
-                        icon: Icons.ramen_dining_rounded,
-                        badge: address == null
-                            ? 'Add an address for better discovery'
-                            : 'Delivering to ${address.label}',
-                        onTap: () => Navigator.of(context)
-                            .pushNamed(RouteNames.discovery),
-                      ),
-                      const SizedBox(height: 14),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _QuickActionCard(
-                              icon: Icons.travel_explore_rounded,
-                              title: 'Explore',
-                              subtitle: 'Browse every store',
-                              onTap: () => Navigator.of(context)
-                                  .pushNamed(RouteNames.discovery),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _QuickActionCard(
-                              icon: Icons.receipt_long_rounded,
-                              title: 'Orders',
-                              subtitle: activeOrders > 0
-                                  ? '$activeOrders active now'
-                                  : 'Track recent orders',
-                              onTap: () => Navigator.of(context)
-                                  .pushNamed(RouteNames.orders),
-                            ),
-                          ),
-                        ],
                       ),
                     ],
                   ),
                 ),
               ),
-              // Promo carousel
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.only(top: 28, bottom: 4),
+                  padding: const EdgeInsets.only(top: 20, bottom: 4),
                   child: SizedBox(
-                    height: 150,
+                    height: 154,
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -148,8 +130,8 @@ class HomeScreen extends StatelessWidget {
                       itemBuilder: (context, index) {
                         final promo = MockData.promotions[index];
                         return PromoBanner(
-                          title: promo.title,
-                          subtitle: promo.subtitle,
+                          title: context.l10n.raw(promo.title),
+                          subtitle: context.l10n.raw(promo.subtitle),
                           discount: promo.discount,
                           gradientColors: promo.gradientColors,
                         );
@@ -158,14 +140,13 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              // Categories
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 28, 16, 0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      SectionHeader(title: 'Start with a craving'),
+                      SectionHeader(title: l10n.raw('Browse by category')),
                       SizedBox(
                         height: 96,
                         child: ListView.separated(
@@ -193,12 +174,11 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              // Featured stores
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 28, 16, 0),
                   child: SectionHeader(
-                    title: 'Featured for tonight',
+                    title: l10n.raw('Popular near you'),
                     onSeeAll: () =>
                         Navigator.of(context).pushNamed(RouteNames.discovery),
                   ),
@@ -206,7 +186,7 @@ class HomeScreen extends StatelessWidget {
               ),
               SliverToBoxAdapter(
                 child: SizedBox(
-                  height: 258,
+                  height: 318,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -235,12 +215,11 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              // Nearby restaurants
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 28, 16, 12),
                   child: SectionHeader(
-                    title: 'Nearby and ready',
+                    title: l10n.text('home.fastDelivery'),
                     onSeeAll: () =>
                         Navigator.of(context).pushNamed(RouteNames.discovery),
                   ),
@@ -278,61 +257,97 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-class _QuickActionCard extends StatelessWidget {
-  const _QuickActionCard({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
+class _DeliveryHeaderCard extends StatelessWidget {
+  const _DeliveryHeaderCard({
+    required this.addressLabel,
+    required this.activeOrders,
+    required this.isGuest,
     required this.onTap,
   });
 
-  final IconData icon;
-  final String title;
-  final String subtitle;
+  final String addressLabel;
+  final int activeOrders;
+  final bool isGuest;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
     return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(18),
+      color: AppTheme.white,
+      borderRadius: BorderRadius.circular(AppTheme.cardRadius),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(AppTheme.cardRadius),
             border: Border.all(color: AppTheme.borderColor),
+            boxShadow: [AppTheme.softShadow(alpha: 0.035)],
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
             children: [
               Container(
-                width: 40,
-                height: 40,
+                width: 46,
+                height: 46,
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(12),
+                  color: AppTheme.primaryColor,
+                  borderRadius: BorderRadius.circular(AppTheme.pillRadius),
                 ),
-                child: Icon(icon, color: AppTheme.primaryColor, size: 20),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
+                child: const Icon(
+                  Icons.delivery_dining_rounded,
+                  color: AppTheme.white,
+                  size: 24,
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                subtitle,
-                style: TextStyle(
-                  fontSize: 12,
-                  height: 1.3,
-                  color: AppTheme.textSecondary,
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.text('home.deliveryNow'),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        color: AppTheme.primaryColor,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      isGuest
+                          ? l10n.text('home.browseFirst')
+                          : activeOrders > 0
+                              ? l10n.activeOrderCount(activeOrders)
+                              : addressLabel,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      isGuest
+                          ? l10n.text('home.checkoutReady')
+                          : activeOrders > 0
+                              ? l10n.text('home.trackStatus')
+                              : l10n.text('home.manageAddress'),
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppTheme.textSecondary,
+                      ),
+                    ),
+                  ],
                 ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: AppTheme.textSecondary,
               ),
             ],
           ),
@@ -367,17 +382,13 @@ class _CategoryCircle extends StatelessWidget {
             height: 62,
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.12),
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: color.withValues(alpha: 0.25),
-                width: 1.5,
-              ),
+              borderRadius: BorderRadius.circular(18),
             ),
             child: Icon(icon, color: color, size: 26),
           ),
           const SizedBox(height: 6),
           Text(
-            name,
+            context.l10n.raw(name),
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,

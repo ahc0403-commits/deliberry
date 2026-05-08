@@ -1,3 +1,7 @@
+"use client";
+
+import { useMerchantI18n } from "../../../shared/i18n/client";
+
 type MerchantLoadingStateProps = {
   title: string;
   subtitle: string;
@@ -7,11 +11,13 @@ export function MerchantLoadingState({
   title,
   subtitle,
 }: MerchantLoadingStateProps) {
+  const { raw } = useMerchantI18n();
+
   return (
     <div className="merchant-surface">
       <section className="merchant-hero merchant-hero-insights">
         <div className="merchant-hero-copy">
-          <span className="merchant-eyebrow">Loading</span>
+          <span className="merchant-eyebrow">{raw("Loading")}</span>
           <h1 className="merchant-hero-title">{title}</h1>
           <p className="merchant-hero-subtitle">{subtitle}</p>
         </div>

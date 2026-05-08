@@ -3,7 +3,7 @@
 Status: active
 Authority: binding (UI implementation)
 Surface: cross-surface
-Last updated: 2026-03-17
+Last updated: 2026-04-25
 
 ---
 
@@ -12,35 +12,36 @@ Last updated: 2026-03-17
 ### Brand Colors
 | Token | Value | Usage |
 |-------|-------|-------|
-| `primary` | #FF4B3A | Primary CTAs, active nav, links, focus rings |
-| `primary-dark` | #E5392A | Primary hover, pressed states |
-| `primary-light` | #FFF0EE | Primary tint backgrounds, selected states |
-| `secondary` | #FFB74D | Accents, highlights, promotional badges |
-| `secondary-light` | #FFF8E1 | Secondary tint backgrounds |
+| `primary` | #D9472F | Primary CTAs, active nav, links, focus rings |
+| `primary-dark` | #BF3E29 | Primary hover, pressed states |
+| `primary-light` | #FFE8DF | Primary tint backgrounds, selected states |
+| `secondary` | #E7A23A | Accents, highlights, restrained section labels |
+| `secondary-light` | #FFF1D4 | Secondary tint backgrounds |
 
 ### Admin Authority Color
 | Token | Value | Usage |
 |-------|-------|-------|
-| `admin-primary` | #4F46E5 | Admin-console primary (replaces coral) |
-| `admin-primary-dark` | #4338CA | Admin hover |
-| `admin-primary-light` | #E0E7FF | Admin tint backgrounds |
+| `admin-primary` | #4D5FCF | Admin-console primary (muted governance indigo) |
+| `admin-primary-dark` | #3F4FB3 | Admin hover |
+| `admin-primary-light` | #E8ECFF | Admin tint backgrounds |
 
 ### Neutral Colors
 | Token | Value | Usage |
 |-------|-------|-------|
 | `surface` | #FFFFFF | Card backgrounds, modals, sheets |
-| `surface-alt` | #F8FAFC | Page backgrounds, table header fills |
-| `background` | #FAFAFA | Scaffold backgrounds, input fills |
-| `border` | #E5E7EB | Card borders, dividers, input borders |
-| `border-light` | #F1F5F9 | Subtle separators, table row borders |
+| `surface-alt` | #F7F4EF | Muted secondary surfaces, chips, promo gradients |
+| `background` | #FFFFFF | Scaffold backgrounds, primary app canvas |
+| `border` | #E8DED3 | Card borders, dividers, input borders |
+| `border-light` | #F3ECE3 | Subtle separators, table row borders |
 
 ### Text Colors
 | Token | Value | Usage |
 |-------|-------|-------|
-| `text` | #111827 | Primary text, headings |
-| `text-secondary` | #4B5563 | Descriptions, secondary labels |
-| `text-muted` | #9CA3AF | Timestamps, metadata, placeholders |
+| `text` | #221D19 | Primary text, headings |
+| `text-secondary` | #746A5F | Descriptions, secondary labels |
+| `text-muted` | #A2968A | Timestamps, metadata, placeholders |
 | `text-inverse` | #FFFFFF | Text on dark/colored backgrounds |
+| `ink` | #221D19 | Customer-app hero cards and dense emphasis surfaces |
 
 ### Status Colors
 | Token | Value | Background | Border | Usage |
@@ -53,25 +54,25 @@ Last updated: 2026-03-17
 ### Sidebar Colors
 | Token | Merchant | Admin | Usage |
 |-------|----------|-------|-------|
-| `sidebar-bg` | #1E293B | #0F172A | Sidebar background |
-| `sidebar-text` | #E2E8F0 | #CBD5E1 | Sidebar labels |
-| `sidebar-active-bg` | rgba(255,75,58,0.15) | rgba(79,70,229,0.15) | Active nav item |
+| `sidebar-bg` | #221D19 | #18212E | Sidebar background |
+| `sidebar-text` | #F7F1EA | #DDE5F1 | Sidebar labels |
+| `sidebar-active-bg` | rgba(217,71,47,0.16) | rgba(77,95,207,0.18) | Active nav item |
 
 ---
 
 ## 2. Typography
 
 ### Font Stack
-- **Mobile (Flutter)**: Roboto (Material 3 default)
-- **Web**: `'Inter', system-ui, -apple-system, sans-serif`
+- **Mobile (Flutter)**: Material 3 system stack, no custom font override
+- **Web**: `system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`
 
 ### Scale
 
 | Level | Size | Weight | Letter Spacing | Usage |
 |-------|------|--------|---------------|-------|
-| Display | 28px / 1.75rem | 800 | -0.5px / -0.03em | Page titles (mobile) |
-| H1 | 24px / 1.5rem | 800 | -0.3px / -0.03em | Page titles (web) |
-| H2 | 20px / 1.25rem | 700 | -0.2px / -0.02em | Section titles |
+| Display | 28px / 1.75rem | 800 | 0 | Page titles (mobile) |
+| H1 | 24px / 1.5rem | 800 | 0 | Page titles (web) |
+| H2 | 20px / 1.25rem | 700 | 0 | Section titles |
 | H3 | 18px / 1.125rem | 700 | 0 | Card titles |
 | Subtitle | 16px / 1rem | 600 | 0 | Subtitles, emphasis labels |
 | Body | 14px / 0.875rem | 400 | 0 | Default body text |
@@ -80,7 +81,7 @@ Last updated: 2026-03-17
 | Tiny | 10px / 0.625rem | 500 | 0 | Nav labels, dense metadata |
 
 ### Rules
-- Headlines use negative letter-spacing for tightness and premium feel.
+- Current customer-app baseline uses zero letter-spacing across headings and display text.
 - Body text uses default letter-spacing for readability.
 - Table headers are UPPERCASE, overline weight, muted color.
 - Monospace is used only for order IDs and technical identifiers: `'SF Mono', 'Fira Code', monospace`.
@@ -120,10 +121,10 @@ Last updated: 2026-03-17
 | Token | Value | Usage |
 |-------|-------|-------|
 | `radius-sm` | 6px | Badges, chips, small tags |
-| `radius-md` | 10px | Web cards, inputs |
+| `radius-md` | 10px | Badges, promo labels, compact chips |
 | `radius-lg` | 14px | Mobile inputs, buttons |
-| `radius-xl` | 16px | Mobile cards |
-| `radius-2xl` | 24px | Marketing cards, bottom sheets, pills |
+| `radius-xl` | 16px | Mobile cards, search bar, promo cards |
+| `radius-2xl` | 18px | Elevated customer-app cards |
 | `radius-full` | 9999px | Circular avatars, pill buttons |
 
 ---
@@ -133,11 +134,11 @@ Last updated: 2026-03-17
 | Token | Value | Usage |
 |-------|-------|-------|
 | `shadow-none` | none | Flat elements |
-| `shadow-xs` | 0 1px 2px rgba(0,0,0,0.04) | Subtle card rest state |
-| `shadow-sm` | 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04) | Cards at rest |
-| `shadow-md` | 0 4px 6px rgba(0,0,0,0.05), 0 2px 4px rgba(0,0,0,0.04) | Cards on hover, dropdowns |
-| `shadow-lg` | 0 10px 15px rgba(0,0,0,0.06), 0 4px 6px rgba(0,0,0,0.04) | Modals, elevated panels |
-| `shadow-primary` | 0 4px 14px rgba(255,75,58,0.25) | Primary CTA hover glow |
+| `shadow-xs` | 0 10px 24px rgba(34,29,25,0.04) | Subtle card rest state |
+| `shadow-sm` | 0 10px 24px rgba(34,29,25,0.05) | Cards at rest |
+| `shadow-md` | 0 18px 42px rgba(24,33,46,0.09) | Cards on hover, dropdowns |
+| `shadow-lg` | 0 28px 58px rgba(34,29,25,0.12) | Dark hero cards, elevated panels |
+| `shadow-primary` | 0 18px 38px rgba(77,95,207,0.16) / 0 18px 36px rgba(217,71,47,0.18) | Surface-specific CTA hover glow |
 
 ### Rules
 - All cards MUST have `shadow-sm` at rest (not just border).
@@ -152,12 +153,13 @@ Last updated: 2026-03-17
 
 ### Cards
 - Background: `surface`
-- Border: 1px solid `border`
-- Border radius: `radius-md` (web), `radius-xl` (mobile)
+- Border: optional 1px solid `border`; customer-app may prefer shadow-only rest state
+- Border radius: `radius-md` (web), `radius-xl` or `radius-2xl` (mobile)
 - Shadow: `shadow-sm` at rest, `shadow-md` on hover
 - Padding: `space-5` (web), `space-4` (mobile)
 - Header: title (H3) + optional action link/button
 - Footer: flex row of buttons, separated by `space-3`
+- Customer-app primary emphasis cards may use `ink` backgrounds with white text instead of white cards
 
 ### Tables (Web Only)
 - Width: 100%
@@ -198,7 +200,7 @@ Last updated: 2026-03-17
 
 ### Form Inputs
 - Height: 44px (web), 52px (mobile)
-- Background: `background` (#FAFAFA)
+- Background: `surface` (#FFFFFF) in current customer-app implementation
 - Border: 1px solid `border`, radius `radius-md` (web) or `radius-lg` (mobile)
 - Focus: 2px `primary` border
 - Error: 2px `error` border + error message below (12px, error color)
@@ -214,6 +216,20 @@ Last updated: 2026-03-17
 - Description: body, `text-secondary`, max 2 lines
 - CTA button: primary or secondary variant
 - Minimum vertical padding: 64px
+
+### Customer-App Presentation-Specific Baseline
+- Default customer-app canvas is white, not beige.
+- Customer-app hero cards should prefer one dark emphasis surface per screen instead of stacking multiple bright gradients.
+- Promo cards should stay visible but lower-chroma than the primary hero block.
+- Entry, auth, and guest surfaces should share the same white-shell hierarchy as the rest of the customer-app.
+- Root shell screens should not imply a back button in the app bar.
+
+### Merchant/Admin Console Presentation-Specific Baseline
+- Merchant-console should use a warm white working canvas with one dark merchant sidebar and restrained coral emphasis.
+- Admin-console should use a cooler white/blue-gray working canvas with a darker slate sidebar and muted indigo authority accents.
+- Both web consoles should prefer white main content areas over tinted full-page backgrounds.
+- Header bars may use translucent white with blur, but they should stay quiet compared to the sidebar and page content.
+- Console cards should read as operational surfaces first: subtle border, visible soft shadow, and restrained radius.
 
 ### Skeleton Loading
 - Shape matches content being loaded (rectangle for text, circle for avatar, full-width for table rows)

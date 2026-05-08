@@ -47,7 +47,7 @@ Of the 6 carry-forward runtime items, only 2 can be honestly closed at the curre
 
 ### 6. formatMoney Adoption — PARTIAL (can close for web surfaces)
 **Current state**: `formatMoney()` is defined in `shared/utils/currency.ts` and re-exported through both web surface adapters. However, 15 web surface presentation files use inline `(value / 100).toFixed(2)` or `(value / 100).toLocaleString()` instead of `formatMoney()`.
-**Honest assessment**: The inline formatting produces the same result for simple cases but doesn't use the canonical `Intl.NumberFormat` with ARS locale that `formatMoney()` provides. Full adoption across 15 files would be a significant change that is better suited for a focused formatting pass. The governance contract (R-013) and the adapter boundary (R-005) are both in place — the wiring is an incremental improvement, not a governance violation.
+**Honest assessment**: The inline formatting produces the same result for simple cases but doesn't use the canonical `Intl.NumberFormat` path that `formatMoney()` provides for the VND/USD baseline. Full adoption across 15 files would be a significant change that is better suited for a focused formatting pass. The governance contract (R-013) and the adapter boundary (R-005) are both in place — the wiring is an incremental improvement, not a governance violation.
 **Status**: DEFERRED — documented as improvement opportunity, not a governance gap.
 
 ---

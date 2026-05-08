@@ -1,6 +1,9 @@
+ "use client";
+
 import Link from "next/link";
 import { ArrowRight, Headphones, Lock, Smartphone, Star, Thermometer, Zap } from "lucide-react";
 import type { ReactNode } from "react";
+import { usePublicI18n } from "../../../shared/i18n/client";
 
 const valueProps: { icon: ReactNode; title: string; desc: string }[] = [
   { icon: <Zap size={24} />, title: "Speed you can count on", desc: "Our routing technology and dedicated courier network means your food arrives in around 28 minutes on average. Not 45. Not \"soon\"." },
@@ -12,11 +15,12 @@ const valueProps: { icon: ReactNode; title: string; desc: string }[] = [
 ];
 
 const coverage = [
-  "Palermo", "Recoleta", "Belgrano", "San Telmo", "Puerto Madero",
-  "Microcentro", "Villa Crespo", "Colegiales",
+  "District 1", "District 3", "District 7", "Binh Thanh",
+  "Phu Nhuan", "Tan Binh", "Go Vap", "Thu Duc",
 ];
 
 export function PublicServiceIntroductionScreen() {
+  const { raw } = usePublicI18n();
   return (
     <div className="public-surface">
       <section className="hero hero-route">
@@ -32,8 +36,8 @@ export function PublicServiceIntroductionScreen() {
               This route explains the product honestly: customers get order-progress updates, merchants get dedicated operating tools, and the public website stays acquisition-first instead of pretending those flows happen here.
             </p>
             <div className="hero-actions">
-              <Link href="/merchant" className="btn btn-primary btn-lg">See the partner route</Link>
-              <Link href="/download" className="btn btn-secondary btn-lg">Check app availability</Link>
+              <Link href="/merchant" className="btn btn-primary btn-lg">{raw("See the partner route")}</Link>
+              <Link href="/download" className="btn btn-secondary btn-lg">{raw("Check app availability")}</Link>
             </div>
           </div>
           <div className="hero-panel hero-panel-route">
@@ -43,15 +47,15 @@ export function PublicServiceIntroductionScreen() {
               <Link href="/merchant" className="hero-route-card">
                 <ArrowRight size={16} />
                 <div>
-                  <strong>Merchant onboarding</strong>
-                  <span>Manual handoff with partner-team email completion</span>
+                  <strong>{raw("Merchant onboarding")}</strong>
+                  <span>{raw("Manual handoff with partner-team email completion")}</span>
                 </div>
               </Link>
               <Link href="/download" className="hero-route-card">
                 <ArrowRight size={16} />
                 <div>
-                  <strong>Download status</strong>
-                  <span>Coming soon, with support fallback instead of live install links</span>
+                  <strong>{raw("Download status")}</strong>
+                  <span>{raw("Coming soon, with support fallback instead of live install links")}</span>
                 </div>
               </Link>
             </div>
@@ -118,8 +122,8 @@ export function PublicServiceIntroductionScreen() {
       <section className="section section-center">
         <div className="container">
           <span className="eyebrow">Delivery coverage</span>
-          <h2 className="section-headline section-headline--center">Delivering across Buenos Aires</h2>
-          <p className="section-sub section-sub--center">We currently cover 8 barrios and are expanding to new zones every month.</p>
+          <h2 className="section-headline section-headline--center">Delivering across Ho Chi Minh City</h2>
+          <p className="section-sub section-sub--center">We currently cover 8 districts and are expanding to new zones every month.</p>
           <div className="chip-row">
             {coverage.map((zone) => (
               <span key={zone} className="chip">{zone}</span>

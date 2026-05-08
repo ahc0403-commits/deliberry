@@ -4,7 +4,7 @@ Status: Active
 Authority: Operational
 Surface: merchant-console
 Domains: menu, catalog, store-scope
-Last updated: 2026-03-16
+Last updated: 2026-04-24
 Retrieve when:
 - editing the merchant menu screen or store-scoped menu route
 - changing category filtering or item search behavior in the merchant console
@@ -12,9 +12,9 @@ Retrieve when:
 Related files:
 - merchant-console/src/app/(console)/[storeId]/menu/page.tsx
 - merchant-console/src/features/menu/presentation/menu-screen.tsx
-- merchant-console/src/shared/data/merchant-query-services.ts
-- merchant-console/src/shared/data/merchant-repository.ts
-- merchant-console/src/shared/data/merchant-mock-data.ts
+- merchant-console/src/features/menu/server/menu-actions.ts
+- merchant-console/src/shared/data/merchant-menu-runtime-service.ts
+- merchant-console/src/shared/data/supabase-merchant-runtime-repository.ts
 - merchant-console/src/features/auth/server/access.ts
 
 ## Purpose
@@ -29,18 +29,20 @@ Owns the merchant menu-management screen for the selected store.
 ## Source of Truth
 
 - Route/store access truth: `merchant-console/src/features/auth/server/access.ts`
-- Read-model source for categories and items: `merchant-console/src/shared/data/merchant-query-services.ts`
-- Fixture-backed data owner: `merchant-console/src/shared/data/merchant-repository.ts`
+- Read-model source for categories and items: `merchant-console/src/shared/data/merchant-menu-runtime-service.ts`
+- Persisted data owner: `public.store_menu_items`
+- Photo storage owner: Supabase Storage bucket `menu-item-images`
 - Local UI state for selected category and search query: `merchant-console/src/features/menu/presentation/menu-screen.tsx`
 
-This feature also has split truth: store scope is server-enforced, but menu content and edits are mock-backed and local-only.
+This feature has split truth: store scope is server-enforced, persisted menu reads/writes are server-owned, and search/category filters remain local UI state.
 
 ## Key Files to Read First
 
 - `merchant-console/src/app/(console)/[storeId]/menu/page.tsx`
 - `merchant-console/src/features/menu/presentation/menu-screen.tsx`
-- `merchant-console/src/shared/data/merchant-query-services.ts`
-- `merchant-console/src/shared/data/merchant-repository.ts`
+- `merchant-console/src/features/menu/server/menu-actions.ts`
+- `merchant-console/src/shared/data/merchant-menu-runtime-service.ts`
+- `merchant-console/src/shared/data/supabase-merchant-runtime-repository.ts`
 
 ## Related Shared and Domain Files
 
@@ -57,19 +59,20 @@ This feature also has split truth: store scope is server-enforced, but menu cont
 
 ## Known Limitations
 
-- Categories and items are fixture-backed.
-- `Add Category`, `Add Item`, `Edit`, and availability toggles are not persisted.
+- Categories and items are persisted in `public.store_menu_items`.
+- Add/edit item and availability toggles persist through server actions.
+- Dedicated category CRUD is not implemented; categories are created by item category labels.
 - Search and category filters are client-only state inside the screen component.
-- Store name and counts come from mock-backed repository data.
+- Store name and counts come from persisted runtime data.
 
 ## Safe Modification Guidance
 
-- Change data read behavior in `merchant-query-services.ts` or `merchant-repository.ts` before changing UI assumptions.
+- Change data read behavior in `merchant-menu-runtime-service.ts` or `supabase-merchant-runtime-repository.ts` before changing UI assumptions.
 - Keep local filter/search state contained unless a broader runtime plan exists.
 - Preserve store-scoped route ownership and server guard behavior.
 
 ## What Not to Change Casually
 
 - Do not move menu truth into random client modules.
-- Do not treat toggle state as saved without adding a real write path.
+- Do not bypass `ensureMerchantStoreScope(storeId)` for writes.
 - Do not import repo-level `shared/*` directly from feature code.

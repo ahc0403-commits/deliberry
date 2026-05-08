@@ -34,9 +34,9 @@ Updated: 2026-04-15 (April 2026 audit remediation batches 0-6 completed; closure
 **Status**: COMPLETE
 
 **Applied fixes**:
-- [x] `CurrencyCode` updated to `'ARS' | 'USD'` -- VND removed (R-012)
-- [x] `MoneyAmount` changed to branded integer centavo type with JSDoc (R-010, R-011)
-- [x] Added `Centavos` alias for `MoneyAmount`
+- [x] `CurrencyCode` updated to the canonical market baseline (R-012)
+- [x] `MoneyAmount` changed to a branded integer money type with JSDoc (R-010, R-011)
+- [x] Added supporting money-type aliases for governed runtime use
 - [x] Added `ISODateTimeUTC` branded type (R-050, R-051)
 - [x] `ORDER_STATUSES` updated to 9 canonical values: draft, pending, confirmed, preparing, ready, in_transit, delivered, cancelled, disputed (R-040)
 - [x] Renamed `ready_for_delivery` to `ready` (R-040, FLOW.md 1.6)
@@ -46,10 +46,10 @@ Updated: 2026-04-15 (April 2026 audit remediation batches 0-6 completed; closure
 - [x] Removed `_placeholder` suffixes from SETTLEMENT_STATES: processing, paid (R-040)
 - [x] Added `failed` to SETTLEMENT_STATES (FLOW.md Section 3)
 - [x] Added `rider` and `guest` and `system` to AUTH_ACTOR_TYPES (R-020, IDENTITY.md)
-- [x] `formatMoney` updated to accept centavos and divide by 100 (R-013)
-- [x] Added `parseToCentavos` helper (R-013)
-- [x] Added `BUENOS_AIRES_TZ`, `toDisplayTime`, `toBusinessDate`, `isValidUTCTimestamp` to date utils (R-050-052)
-- [x] Updated `order.contract.json` with canonical status enum and centavo fields (R-040)
+- [x] `formatMoney` updated to accept integer money values with currency-aware formatting (R-013)
+- [x] Added supporting parser helper for governed money input normalization (R-013)
+- [x] Added display-timezone/date utility helpers to `shared/utils/date.ts` (R-050-052)
+- [x] Updated `order.contract.json` with canonical status enum and integer money fields (R-040)
 - [x] Updated `order.schema.json` with enum constraint on status and integer money type (R-041)
 - [x] Updated `domain.constants.json` (Flutter bridge source) with all canonical values
 - [x] Updated `customer-app` Dart bridge with canonical statuses
@@ -66,12 +66,12 @@ Updated: 2026-04-15 (April 2026 audit remediation batches 0-6 completed; closure
 - [x] Admin CSS status badge updated: .new -> .pending
 
 **Remaining items (deferred to Wave 2)**:
-- [x] Merchant mock data: convert float money values to integer centavos (Wave 2A-1 -- DONE 2026-03-16)
-- [x] Admin mock data: convert float money values to integer centavos (Wave 2A-2 -- DONE 2026-03-16)
+- [x] Merchant mock data: convert float money values to integer minor money units (Wave 2A-1 -- DONE 2026-03-16)
+- [x] Admin mock data: convert float money values to integer minor money units (Wave 2A-2 -- DONE 2026-03-16)
 - [x] Merchant settlement mock type already uses canonical values (paid/pending/processing) -- verified OK
 - [x] Admin settlement mock type already uses canonical values -- verified OK
 - [x] Surface mock data types should programmatically derive from canonical OrderStatus type (Wave 2B-2 -- DONE 2026-03-16)
-- [ ] Add runtime centavo assertion utility (deferred to Wave 2 remaining scope)
+- [ ] Add runtime money-unit assertion utility (deferred to Wave 2 remaining scope)
 
 ---
 
@@ -79,14 +79,14 @@ Updated: 2026-04-15 (April 2026 audit remediation batches 0-6 completed; closure
 **Status**: IN PROGRESS
 
 **Wave 2A-1 (merchant-console money normalization) -- DONE 2026-03-16**:
-- [x] Converted all merchant-console mock money fields to integer centavos (R-010, R-011)
+- [x] Converted all merchant-console mock money fields to integer minor money units (R-010, R-011)
   - `mockOrders`: item prices, subtotal, deliveryFee, total
   - `mockMenuItems`: price
   - `mockPromotions`: minOrder, fixed-type value
   - `mockTopSellingItems`: revenue (float 232.5 eliminated)
   - `mockDailyRevenue`: revenue
-  - Settlement mock data (grossAmount, commission, adjustments, netAmount) was already in centavos -- verified correct
-- [x] Updated all merchant-console display components to divide centavos by 100 for rendering
+  - Settlement mock data (grossAmount, commission, adjustments, netAmount) was already in integer money units -- verified correct
+- [x] Updated all merchant-console display components to follow currency-aware formatting rules
   - orders-screen.tsx: table total, item price×qty, subtotal, deliveryFee, total
   - dashboard-screen.tsx: recent orders total
   - menu-screen.tsx: item price
@@ -96,14 +96,14 @@ Updated: 2026-04-15 (April 2026 audit remediation batches 0-6 completed; closure
 - [x] Removed stale TODO comment referencing Wave 2 alignment
 
 **Wave 2A-2 (admin-console money normalization) -- DONE 2026-03-16**:
-- [x] Converted all admin-console mock money fields to integer centavos (R-010, R-011)
+- [x] Converted all admin-console mock money fields to integer minor money units (R-010, R-011)
   - `mockPlatformOrders`: total (56.0 → 5600, 32.5 → 3250, 78.0 → 7800, 45.5 → 4550, 28.0 → 2800, 41.0 → 4100, 62.5 → 6250)
   - `mockDisputes`: amount (41.0 → 4100, 15.5 → 1550, 62.5 → 6250, 56.0 → 5600, 32.5 → 3250)
   - `mockPlatformSettlements`: grossAmount, commission, netAmount (all float peso-amounts × 100)
   - `mockMerchants`: totalRevenue (peso-level integers × 100)
   - `mockCampaigns`: budget and spent (× 100)
   - `mockWeeklyOrders`: revenue (× 100)
-- [x] Updated all admin-console display components to divide centavos by 100 for rendering
+- [x] Updated all admin-console display components to follow currency-aware formatting rules
   - orders-screen.tsx: table total, detail panel total
   - dashboard-screen.tsx: recent orders total
   - disputes-screen.tsx: summary total value, table amount column
@@ -115,9 +115,9 @@ Updated: 2026-04-15 (April 2026 audit remediation batches 0-6 completed; closure
 
 **Wave 2A-4 (shared fixture/schema money normalization) -- DONE 2026-03-16**:
 - [x] Scanned all shared/ mock/fixture/seed/demo/contract/schema files for float money values (R-010, R-011)
-  - `shared/validation/settlement.schema.json`: `amount` field was `"type": "number"` — changed to `"type": "integer"` with centavo description
-  - `shared/validation/menu.schema.json`: `price` field was `"type": "number"` — changed to `"type": "integer"` with centavo description
-  - `shared/validation/order.schema.json`: `total_centavos` already `"type": "integer"` — verified correct, no change needed
+  - `shared/validation/settlement.schema.json`: `amount` field was `"type": "number"` — changed to `"type": "integer"` with minor-money-unit description
+  - `shared/validation/menu.schema.json`: `price` field was `"type": "number"` — changed to `"type": "integer"` with minor-money-unit description
+  - `shared/validation/order.schema.json`: integer order total fields were verified correct
   - All remaining shared/ files (contracts, models, types, constants, utils): no numeric mock money values; no changes required
 - [x] `npm run typecheck` passes for merchant-console, admin-console, public-website — no breakage
 
@@ -127,14 +127,14 @@ Updated: 2026-04-15 (April 2026 audit remediation batches 0-6 completed; closure
   - `content-service.ts`: service facade only — no money fields
   - `domain.ts`: surface adapter — exports legal/support constants only, no money fields
   - All TSX screen files: money references are prose/marketing copy only, not data fields
-- [x] Result: public-website has zero mock money fields requiring centavo conversion
+- [x] Result: public-website has zero mock money fields requiring money-unit conversion
 - [x] `npm run typecheck` passes with no errors
 
 **Wave 2B-1 (timestamp normalization) -- DONE 2026-03-16**:
 - [x] Normalized all UTC ISO 8601 timestamps in merchant-console mock data (R-050, R-051)
   - `mockOrders`: createdAt, estimatedDelivery (7 records)
   - `mockReviews`: date, responseDate (6 records, 3 with responseDate)
-  - `mockPromotions`: startsAt, expiresAt (4 records) — boundary times use Buenos Aires midnight (UTC-3 offset)
+  - `mockPromotions`: startsAt, expiresAt (4 records) — boundary times use Ho Chi Minh City midnight (UTC+7 offset)
   - `mockSettlements`: paidAt (3 paid records)
   - `mockRecentAlerts`: time (4 records)
 - [x] Normalized all UTC ISO 8601 timestamps in admin-console mock data (R-050, R-051)
@@ -142,11 +142,11 @@ Updated: 2026-04-15 (April 2026 audit remediation batches 0-6 completed; closure
   - `mockDisputes`: createdAt (5 records)
   - `mockSupportTickets`: createdAt (6 records)
   - `mockUsers`: registeredAt, lastActive (8 records)
-  - `mockMerchants`: joinedAt (6 records) — month-level dates set to 1st of month at Buenos Aires midnight
+  - `mockMerchants`: joinedAt (6 records) — month-level dates set to 1st of month at Ho Chi Minh City midnight
   - `mockStores`: lastActive (8 records)
   - `mockPlatformSettlements`: paidAt (2 paid records)
   - `mockAnnouncements`: publishedAt, scheduledAt (3 records with dates)
-  - `mockCampaigns`: startDate, endDate (4 records) — boundary times use Buenos Aires midnight
+  - `mockCampaigns`: startDate, endDate (4 records) — boundary times use Ho Chi Minh City midnight
   - `mockB2BPartners`: contractStart, contractEnd (5 records) — month-level dates set to 1st of month
   - `mockPlatformAlerts`: time (5 records)
   - `mockSystemHealth`: lastCheck (7 records)
@@ -168,7 +168,7 @@ Updated: 2026-04-15 (April 2026 audit remediation batches 0-6 completed; closure
 
 **Remaining Wave 2 scope**:
 - [ ] Remove superseded placeholder files
-- [ ] Add runtime centavo assertion utility
+- [ ] Add runtime money-unit assertion utility
 
 ---
 
@@ -232,12 +232,12 @@ Updated: 2026-04-15 (April 2026 audit remediation batches 0-6 completed; closure
 **Completed**: 2026-03-17
 
 **Applied fixes**:
-- [x] GAP-C01: Converted all customer-app money fields from `double` to `int` centavos (R-010, R-011)
+- [x] GAP-C01: Converted all customer-app money fields from `double` to `int` money values (R-010, R-011)
   - MockStore.deliveryFee, MockMenuItem.price, MockCartItem.total, MockOrder.total: `double` → `int`
   - MockData.cartSubtotal/cartDeliveryFee/cartServiceFee/cartTotal: `double` → `int`
   - CustomerRuntimeController cart computation: `double` → `int`
-  - All 12 presentation files updated: `toStringAsFixed(2)` → `formatCentavos()` (centavos ÷ 100)
-  - Promo discount: 5.0 → 500 (centavos)
+  - All 12 presentation files updated from raw float formatting to dedicated money formatters
+  - Promo discount fixture converted from float to integer money value
 - [x] GAP-C02: Replaced display-string status values with canonical enum values (R-041, R-043)
   - `'Preparing'` → `'preparing'`, `'On the way'` → `'in_transit'`, `'Delivered'` → `'delivered'`
   - Added `formatOrderStatus()` for presentation-layer label mapping

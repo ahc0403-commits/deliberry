@@ -114,7 +114,7 @@ export function PublicRefundPolicyScreen() {
 
               <h2>4. Refund processing times</h2>
               <ul>
-                <li><strong>Card payments:</strong> timing depends on the payment and review context</li>
+                <li><strong>Card or pay-method selections:</strong> timing depends on whether a live payment flow is enabled and what support confirms for the affected order</li>
                 <li><strong>Cash orders:</strong> support will explain the available resolution path for the affected order</li>
                 <li><strong>Account credits:</strong> only offered when explicitly confirmed by support</li>
               </ul>

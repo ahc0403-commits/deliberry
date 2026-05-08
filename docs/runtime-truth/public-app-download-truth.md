@@ -4,10 +4,11 @@ Status: Active
 Authority: Operational
 Surface: public-website
 Domains: app-download, customer-handoff, acquisition
-Last updated: 2026-03-17
+Last updated: 2026-05-06
+Last verified: 2026-05-06
 Retrieve when:
 - changing the `/download` route, download-page CTAs, store badge behavior, or customer-app handoff copy
-- checking whether app-download content is live in the screen or in the shared content-service layer
+- checking whether app-download content is live in the screen or in shared marketing shell files
 Related files:
 - public-website/src/app/(marketing)/download/page.tsx
 - public-website/src/app/(marketing)/layout.tsx
@@ -43,25 +44,19 @@ Authoritative:
 - [page.tsx](/Users/andremacmini/Deliberry/public-website/src/app/(marketing)/download/page.tsx) for route ownership
 - [layout.tsx](/Users/andremacmini/Deliberry/public-website/src/app/(marketing)/layout.tsx) for shared marketing-shell behavior
 
-Derived or structural only:
-
-- [public-website/src/shared/data/content-service.ts](/Users/andremacmini/Deliberry/public-website/src/shared/data/content-service.ts)
-- [public-website/src/shared/data/public-content-repository.ts](/Users/andremacmini/Deliberry/public-website/src/shared/data/public-content-repository.ts)
-
-Those files are not the live truth for `/download` today.
-
 ## What Is Still Static, Hardcoded, Partial, or Retrieval-Shim-Only
 
 - Download content is hardcoded in the screen component.
-- The app-store badges are now honest non-link placeholders until live store destinations exist.
-- The route now uses `/support` as the visible fallback for release updates instead of dead install links.
+- The app-store badges remain honest placeholders when no store URLs are configured.
+- If `NEXT_PUBLIC_CUSTOMER_APP_STORE_URL` or `NEXT_PUBLIC_CUSTOMER_PLAY_STORE_URL` is configured, the matching badge becomes a live external handoff while the missing platform remains explicitly marked `Coming soon`.
+- The route continues to use `/support` as the visible fallback for release updates whenever a platform link is not live yet.
 - Marketing copy is intentionally narrowed to order-progress updates and checkout-ready payment selection, not live map tracking or full payment processing.
 - There is no dynamic device detection, store deep-linking, or repository-backed content path.
+- The unused shared public content seam was removed on 2026-04-18 so `/download` truth stays single-source.
 
 ## Known Risks
 
-- The route still does not provide real app-store installation destinations.
-- Editing structural content files will not change the live route.
+- The route may still lack one or both real app-store installation destinations if the matching public env vars are absent.
 - Marketing-shell link changes can drift away from the download page’s handoff copy.
 
 ## Safe Modification Guidance
@@ -69,7 +64,7 @@ Those files are not the live truth for `/download` today.
 - Confirm the route owner in [page.tsx](/Users/andremacmini/Deliberry/public-website/src/app/(marketing)/download/page.tsx).
 - Change live download content and badge behavior in [app-download-screen.tsx](/Users/andremacmini/Deliberry/public-website/src/features/app-download/presentation/app-download-screen.tsx).
 - Change shared shell behavior in [layout.tsx](/Users/andremacmini/Deliberry/public-website/src/app/(marketing)/layout.tsx).
-- Do not treat [content-service.ts](/Users/andremacmini/Deliberry/public-website/src/shared/data/content-service.ts) as authoritative unless the live route is deliberately rewired.
+- Do not reintroduce a second public content source unless the route is migrated in the same pass.
 
 ## Related Filemaps
 

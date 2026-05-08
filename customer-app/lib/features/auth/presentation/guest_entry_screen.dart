@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/router/route_names.dart';
+import '../../../core/i18n/app_localizations.dart';
 import '../../../core/session/customer_session_controller.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../common/presentation/widgets.dart';
@@ -10,10 +11,11 @@ class GuestEntryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppTheme.backgroundGrey,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppTheme.backgroundGrey,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
@@ -25,93 +27,32 @@ class GuestEntryScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Illustration area
-            Container(
-              height: 180,
-              margin: const EdgeInsets.only(bottom: 32),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFF0EE),
-                borderRadius: BorderRadius.circular(20),
+            FeatureHeroCard(
+              eyebrow: l10n.raw('Guest browsing'),
+              title: l10n.raw('Browse first, sign in later'),
+              subtitle: l10n.raw(
+                'Explore stores and menus without creating an account. Checkout will ask you to sign in when it matters.',
               ),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Positioned(
-                    right: 24,
-                    top: 20,
-                    child: Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryColor.withValues(alpha: 0.15),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    left: 20,
-                    bottom: 20,
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: AppTheme.secondaryColor.withValues(alpha: 0.25),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        width: 72,
-                        height: 72,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color:
-                                  AppTheme.primaryColor.withValues(alpha: 0.15),
-                              blurRadius: 20,
-                              offset: const Offset(0, 6),
-                            ),
-                          ],
-                        ),
-                        child: const Icon(
-                          Icons.person_outline_rounded,
-                          size: 36,
-                          color: AppTheme.primaryColor,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'Guest Mode',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.primaryColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+              icon: Icons.person_outline_rounded,
+              badge: l10n.raw('No account needed yet'),
             ),
+            const SizedBox(height: 32),
 
-            const Text(
-              'Browse without\nan account',
+            Text(
+              l10n.raw('Browse without\nan account'),
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.w800,
-                color: Color(0xFF1A1A2E),
-                letterSpacing: -0.8,
+                color: AppTheme.inkColor,
+                letterSpacing: 0,
                 height: 1.15,
               ),
             ),
             const SizedBox(height: 10),
             Text(
-              'Explore stores and menus right away. Create an account when you\'re ready to order.',
+              l10n.raw(
+                'Explore stores and menus right away. Create an account when you\'re ready to order.',
+              ),
               style: TextStyle(
                 fontSize: 15,
                 color: AppTheme.textSecondary,
@@ -121,7 +62,7 @@ class GuestEntryScreen extends StatelessWidget {
             const SizedBox(height: 28),
 
             // Comparison
-            _ComparisonSection(),
+            const _ComparisonSection(),
 
             const Spacer(),
 
@@ -131,14 +72,14 @@ class GuestEntryScreen extends StatelessWidget {
                 if (!context.mounted) return;
                 Navigator.of(context).pushReplacementNamed(RouteNames.home);
               },
-              child: const Text('Browse as Guest'),
+              child: Text(l10n.raw('Browse as Guest')),
             ),
             const SizedBox(height: 12),
             OutlinedButton(
               onPressed: () {
                 Navigator.of(context).pushNamed(RouteNames.authPhone);
               },
-              child: const Text('Create Account'),
+              child: Text(l10n.raw('Create Account')),
             ),
           ],
         ),
@@ -148,41 +89,45 @@ class GuestEntryScreen extends StatelessWidget {
 }
 
 class _ComparisonSection extends StatelessWidget {
+  const _ComparisonSection();
+
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: AppTheme.borderColor),
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
+        boxShadow: [AppTheme.softShadow(alpha: 0.04)],
       ),
       child: Column(
         children: [
           _ComparisonRow(
-            feature: 'Browse stores & menus',
+            feature: l10n.raw('Browse stores & menus'),
             guestAllowed: true,
             accountRequired: false,
           ),
           Divider(height: 1, color: AppTheme.borderColor),
           _ComparisonRow(
-            feature: 'Place orders',
+            feature: l10n.raw('Place orders'),
             guestAllowed: false,
             accountRequired: true,
           ),
           Divider(height: 1, color: AppTheme.borderColor),
           _ComparisonRow(
-            feature: 'Save favourites',
+            feature: l10n.raw('Save favourites'),
             guestAllowed: false,
             accountRequired: true,
           ),
           Divider(height: 1, color: AppTheme.borderColor),
           _ComparisonRow(
-            feature: 'Track deliveries',
+            feature: l10n.raw('Track deliveries'),
             guestAllowed: false,
             accountRequired: true,
           ),
           Divider(height: 1, color: AppTheme.borderColor),
           _ComparisonRow(
-            feature: 'Earn rewards',
+            feature: l10n.raw('Earn rewards'),
             guestAllowed: false,
             accountRequired: true,
             isLast: true,
@@ -218,13 +163,16 @@ class _ComparisonRow extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: Color(0xFF1A1A2E),
+                color: AppTheme.inkColor,
               ),
             ),
           ),
-          _StatusIcon(allowed: guestAllowed, label: 'Guest'),
+          _StatusIcon(allowed: guestAllowed, label: context.l10n.raw('Guest')),
           const SizedBox(width: 24),
-          _StatusIcon(allowed: accountRequired, label: 'Account'),
+          _StatusIcon(
+            allowed: accountRequired,
+            label: context.l10n.raw('Account'),
+          ),
         ],
       ),
     );

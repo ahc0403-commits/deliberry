@@ -48,8 +48,6 @@ This is a sibling-route cluster rather than a stateful multi-step journey. The v
 
 ## Key Dependent Screens and Files
 
-- [public-website/src/shared/data/content-service.ts](/Users/andremacmini/Deliberry/public-website/src/shared/data/content-service.ts)
-- [public-website/src/shared/data/public-content-repository.ts](/Users/andremacmini/Deliberry/public-website/src/shared/data/public-content-repository.ts)
 
 ## What Is Authoritative vs Derived in This Flow
 
@@ -61,8 +59,6 @@ Authoritative:
 
 Derived or structural only:
 
-- [content-service.ts](/Users/andremacmini/Deliberry/public-website/src/shared/data/content-service.ts)
-- [public-content-repository.ts](/Users/andremacmini/Deliberry/public-website/src/shared/data/public-content-repository.ts)
 
 Those shared data files are not the live content source for the legal routes today.
 
@@ -75,7 +71,7 @@ Those shared data files are not the live content source for the legal routes tod
 ## Common Edit Mistakes
 
 - Updating one legal screen and assuming the other policy routes remain consistent automatically.
-- Editing shared content-service files and expecting legal-route copy to change.
+- Editing removed shared public content seams and expecting legal-route copy to change.
 - Changing the legal shell without checking all three routes together.
 
 ## Related Filemaps

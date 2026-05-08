@@ -1,23 +1,60 @@
 import 'package:flutter/material.dart';
 
 abstract final class AppTheme {
-  static const _primary = Color(0xFFFF4B3A);
-  static const _secondary = Color(0xFFFFB74D);
+  static const _primary = Color(0xFFE91400);
+  static const _primaryDark = Color(0xFFB91005);
+  static const _primaryPressed = Color(0xFF9F0F06);
+  static const _primarySoft = Color(0xFFFFF0EE);
+  static const _primaryTint = Color(0xFFFFDFDA);
+  static const _primaryMist = Color(0xFFFFF7F5);
+  static const _secondary = Color(0xFFFFB020);
+  static const _secondarySoft = Color(0xFFFFF3D6);
+  static const _tomato = Color(0xFFFF4B32);
+  static const _coral = Color(0xFFFF7A59);
   static const _surface = Color(0xFFFFFFFF);
-  static const _background = Color(0xFFFAFAFA);
-  static const _onSurface = Color(0xFF1A1A2E);
-  static const _onSurfaceVariant = Color(0xFF6B7280);
-  static const _border = Color(0xFFE5E7EB);
-  static const _success = Color(0xFF22C55E);
-  static const _error = Color(0xFFEF4444);
+  static const _surfaceMuted = Color(0xFFF6F6F6);
+  static const _background = Color(0xFFFBFAF9);
+  static const _onSurface = Color(0xFF141414);
+  static const _onSurfaceVariant = Color(0xFF6A6A6A);
+  static const _border = Color(0xFFE6E2DF);
+  static const _disabled = Color(0xFFE1E1E1);
+  static const _success = Color(0xFF087A3A);
+  static const _warning = Color(0xFFB86B00);
+  static const _error = Color(0xFFD92D20);
 
   static const primaryColor = _primary;
+  static const primaryDark = _primaryDark;
+  static const primaryPressed = _primaryPressed;
+  static const primarySoft = _primarySoft;
+  static const primaryTint = _primaryTint;
+  static const primaryMist = _primaryMist;
   static const secondaryColor = _secondary;
+  static const tomatoColor = _tomato;
+  static const coralColor = _coral;
   static const successColor = _success;
+  static const warningColor = _warning;
   static const errorColor = _error;
   static const borderColor = _border;
+  static const disabledColor = _disabled;
   static const backgroundGrey = _background;
+  static const surfaceMuted = _surfaceMuted;
   static const textSecondary = _onSurfaceVariant;
+  static const inkColor = _onSurface;
+  static const white = _surface;
+  static const cardRadius = 16.0;
+  static const pillRadius = 999.0;
+  static const spaceXs = 4.0;
+  static const spaceSm = 8.0;
+  static const spaceMd = 12.0;
+  static const spaceLg = 16.0;
+  static const spaceXl = 24.0;
+  static const space2Xl = 32.0;
+
+  static BoxShadow softShadow({double alpha = 0.08}) => BoxShadow(
+        color: _onSurface.withValues(alpha: alpha),
+        blurRadius: 20,
+        offset: const Offset(0, 8),
+      );
 
   static ThemeData get theme => ThemeData(
         useMaterial3: true,
@@ -29,34 +66,34 @@ abstract final class AppTheme {
           onSurface: _onSurface,
           onSurfaceVariant: _onSurfaceVariant,
           error: _error,
-          primaryContainer: const Color(0xFFFFF0EE),
-          secondaryContainer: const Color(0xFFFFF8E1),
+          primaryContainer: _primarySoft,
+          secondaryContainer: _secondarySoft,
           outline: _border,
+          surfaceContainerHighest: _surfaceMuted,
         ),
         scaffoldBackgroundColor: _background,
-        fontFamily: 'Roboto',
         textTheme: const TextTheme(
           headlineLarge: TextStyle(
             fontSize: 28,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.5,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 0,
             color: _onSurface,
           ),
           headlineMedium: TextStyle(
             fontSize: 24,
-            fontWeight: FontWeight.w700,
-            letterSpacing: -0.3,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 0,
             color: _onSurface,
           ),
           headlineSmall: TextStyle(
             fontSize: 20,
-            fontWeight: FontWeight.w700,
-            letterSpacing: -0.2,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0,
             color: _onSurface,
           ),
           titleLarge: TextStyle(
             fontSize: 18,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w800,
             color: _onSurface,
           ),
           titleMedium: TextStyle(
@@ -108,19 +145,17 @@ abstract final class AppTheme {
           foregroundColor: _onSurface,
           titleTextStyle: TextStyle(
             fontSize: 20,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.3,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 0,
             color: _onSurface,
-            fontFamily: 'Roboto',
           ),
         ),
         cardTheme: CardThemeData(
-          elevation: 1,
-          shadowColor: Colors.black.withValues(alpha: 0.08),
+          elevation: 0,
+          shadowColor: _onSurface.withValues(alpha: 0.08),
           color: _surface,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: const BorderSide(color: _border, width: 1),
+            borderRadius: BorderRadius.circular(cardRadius),
           ),
           clipBehavior: Clip.antiAlias,
           margin: EdgeInsets.zero,
@@ -128,30 +163,31 @@ abstract final class AppTheme {
         filledButtonTheme: FilledButtonThemeData(
           style: FilledButton.styleFrom(
             backgroundColor: _primary,
-            foregroundColor: Colors.white,
+            foregroundColor: _surface,
+            disabledBackgroundColor: _disabled,
+            disabledForegroundColor: _onSurfaceVariant.withValues(alpha: 0.58),
             minimumSize: const Size(double.infinity, 52),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(12),
             ),
             textStyle: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
-              fontFamily: 'Roboto',
             ),
           ),
         ),
         outlinedButtonTheme: OutlinedButtonThemeData(
           style: OutlinedButton.styleFrom(
             foregroundColor: _onSurface,
+            disabledForegroundColor: _onSurfaceVariant.withValues(alpha: 0.58),
             minimumSize: const Size(double.infinity, 52),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(12),
             ),
             side: const BorderSide(color: _border),
             textStyle: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              fontFamily: 'Roboto',
             ),
           ),
         ),
@@ -161,25 +197,24 @@ abstract final class AppTheme {
             textStyle: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              fontFamily: 'Roboto',
             ),
           ),
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
-          fillColor: _background,
+          fillColor: _surface,
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(color: _border),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(color: _border),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(color: _primary, width: 2),
           ),
           hintStyle: const TextStyle(
@@ -188,14 +223,14 @@ abstract final class AppTheme {
           ),
         ),
         chipTheme: ChipThemeData(
-          backgroundColor: _background,
-          selectedColor: const Color(0xFFFFF0EE),
+          backgroundColor: _surface,
+          selectedColor: _primarySoft,
           labelStyle: const TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w500,
           ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(pillRadius),
             side: const BorderSide(color: _border),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -203,7 +238,7 @@ abstract final class AppTheme {
         navigationBarTheme: NavigationBarThemeData(
           elevation: 0,
           backgroundColor: _surface,
-          indicatorColor: const Color(0xFFFFF0EE),
+          indicatorColor: _primarySoft,
           indicatorShape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
@@ -214,14 +249,12 @@ abstract final class AppTheme {
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
                 color: _primary,
-                fontFamily: 'Roboto',
               );
             }
             return const TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w500,
               color: _onSurfaceVariant,
-              fontFamily: 'Roboto',
             );
           }),
           iconTheme: WidgetStateProperty.resolveWith((states) {

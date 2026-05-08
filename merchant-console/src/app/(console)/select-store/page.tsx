@@ -4,8 +4,13 @@ import { ensureMerchantConsoleAccess } from "../../../features/auth/server/acces
 import { resolveMerchantAccessPath } from "../../../shared/auth/merchant-session";
 import { MerchantStoreSelectionScreen } from "../../../features/store-selection/presentation/store-selection-screen";
 
-export default async function MerchantSelectStorePage() {
+export default async function MerchantSelectStorePage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ reason?: string }>;
+}) {
   const access = await ensureMerchantConsoleAccess();
+  const params = await searchParams;
 
   if (access.selectedStoreId) {
     redirect(
@@ -22,6 +27,8 @@ export default async function MerchantSelectStorePage() {
     <MerchantStoreSelectionScreen
       memberships={access.memberships}
       membershipCount={access.membershipCount}
+      authority={access.authority === "none" ? "demo-cookie" : access.authority}
+      reason={params?.reason ?? null}
     />
   );
 }

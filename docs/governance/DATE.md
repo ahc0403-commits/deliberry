@@ -4,8 +4,8 @@ Status: active
 Authority: binding
 Surface: cross-surface
 Domains: governance, date, time, timestamps
-Last updated: 2026-03-17
-Last verified: 2026-03-17
+Last updated: 2026-05-05
+Last verified: 2026-05-05
 Retrieve when:
 - checking timestamp, timezone, or document-date rules
 - verifying canonical date formats for governance docs, contracts, and comments
@@ -102,7 +102,7 @@ The following rules apply to all runtime timestamps across all surfaces and cont
 
 - All timestamps MUST be stored in UTC.
 - All timestamps MUST be represented as ISO 8601 strings with timezone offset (e.g., `2026-03-16T15:30:00Z`).
-- Display-layer conversion to `America/Argentina/Buenos_Aires` MUST happen only at the presentation layer.
+- Display-layer conversion to `Asia/Ho_Chi_Minh` MUST happen only at the presentation layer.
 - No surface MUST persist a local-time string in a database or API contract field.
 
 These rules are constitutional law (CONSTITUTION.md R-050). This document is their sole owner.
@@ -120,22 +120,22 @@ Timestamp fields in data models, DTOs, and domain entities belong to the surface
 The canonical display timezone for the Deliberry platform is:
 
 ```
-America/Argentina/Buenos_Aires (UTC-3, no daylight saving time)
+Asia/Ho_Chi_Minh (UTC+7, no daylight saving time)
 ```
 
-- All user-facing timestamps MUST be converted to Buenos Aires time at the presentation layer.
+- All user-facing timestamps MUST be converted to Ho Chi Minh City time at the presentation layer.
 - Conversion MUST happen in UI rendering code, never in the data layer.
-- The timezone offset is fixed at UTC-3 (Argentina does not observe DST).
+- The timezone offset is fixed at UTC+7 (Vietnam does not observe DST).
 
 ---
 
 ## Law 9 — Business Date Definition
 
-A "business date" is the calendar date in `America/Argentina/Buenos_Aires` at the time of the event.
+A "business date" is the calendar date in `Asia/Ho_Chi_Minh` at the time of the event.
 
-- An order placed at `2026-03-14T02:30:00Z` (UTC) has business date `2026-03-13` (11:30 PM Buenos Aires).
+- An order placed at `2026-03-14T18:30:00Z` (UTC) has business date `2026-03-15` (01:30 AM Ho Chi Minh City).
 - Settlement periods, daily reports, and analytics MUST use business dates.
-- Settlement periods cut off at `23:59:59` Buenos Aires time (`02:59:59Z` the following UTC day).
+- Settlement periods cut off at `23:59:59` Ho Chi Minh City time (`16:59:59Z` the same UTC day).
 
 ---
 
@@ -166,7 +166,7 @@ Every entity that records timestamps MUST use the following canonical field name
 
 ### Storage
 
-- MUST NOT store local Argentine time as-is in any persistent field.
+- MUST NOT store local Ho Chi Minh City time as-is in any persistent field.
 - MUST NOT store Unix epoch integers in contract or API fields (use ISO 8601 strings).
 - MUST NOT store relative time strings (`"2 min ago"`, `"yesterday"`) in persistent storage.
 
@@ -175,7 +175,7 @@ Every entity that records timestamps MUST use the following canonical field name
 - MUST NOT use `new Date()` without explicit UTC context in server-side code.
 - MUST NOT use `Date.now()` directly in contract fields (convert to ISO 8601 first).
 - MUST NOT use `toLocaleDateString()` or `toLocaleTimeString()` in data-layer code.
-- MUST NOT assume server timezone matches Buenos Aires.
+- MUST NOT assume server timezone matches Ho Chi Minh City.
 
 ### Client-Side Code
 
@@ -198,8 +198,8 @@ Every entity that records timestamps MUST use the following canonical field name
 | Inline date references in docs | `YYYY-MM-DD` |
 | Timestamp precision in docs | `YYYY-MM-DDTHH:MM:SSZ` |
 | Runtime timestamps (all surfaces) | `YYYY-MM-DDTHH:MM:SSZ` (UTC) |
-| Display timezone | `America/Argentina/Buenos_Aires` (UTC-3) |
-| Business dates | Calendar date in Buenos Aires time |
+| Display timezone | `Asia/Ho_Chi_Minh` (UTC+7) |
+| Business dates | Calendar date in Ho Chi Minh City time |
 | Current date in agent runs | Use injected `currentDate` |
 | Relative dates in docs | Forbidden |
 | Unix epoch in contracts | Forbidden |

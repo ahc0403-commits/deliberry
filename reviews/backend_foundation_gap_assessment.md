@@ -56,7 +56,7 @@ These are complete and waiting to be wired:
   - `orders` table must include all per-status timestamp columns (confirmedAt, preparingAt, etc.)
   - `audit_logs` table must match `AuditLogEntry` type exactly
   - `status` columns must use canonical enum values
-  - `money` columns must be `integer` (centavos)
+  - `money` columns must be `integer` (minor money units)
   - `timestamp` columns must be `timestamptz` (UTC)
 - **Blocks**: All data operations
 

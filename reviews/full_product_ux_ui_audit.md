@@ -43,7 +43,7 @@ Status: Active baseline audit
 - merchant-console: inline `(value / 100).toFixed(2)` or `.toLocaleString()`
 - admin-console: same inline pattern
 - `formatMoney()` from shared/utils/currency.ts is exported but not called by any surface
-- **Impact**: ARS locale formatting not applied. Dollar sign hardcoded.
+- **Impact**: Canonical VND formatting path was not applied. Currency symbol handling was hardcoded.
 
 ---
 

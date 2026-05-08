@@ -109,6 +109,28 @@ class OrderMilestone {
   final bool isCurrent;
 }
 
+class GroupOrderParticipant {
+  const GroupOrderParticipant({
+    required this.id,
+    required this.name,
+    required this.role,
+  });
+
+  final String id;
+  final String name;
+  final String role;
+}
+
+class GroupOrderRoom {
+  const GroupOrderRoom({
+    required this.code,
+    required this.participants,
+  });
+
+  final String code;
+  final List<GroupOrderParticipant> participants;
+}
+
 class CustomerRuntimeController extends ChangeNotifier {
   CustomerRuntimeController._() {
     _resetInMemoryState();
@@ -143,7 +165,7 @@ class CustomerRuntimeController extends ChangeNotifier {
     'store-5': {'Halal'},
     'store-6': {'Vegetarian'},
   };
-  static const int minimumOrderCentavos = 1000;
+  static const int minimumOrderCentavos = 100000;
 
   late List<String> _recentSearches;
   late String _searchQuery;
@@ -155,6 +177,17 @@ class CustomerRuntimeController extends ChangeNotifier {
   late List<CustomerOrderRecord> _activeOrderRecords;
   late List<CustomerOrderRecord> _pastOrderRecords;
   late List<MockAddress> _addresses;
+  late List<MockNotification> _notifications;
+  Set<String> _favoriteStoreIds = <String>{};
+  CustomerProfileIdentity _profileIdentity = const CustomerProfileIdentity();
+  Map<String, CustomerOrderReview> _reviewsByOrderId =
+      <String, CustomerOrderReview>{};
+  GroupOrderRoom? _groupOrderRoom;
+  CustomerSettingsPreferences _settingsPreferences =
+      const CustomerSettingsPreferences(
+    notificationsEnabled: true,
+    darkModeEnabled: false,
+  );
   int _nextAddressId = 100;
   late List<MockStore> _stores;
   Map<String, List<MockMenuItem>> _menuItemsByStore =
@@ -182,9 +215,24 @@ class CustomerRuntimeController extends ChangeNotifier {
   List<MockOrder> get pastOrders =>
       _pastOrderRecords.map((record) => record.order).toList();
   List<MockAddress> get addresses => List.unmodifiable(_addresses);
+  List<MockNotification> get notifications => List.unmodifiable(_notifications);
   List<MockStore> get stores => List.unmodifiable(_stores);
+  List<String> get favoriteStoreIds => List.unmodifiable(_favoriteStoreIds);
+  CustomerProfileIdentity get profileIdentity => _profileIdentity;
+  String? get profileDisplayName => _profileIdentity.displayName;
+  Map<String, CustomerOrderReview> get reviewsByOrderId =>
+      Map.unmodifiable(_reviewsByOrderId);
+  GroupOrderRoom? get groupOrderRoom => _groupOrderRoom;
+  List<MockStore> get favoriteStores => _stores
+      .where((store) => _favoriteStoreIds.contains(store.id))
+      .toList(growable: false);
   List<MockStore> get featuredStores =>
       _stores.where((store) => store.isFeatured).toList();
+  int get favoriteStoreCount => _favoriteStoreIds.length;
+  int get unreadNotificationCount =>
+      _notifications.where((notification) => !notification.isRead).length;
+  bool get notificationsEnabled => _settingsPreferences.notificationsEnabled;
+  bool get darkModeEnabled => _settingsPreferences.darkModeEnabled;
   String? get lastRuntimeBlocker => _lastRuntimeBlocker;
   bool get usesPersistedStoreData => _usesPersistedStoreData;
   bool get hasPersistedRuntimeLoaded => _persistedRuntimeLoaded;
@@ -198,8 +246,17 @@ class CustomerRuntimeController extends ChangeNotifier {
     _stores = List<MockStore>.from(MockData.stores);
     _selectedStoreId = _cartItems.isEmpty ? null : _stores.first.id;
     _addresses = const <MockAddress>[];
+    _notifications = List<MockNotification>.from(MockData.notifications);
+    _favoriteStoreIds = <String>{};
+    _profileIdentity = const CustomerProfileIdentity();
+    _reviewsByOrderId = <String, CustomerOrderReview>{};
+    _groupOrderRoom = null;
     _activeOrderRecords = const <CustomerOrderRecord>[];
     _pastOrderRecords = const <CustomerOrderRecord>[];
+    _settingsPreferences = const CustomerSettingsPreferences(
+      notificationsEnabled: true,
+      darkModeEnabled: false,
+    );
     _menuItemsByStore = <String, List<MockMenuItem>>{};
     _promoCode = null;
     _promoDiscount = 0;
@@ -289,7 +346,25 @@ class CustomerRuntimeController extends ChangeNotifier {
   }
 
   Future<CustomerOrderReview?> readOrderReview(String orderId) async {
-    return _gateway.readOrderReview(orderId);
+    final normalizedOrderId = orderId.trim();
+    if (normalizedOrderId.isEmpty) {
+      return null;
+    }
+
+    final cached = _reviewsByOrderId[normalizedOrderId];
+    if (cached != null) {
+      return cached;
+    }
+
+    final review = await _gateway.readOrderReview(normalizedOrderId);
+    if (review != null) {
+      _reviewsByOrderId = <String, CustomerOrderReview>{
+        ..._reviewsByOrderId,
+        normalizedOrderId: review,
+      };
+      notifyListeners();
+    }
+    return review;
   }
 
   Future<CustomerOrderReview> submitOrderReview({
@@ -299,7 +374,7 @@ class CustomerRuntimeController extends ChangeNotifier {
     required String reviewText,
     required List<String> tags,
   }) async {
-    return _gateway.saveOrderReview(
+    final review = await _gateway.saveOrderReview(
       CustomerOrderReview(
         orderId: orderId,
         storeId: storeId,
@@ -308,6 +383,24 @@ class CustomerRuntimeController extends ChangeNotifier {
         tags: tags,
       ),
     );
+    _reviewsByOrderId = <String, CustomerOrderReview>{
+      ..._reviewsByOrderId,
+      review.orderId: review,
+    };
+    notifyListeners();
+    return review;
+  }
+
+  CustomerOrderReview? findOrderReviewById(String? orderId) {
+    final normalizedOrderId = orderId?.trim();
+    if (normalizedOrderId == null || normalizedOrderId.isEmpty) {
+      return null;
+    }
+    return _reviewsByOrderId[normalizedOrderId];
+  }
+
+  bool hasSubmittedReview(String? orderId) {
+    return findOrderReviewById(orderId) != null;
   }
 
   MockAddress? get deliveryAddress {
@@ -316,6 +409,230 @@ class CustomerRuntimeController extends ChangeNotifier {
       (a) => a.isDefault,
       orElse: () => _addresses.first,
     );
+  }
+
+  void markNotificationRead(String notificationId) {
+    final index = _notifications.indexWhere(
+      (notification) => notification.id == notificationId,
+    );
+    if (index < 0) {
+      return;
+    }
+
+    final current = _notifications[index];
+    if (current.isRead) {
+      return;
+    }
+
+    _notifications[index] = MockNotification(
+      id: current.id,
+      title: current.title,
+      body: current.body,
+      createdAt: current.createdAt,
+      icon: current.icon,
+      isRead: true,
+    );
+    notifyListeners();
+  }
+
+  void markAllNotificationsRead() {
+    if (unreadNotificationCount == 0) {
+      return;
+    }
+
+    _notifications = _notifications
+        .map(
+          (notification) => MockNotification(
+            id: notification.id,
+            title: notification.title,
+            body: notification.body,
+            createdAt: notification.createdAt,
+            icon: notification.icon,
+            isRead: true,
+          ),
+        )
+        .toList();
+    notifyListeners();
+  }
+
+  bool isStoreFavorited(String storeId) => _favoriteStoreIds.contains(storeId);
+
+  Future<bool> toggleFavoriteStore(String storeId) async {
+    final normalizedStoreId = storeId.trim();
+    if (normalizedStoreId.isEmpty) {
+      return false;
+    }
+
+    final previous = Set<String>.from(_favoriteStoreIds);
+    final next = Set<String>.from(previous);
+    if (next.contains(normalizedStoreId)) {
+      next.remove(normalizedStoreId);
+    } else {
+      next.add(normalizedStoreId);
+    }
+
+    _favoriteStoreIds = next;
+    notifyListeners();
+
+    if (!CustomerSessionController.instance.hasSupabaseBackedSession ||
+        !RuntimeBackendConfig.current.isConfigured) {
+      return next.contains(normalizedStoreId);
+    }
+
+    try {
+      final snapshot = await _gateway.saveFavoriteStores(
+        CustomerFavoriteStoresSnapshot(
+          storeIds: next.toList()..sort(),
+        ),
+      );
+      _favoriteStoreIds = snapshot.storeIds.toSet();
+      _lastRuntimeBlocker = null;
+      notifyListeners();
+      return _favoriteStoreIds.contains(normalizedStoreId);
+    } catch (error) {
+      _favoriteStoreIds = previous;
+      _lastRuntimeBlocker = 'favorite_store_save_failed';
+      notifyListeners();
+      debugPrint('[CustomerRuntime] favorite_store_save_failed: $error');
+      rethrow;
+    }
+  }
+
+  Future<void> saveProfileIdentity({
+    String? displayName,
+  }) async {
+    final previous = _profileIdentity;
+    final normalizedDisplayName = displayName?.trim();
+    final next = CustomerProfileIdentity(
+      displayName:
+          normalizedDisplayName?.isEmpty == true ? null : normalizedDisplayName,
+    );
+
+    _profileIdentity = next;
+    notifyListeners();
+
+    if (!CustomerSessionController.instance.hasSupabaseBackedSession ||
+        !RuntimeBackendConfig.current.isConfigured) {
+      return;
+    }
+
+    try {
+      _profileIdentity = await _gateway.saveProfileIdentity(next);
+      _lastRuntimeBlocker = null;
+      notifyListeners();
+    } catch (error) {
+      _profileIdentity = previous;
+      _lastRuntimeBlocker = 'profile_identity_save_failed';
+      notifyListeners();
+      debugPrint('[CustomerRuntime] profile_identity_save_failed: $error');
+      rethrow;
+    }
+  }
+
+  GroupOrderRoom createGroupOrderRoom() {
+    final room = GroupOrderRoom(
+      code: _generateLocalGroupOrderCode(),
+      participants: [
+        GroupOrderParticipant(
+          id: 'local-host',
+          name: _resolveGroupOrderParticipantName(fallback: 'You'),
+          role: 'host',
+        ),
+      ],
+    );
+    _groupOrderRoom = room;
+    notifyListeners();
+    return room;
+  }
+
+  bool joinGroupOrderRoom(String code) {
+    final room = _groupOrderRoom;
+    if (room == null) {
+      return false;
+    }
+
+    final normalizedCode = code.trim().toUpperCase();
+    if (normalizedCode.isEmpty || room.code.toUpperCase() != normalizedCode) {
+      return false;
+    }
+
+    final member = GroupOrderParticipant(
+      id: 'local-member',
+      name: _resolveGroupOrderParticipantName(fallback: 'You'),
+      role: 'member',
+    );
+    final participants = List<GroupOrderParticipant>.from(room.participants);
+    final existingIndex = participants.indexWhere(
+      (participant) => participant.id == member.id,
+    );
+    if (existingIndex >= 0) {
+      participants[existingIndex] = member;
+    } else {
+      participants.add(member);
+    }
+
+    _groupOrderRoom = GroupOrderRoom(
+      code: room.code,
+      participants: participants,
+    );
+    notifyListeners();
+    return true;
+  }
+
+  String _resolveGroupOrderParticipantName({
+    required String fallback,
+  }) {
+    final savedName = profileDisplayName?.trim();
+    if (savedName != null && savedName.isNotEmpty) {
+      return savedName;
+    }
+    final sessionName =
+        CustomerSessionController.instance.identity?.displayName?.trim();
+    if (sessionName != null && sessionName.isNotEmpty) {
+      return sessionName;
+    }
+    final phone = CustomerSessionController.instance.phoneNumber?.trim();
+    if (phone != null && phone.isNotEmpty) {
+      return phone;
+    }
+    return fallback;
+  }
+
+  String _generateLocalGroupOrderCode() {
+    final millis = DateTime.now().millisecondsSinceEpoch % 10000;
+    return 'LOCAL-${millis.toString().padLeft(4, '0')}';
+  }
+
+  Future<void> saveSettingsPreferences({
+    bool? notificationsEnabled,
+    bool? darkModeEnabled,
+  }) async {
+    final previous = _settingsPreferences;
+    final next = CustomerSettingsPreferences(
+      notificationsEnabled:
+          notificationsEnabled ?? previous.notificationsEnabled,
+      darkModeEnabled: darkModeEnabled ?? previous.darkModeEnabled,
+    );
+
+    _settingsPreferences = next;
+    notifyListeners();
+
+    if (!CustomerSessionController.instance.hasSupabaseBackedSession ||
+        !RuntimeBackendConfig.current.isConfigured) {
+      return;
+    }
+
+    try {
+      _settingsPreferences = await _gateway.saveSettingsPreferences(next);
+      _lastRuntimeBlocker = null;
+      notifyListeners();
+    } catch (error) {
+      _settingsPreferences = previous;
+      _lastRuntimeBlocker = 'settings_preferences_save_failed';
+      notifyListeners();
+      debugPrint('[CustomerRuntime] settings_preferences_save_failed: $error');
+      rethrow;
+    }
   }
 
   MockStore? get selectedStore =>
@@ -383,6 +700,30 @@ class CustomerRuntimeController extends ChangeNotifier {
   MockStore resolveStore([String? storeId]) {
     final resolvedId = storeId ?? _selectedStoreId ?? _stores.first.id;
     return findStoreById(resolvedId);
+  }
+
+  Future<void> clearSessionOwnedState() async {
+    _recentSearches = List<String>.from(MockData.recentSearches);
+    _searchQuery = '';
+    _filterSelections = Map<String, int>.from(_defaultFilterSelections);
+    _cartItems = [];
+    _selectedStoreId = null;
+    _promoCode = null;
+    _promoDiscount = 0;
+    _addresses = const <MockAddress>[];
+    _activeOrderRecords = const <CustomerOrderRecord>[];
+    _pastOrderRecords = const <CustomerOrderRecord>[];
+    _notifications = List<MockNotification>.from(MockData.notifications);
+    _favoriteStoreIds = <String>{};
+    _profileIdentity = const CustomerProfileIdentity();
+    _groupOrderRoom = null;
+    _settingsPreferences = const CustomerSettingsPreferences(
+      notificationsEnabled: true,
+      darkModeEnabled: false,
+    );
+    _lastRuntimeBlocker = null;
+    notifyListeners();
+    await refreshPersistedRuntime();
   }
 
   List<MockMenuItem> menuItemsForStore(String storeId) {
@@ -519,11 +860,11 @@ class CustomerRuntimeController extends ChangeNotifier {
 
   bool applyPromoCode(String code) {
     final normalized = code.trim().toUpperCase();
-    if (normalized != 'SAVE5') {
+    if (normalized != 'SAVE50K') {
       return false;
     }
     _promoCode = normalized;
-    _promoDiscount = 500;
+    _promoDiscount = 50000;
     notifyListeners();
     return true;
   }
@@ -536,7 +877,7 @@ class CustomerRuntimeController extends ChangeNotifier {
 
   Future<CustomerOrderRecord?> submitOrder({
     required String instructions,
-    required int paymentMethodIndex,
+    required String paymentMethod,
   }) async {
     // R-024: Order placement requires authentication. Guests must not place orders.
     if (CustomerSessionController.instance.isGuest ||
@@ -570,11 +911,6 @@ class CustomerRuntimeController extends ChangeNotifier {
     }
 
     final now = DateTime.now().toUtc();
-    final paymentMethod = switch (paymentMethodIndex) {
-      0 => 'cash',
-      2 => 'digital_wallet',
-      _ => 'card',
-    };
     final idempotencyFingerprint = _buildOrderIdempotencyFingerprint(
       storeId: store.id,
       paymentMethod: paymentMethod,
@@ -972,6 +1308,14 @@ class CustomerRuntimeController extends ChangeNotifier {
         _stores = List<MockStore>.from(MockData.stores);
         _menuItemsByStore = <String, List<MockMenuItem>>{};
         _usesPersistedStoreData = false;
+        _settingsPreferences = const CustomerSettingsPreferences(
+          notificationsEnabled: true,
+          darkModeEnabled: false,
+        );
+        _favoriteStoreIds = <String>{};
+        _profileIdentity = const CustomerProfileIdentity();
+        _reviewsByOrderId = <String, CustomerOrderReview>{};
+        _groupOrderRoom = null;
         _persistedRuntimeLoaded = false;
         _lastRuntimeBlocker = null;
         notifyListeners();
@@ -1027,11 +1371,30 @@ class CustomerRuntimeController extends ChangeNotifier {
         _addresses = await _gateway.readAddresses();
         _activeOrderRecords = await _gateway.readActiveOrders();
         _pastOrderRecords = await _gateway.readPastOrders();
+        _settingsPreferences = await _gateway.readSettingsPreferences();
+        _favoriteStoreIds =
+            (await _gateway.readFavoriteStores()).storeIds.toSet();
+        _profileIdentity = await _gateway.readProfileIdentity();
+        final orderIds = [
+          ..._activeOrderRecords.map((record) => record.order.id),
+          ..._pastOrderRecords.map((record) => record.order.id),
+        ];
+        _reviewsByOrderId = await _gateway.readOrderReviewsBatch(orderIds);
         unawaited(_syncExternalSalesFromPersistedOrders(client));
       } else {
         _addresses = const <MockAddress>[];
         _activeOrderRecords = const <CustomerOrderRecord>[];
         _pastOrderRecords = const <CustomerOrderRecord>[];
+        _profileIdentity = CustomerProfileIdentity(
+          displayName:
+              CustomerSessionController.instance.identity?.displayName?.trim(),
+        );
+        _reviewsByOrderId = <String, CustomerOrderReview>{};
+        _settingsPreferences = const CustomerSettingsPreferences(
+          notificationsEnabled: true,
+          darkModeEnabled: false,
+        );
+        _favoriteStoreIds = <String>{};
       }
       if (_selectedStoreId != null &&
           !_stores.any((store) => store.id == _selectedStoreId)) {
@@ -1099,7 +1462,7 @@ class CustomerRuntimeController extends ChangeNotifier {
       rating: (row['rating'] as num?)?.toDouble() ?? 4.6,
       reviewCount: (row['review_count'] as num?)?.toInt() ?? 0,
       deliveryTime: row['avg_prep_time'] as String? ?? '25-35 min',
-      deliveryFee: 299,
+      deliveryFee: 29900,
       imageColor:
           index.isEven ? AppTheme.primaryColor : AppTheme.secondaryColor,
       storeType: 'direct',

@@ -139,29 +139,29 @@ PENDING → CAPTURED → SETTLED
 ### 3.1 Canonical State Machine
 
 ```
-PENDING → SCHEDULED → PROCESSING → PAID
-                    → FAILED → PENDING (retry)
+PENDING → CALCULATED → RECEIVED
+        → DISPUTED → ADJUSTED
+        CALCULATED → ADJUSTED
+        RECEIVED → ADJUSTED
 ```
 
 ### 3.2 Status Definitions
 
 | Status | Description |
 |---|---|
-| `pending` | Settlement calculated, awaiting scheduling |
-| `scheduled` | Settlement queued for processing on a future date |
-| `processing` | Settlement being transferred to merchant |
-| `paid` | Settlement successfully transferred |
-| `failed` | Settlement transfer failed (retryable) |
+| `pending` | Settlement window exists but totals are not finalized yet |
+| `calculated` | Settlement totals were calculated for the period |
+| `received` | Settlement receipt or payout receipt was recorded |
+| `disputed` | Settlement amount or payout expectation is under finance review |
+| `adjusted` | Settlement was corrected with an explicit adjustment outcome |
 
 ### 3.3 Rules
 
 - Settlements MUST NOT be deleted (R-032).
 - Corrections MUST be recorded as new adjustment entries.
-- Settlement amounts MUST be integer centavos (R-010).
-- Settlement period cutoff is 23:59:59 Buenos Aires time (see DATE.md Law 9).
-
-Note: Current canonical uses `processing_placeholder` and `completed_placeholder`. These
-MUST be renamed to `processing` and `paid` respectively.
+- Settlement amounts MUST be integer minor money units (whole dong for VND, cents for USD) (R-010).
+- Settlement period cutoff is 23:59:59 Ho Chi Minh City time (see DATE.md Law 9).
+- Merchant/admin web settlement routes may remain informational and fixture-backed until the landed settlement schema is actually wired into those surfaces.
 
 ---
 
@@ -229,7 +229,7 @@ OPEN → IN_PROGRESS → AWAITING_REPLY → RESOLVED → CLOSED
 ### 6.2 Compensation / Rollback Policy
 
 - If payment capture fails after order is `pending`, the order MUST auto-transition to `cancelled`.
-- If settlement fails, the settlement MUST transition to `failed` and be retried. The order and payment remain unaffected.
+- If settlement review finds an issue, the settlement MUST transition into `disputed` before any corrective `adjusted` outcome is recorded. The order and payment remain unaffected.
 - If a refund fails, it MUST be retried up to 3 times, then escalated to `finance_admin`.
 
 ### 6.3 Command/Event Distinction

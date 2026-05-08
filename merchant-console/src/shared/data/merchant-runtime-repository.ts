@@ -37,9 +37,16 @@ export interface MerchantDashboardKpiSnapshot {
   reviewCount: number;
 }
 
+export interface MerchantStoreShellSnapshot {
+  storeName: string;
+  activeOrderCount: number;
+  pendingReviewCount: number;
+}
+
 export interface MerchantRuntimeRepository {
   getDashboardData(storeId: string): Promise<DashboardData>;
   getDashboardKpiSnapshot(storeId: string): Promise<MerchantDashboardKpiSnapshot>;
+  getStoreShellSnapshot(storeId: string): Promise<MerchantStoreShellSnapshot>;
   getOrdersData(query: MerchantOrdersQuery): Promise<OrdersData>;
   updateOrderStatus(input: {
     storeId: string;

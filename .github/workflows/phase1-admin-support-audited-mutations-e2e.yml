@@ -1,0 +1,42 @@
+name: Phase 1 Admin Support Audited Mutations E2E
+
+on:
+  workflow_dispatch:
+
+jobs:
+  admin-support-audit-e2e:
+    name: Admin support audit E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      SUPABASE_URL: ${{ secrets.REMOTE_AUDIT_SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.REMOTE_AUDIT_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.REMOTE_AUDIT_SUPABASE_SERVICE_ROLE_KEY }}
+      ADMIN_SUPPORT_AUDIT_OUTPUT_ROOT: output/admin-support-audit
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+
+      - name: Check admin support audit script syntax
+        run: node --check docs/operations/phase-1-admin-support-audit-e2e-2026-05-04.mjs
+
+      - name: Check admin support audit environment
+        run: scripts/check-phase1-admin-support-audit-env.sh
+
+      - name: Run admin support audit E2E
+        run: scripts/run-phase1-admin-support-audit-e2e.sh
+
+      - name: Upload admin support audit artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: phase1-admin-support-audit-e2e
+          path: output/admin-support-audit/**
+          if-no-files-found: ignore

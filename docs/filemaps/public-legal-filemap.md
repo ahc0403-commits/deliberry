@@ -37,8 +37,6 @@ Show the narrow file cluster for the public legal routes, the legal-only shell, 
 - `public-website/src/features/legal/presentation/privacy-screen.tsx`
 - `public-website/src/features/legal/presentation/terms-screen.tsx`
 - `public-website/src/features/legal/presentation/refund-policy-screen.tsx`
-- `public-website/src/shared/data/content-service.ts`
-- `public-website/src/shared/data/public-content-repository.ts`
 
 ## Source-of-Truth Files
 
@@ -51,8 +49,6 @@ The live truth is split: document copy lives in the three legal screen files, wh
 
 ## Files Often Mistaken as Source of Truth but Are Not
 
-- `public-website/src/shared/data/content-service.ts`
-- `public-website/src/shared/data/public-content-repository.ts`
 - `public-website/src/shared/domain.ts`
 
 These represent a structural content boundary, not the current live legal-document source.

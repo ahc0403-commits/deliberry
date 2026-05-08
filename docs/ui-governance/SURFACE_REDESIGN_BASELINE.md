@@ -3,7 +3,7 @@
 Status: active
 Authority: binding (redesign implementation)
 Surface: cross-surface
-Last updated: 2026-03-17
+Last updated: 2026-04-28
 Related files:
 - docs/ui-governance/DESIGN_SYSTEM_BASELINE.md
 - docs/ui-governance/VISUAL_POLISH_RULES.md
@@ -19,6 +19,7 @@ Related files:
 - **Keep**: AppBar with back button for drill-down screens
 - **Add**: Subtle top-edge shadow on bottom nav for depth separation
 - **Change**: Tab icons should have filled variant when selected (not just color change)
+- **Change**: Root shell screens such as Home should not imply a back button from the app bar
 
 ### Information Hierarchy
 - **Home**: Hero promo carousel → Category pills → Featured stores → Nearby stores
@@ -43,23 +44,28 @@ Related files:
 | Status badges | Plain colored pill | Bordered pill with semantic color (bg + text + border) |
 | Info notices | Background-only box | Left accent bar (4px primary) + icon |
 | Store cards | Gradient placeholder image | Keep gradient but add subtle inner shadow for depth |
+| Global background | Warm beige app canvas | White app canvas with very light warm-muted secondary surfaces only |
+| Hero card tone | Bright coral gradient | Ink-black utility hero with restrained amber accent label |
+| Promo cards | High-chroma campaign banners | Tone-reduced campaign cards that sit under the hero without overpowering the screen |
+| Guest/auth entry | Decorative warm illustration blocks | Clean white-shell entry/auth surfaces with one strong dark hero block only where needed |
 
 ### What Must Stay
 - Material 3 theme foundation (app_theme.dart)
-- Coral primary (#FF4B3A), secondary (#FFB74D)
+- Strong delivery-red primary action family on white-first surfaces
 - 52px button height, 14px button radius
 - 16px card radius, 16px content edge padding
-- Roboto font family
 - Bottom nav at 72px
 - Current route structure and screen names
+- Customer-app visual refresh must remain presentation-only and must not alter runtime ownership, route ownership, payment placeholder rules, or excluded-feature boundaries
+- VNPAY/card/pay surfaces must use honest sandbox or pending wording and must not visually imply captured payment
 
 ---
 
 ## 2. merchant-console (Next.js)
 
 ### Navigation
-- **Keep**: Fixed left sidebar (240px, dark #1E293B)
-- **Keep**: Top header bar (56px, white, sticky)
+- **Keep**: Fixed left sidebar (240px, dark warm ink `#221D19`)
+- **Keep**: Top header bar (56px, translucent white, sticky)
 - **Change**: Replace emoji sidebar icons with Lucide SVG icons (20px, 1.5px stroke)
 - **Add**: Collapsed sidebar mode for tablet (icon-only, 64px)
 - **Add**: Active nav indicator: left 3px accent bar (primary color) instead of just background tint
@@ -92,13 +98,16 @@ Related files:
 | Forms | No validation states | Inline error/success states per VISUAL_POLISH_RULES |
 | Empty tables | Basic centered text | Full empty state pattern (icon + title + CTA) |
 | Money display | Inline `(v/100).toFixed(2)` | Use `formatMoney()` from adapter |
+| Main canvas | Tinted dashboard background | White operational canvas with warm-muted secondary surfaces |
+| Sidebar tone | Cool slate dashboard shell | Warm ink merchant shell |
+| Hero treatment | Bright mixed dashboard gradients | White shell with one dark focus panel only |
 
 ### What Must Stay
-- Dark sidebar (#1E293B)
-- Coral primary (#FF4B3A)
+- Dark warm sidebar (`#221D19`)
+- Coral primary (`#D9472F`)
 - 240px sidebar width, 56px header
 - 4px spacing grid
-- Inter/system-ui font stack
+- System UI font stack
 - Server action auth pattern (cookie-based)
 - In-memory repository + query service architecture
 
@@ -107,7 +116,7 @@ Related files:
 ## 3. admin-console (Next.js)
 
 ### Navigation
-- **Keep**: Fixed left sidebar (240px, dark #0F172A — darker than merchant)
+- **Keep**: Fixed left sidebar (240px, dark slate `#18212E` — cooler than merchant)
 - **Keep**: Top header with role badge and scope badge
 - **Change**: Replace emoji sidebar icons with Lucide SVG icons
 - **Add**: Same collapsed sidebar mode as merchant
@@ -138,12 +147,16 @@ Same table as merchant-console (icons, cards, tables, buttons, KPIs, badges, for
 | System health | Basic table | Status dot (green/yellow/red) + sparkline latency |
 | Dispute priority | Text badge only | Priority badge with icon (exclamation for high) |
 | Finance summary | Plain cards | Cards with subtle top accent bar (semantic color) |
+| Page canvas | Flat tinted console field | White/cool-gray platform canvas with white content surface |
+| Accent tone | Saturated indigo | Muted governance indigo |
+| Auth shell | Dark gradient card shell | Light governance entry shell with restrained accent chrome |
 
 ### What Must Stay
-- Indigo primary (#4F46E5) — governance authority signal
-- Darker sidebar (#0F172A)
+- Indigo primary (`#4D5FCF`) — governance authority signal
+- Darker sidebar (`#18212E`)
 - Permission role badge in header
 - Same architectural patterns as merchant (mirror structure)
+- Page-level horizontal overflow must be prevented; dense tables may scroll locally inside table wrappers
 
 ---
 

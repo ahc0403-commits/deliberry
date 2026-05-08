@@ -4,7 +4,7 @@ Status: Active
 Authority: Operational
 Surface: admin-console
 Domains: analytics, platform-reporting, admin
-Last updated: 2026-03-17
+Last updated: 2026-05-06
 Retrieve when:
 - editing the admin analytics route
 - tracing how analytics metrics reach the screen
@@ -26,16 +26,16 @@ Owns the platform analytics route and its fixture-backed KPI and chart views.
 ## Source of Truth
 
 - Route ownership lives in `admin-console/src/app/(platform)/analytics/page.tsx`
-- Read-path truth flows through `admin-console/src/shared/data/admin-query-services.ts`
+- Read-path truth flows through `admin-console/src/shared/data/admin-query-services.ts` via `adminFixtureFacade`
 - Repository truth lives in `admin-console/src/shared/data/admin-repository.ts`
 
-The route is access-enforced. Analytics data is fixture-backed and read-only.
+The route is access-enforced. Analytics data is fixture-backed and read-only, and the presentation layer now routes its explanatory copy through the admin locale system instead of leaving the long-form shell text English-only.
 
 ## Key Files to Read First
 
 - `admin-console/src/app/(platform)/analytics/page.tsx`
 - `admin-console/src/features/analytics/presentation/analytics-screen.tsx`
-- `admin-console/src/shared/data/admin-query-services.ts`
+- `admin-console/src/shared/data/admin-query-services.ts` (`adminFixtureFacade`)
 - `admin-console/src/shared/data/admin-repository.ts`
 
 ## Related Shared and Domain Files
@@ -64,5 +64,5 @@ The route is access-enforced. Analytics data is fixture-backed and read-only.
 ## What Not to Change Casually
 
 - Do not treat charts as live platform telemetry.
-- Do not bypass `adminQueryServices`.
+- Do not bypass `adminFixtureFacade`.
 - Do not introduce fake persistence to filter controls.

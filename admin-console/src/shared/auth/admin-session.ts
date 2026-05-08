@@ -4,6 +4,12 @@ import { createAdminServerSupabaseClient } from "../supabase/client";
 
 export const ADMIN_SESSION_COOKIE = "admin_session";
 export const ADMIN_ROLE_COOKIE = "admin_role";
+export const ADMIN_COOKIE_OPTIONS = {
+  httpOnly: true,
+  sameSite: "lax" as const,
+  secure: process.env.NODE_ENV === "production",
+  path: "/",
+};
 
 // R-020: Every mutation must be attributed to an authenticated actor.
 // R-022: Admin roles must be from PERMISSION_ROLES.

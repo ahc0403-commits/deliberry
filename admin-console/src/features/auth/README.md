@@ -4,7 +4,7 @@ Status: Active
 Authority: Operational
 Surface: admin-console
 Domains: auth, session, platform-entry
-Last updated: 2026-03-17
+Last updated: 2026-04-24
 Retrieve when:
 - editing admin login or sign-out behavior
 - checking where admin session cookies are written or read
@@ -20,7 +20,7 @@ Related files:
 
 ## Purpose
 
-Owns admin login entry, sign-out, and the current admin session cookie write path.
+Owns admin login entry, sign-out, Supabase-backed admin profile validation, and the current admin session cookie write path.
 
 ## Primary Routes and Screens
 
@@ -32,6 +32,7 @@ Owns admin login entry, sign-out, and the current admin session cookie write pat
 
 - Session cookie definitions and reads: `admin-console/src/shared/auth/admin-session.ts`
 - Sign-in and sign-out writes: `admin-console/src/features/auth/server/auth-actions.ts`
+- Admin identity source: Supabase Auth plus `public.actor_profiles` and `public.admin_profiles`
 
 This source of truth is split: cookies are written and read in the auth/session layer, while protected route enforcement now lives in the admin-local access guard used by the platform layout and middleware.
 
@@ -60,10 +61,10 @@ This source of truth is split: cookies are written and read in the auth/session 
 
 ## Known Limitations
 
-- Login is demo-safe only. Credentials are not validated.
-- Admin identity is hardcoded in `signInAdminAction`.
+- Login validates through Supabase Auth.
+- Admin role comes from `admin_profiles.role`.
+- Local seed provides `admin@deliberry.local / admin1234` for local smoke tests only.
 - Session presence is now enforced before protected platform routes render.
-- Auth remains demo-safe despite the runtime guard because there is still no real provider-backed identity.
 
 ## Safe Modification Guidance
 
@@ -74,5 +75,5 @@ This source of truth is split: cookies are written and read in the auth/session 
 ## What Not to Change Casually
 
 - Do not move session truth into client-only state.
-- Do not make the login UI imply real provider-backed auth.
+- Do not copy local seed credentials into production.
 - Do not bypass the admin-local guard layer with ad-hoc checks inside individual platform screens.

@@ -1,17 +1,21 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-export default function MarketingLayout({ children }: { children: ReactNode }) {
+import { getTranslations } from "../../shared/i18n/server";
+
+export default async function MarketingLayout({ children }: { children: ReactNode }) {
+  const { t } = await getTranslations();
+
   return (
     <div className="marketing-shell">
       <header className="site-header">
         <div className="site-header-inner">
           <Link href="/" className="site-logo">Deliberry</Link>
           <nav className="site-nav" aria-label="Main navigation">
-            <Link href="/service" className="site-nav-link">How it works</Link>
-            <Link href="/merchant" className="site-nav-link">For merchants</Link>
-            <Link href="/support" className="site-nav-link">Support</Link>
-            <Link href="/download" className="site-nav-cta">Get the app</Link>
+            <Link href="/service" className="site-nav-link">{t("nav.service")}</Link>
+            <Link href="/merchant" className="site-nav-link">{t("nav.merchant")}</Link>
+            <Link href="/support" className="site-nav-link">{t("nav.support")}</Link>
+            <Link href="/download" className="site-nav-cta">{t("nav.download")}</Link>
           </nav>
         </div>
       </header>
@@ -21,49 +25,49 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
       <footer className="site-footer">
         <div className="site-footer-inner">
           <div className="site-footer-topline">
-            <span className="site-footer-topline-label">Public acquisition surface</span>
+            <span className="site-footer-topline-label">{t("footer.surfaceLabel")}</span>
             <span className="site-footer-topline-copy">
-              Understand the service, explore merchant onboarding, and follow app availability truthfully.
+              {t("footer.surfaceCopy")}
             </span>
           </div>
           <div className="site-footer-grid">
             <div className="site-footer-brand-col">
               <span className="site-footer-logo">Deliberry</span>
               <p className="site-footer-tagline">
-                Fast, reliable food delivery connecting Buenos Aires with the restaurants they love.
+                {t("footer.tagline")}
               </p>
             </div>
             <div>
-              <div className="site-footer-col-title">Product</div>
+              <div className="site-footer-col-title">{t("footer.product")}</div>
               <div className="site-footer-col-links">
-                <Link href="/service">How it works</Link>
-                <Link href="/download">Download the app</Link>
-                <Link href="/support">Customer support</Link>
+                <Link href="/service">{t("footer.howItWorks")}</Link>
+                <Link href="/download">{t("footer.download")}</Link>
+                <Link href="/support">{t("footer.customerSupport")}</Link>
               </div>
             </div>
             <div>
-              <div className="site-footer-col-title">Business</div>
+              <div className="site-footer-col-title">{t("footer.business")}</div>
               <div className="site-footer-col-links">
-                <Link href="/merchant">Become a merchant</Link>
-                <Link href="/merchant#benefits">Partner benefits</Link>
-                <a href="mailto:partners@deliberry.com">Partner support</a>
+                <Link href="/merchant">{t("footer.becomeMerchant")}</Link>
+                <Link href="/merchant#benefits">{t("footer.partnerBenefits")}</Link>
+                <a href="mailto:partners@deliberry.com">{t("footer.partnerSupport")}</a>
               </div>
             </div>
             <div>
-              <div className="site-footer-col-title">Legal</div>
+              <div className="site-footer-col-title">{t("footer.legal")}</div>
               <div className="site-footer-col-links">
-                <Link href="/privacy">Privacy policy</Link>
-                <Link href="/terms">Terms of service</Link>
-                <Link href="/refund-policy">Refund policy</Link>
+                <Link href="/privacy">{t("footer.privacy")}</Link>
+                <Link href="/terms">{t("footer.terms")}</Link>
+                <Link href="/refund-policy">{t("footer.refunds")}</Link>
               </div>
             </div>
           </div>
           <div className="site-footer-bottom">
-            <span className="site-footer-copy">© 2026 Deliberry. All rights reserved.</span>
+            <span className="site-footer-copy">© 2026 Deliberry. {t("footer.rights")}</span>
             <div className="site-footer-legal">
-              <Link href="/privacy">Privacy</Link>
-              <Link href="/terms">Terms</Link>
-              <Link href="/refund-policy">Refunds</Link>
+              <Link href="/privacy">{t("footer.privacy")}</Link>
+              <Link href="/terms">{t("footer.terms")}</Link>
+              <Link href="/refund-policy">{t("footer.refunds")}</Link>
             </div>
           </div>
         </div>

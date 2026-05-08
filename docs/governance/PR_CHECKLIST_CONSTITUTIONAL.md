@@ -35,12 +35,12 @@ References: CONSTITUTION.md
 
 ## 2. Money Integrity (R-010 — R-014)
 
-- [ ] All new monetary values use integer centavos (not float)
+- [ ] All new monetary values use integer minor money units (not float)
 - [ ] No `parseFloat` or floating-point arithmetic on money values
-- [ ] Currency references use `'ARS'` as primary (not `'VND'`)
-- [ ] Run `scripts/check-governed-currency-literals.sh` and confirm no governed write path uses `VND` or undocumented `USD`
+- [ ] Currency references use `'VND'` as primary and `'USD'` only where documented
+- [ ] Run `scripts/check-governed-currency-literals.sh` and confirm no governed write path uses undocumented currency literals
 - [ ] Money display uses `formatMoney()` utility — no inline currency formatting
-- [ ] Settlement, refund, and commission amounts use centavo representation
+- [ ] Settlement, refund, and commission amounts use integer minor money unit representation
 
 ## 3. Identity & Permissions (R-020 — R-024)
 
@@ -67,8 +67,8 @@ References: CONSTITUTION.md
 ## 6. Timestamps (R-050 — R-053)
 
 - [ ] All new timestamps stored as UTC ISO 8601 (ending with `Z`)
-- [ ] No local Argentine time strings stored in database or API fields
-- [ ] Timezone conversion to Buenos Aires happens only in presentation/display code
+- [ ] No local Ho Chi Minh City time strings stored in database or API fields
+- [ ] Timezone conversion to Ho Chi Minh City happens only in presentation/display code
 - [ ] No `new Date()` without UTC context in server-side code
 - [ ] No relative time strings (`"2 min ago"`) in persistent storage
 
@@ -102,7 +102,7 @@ References: CONSTITUTION.md
 
 - [ ] New business logic has corresponding test coverage
 - [ ] State machine transitions have positive and negative test cases
-- [ ] Money calculations have test cases verifying integer centavo behavior
+- [ ] Money calculations have test cases verifying integer money-unit behavior
 - [ ] Permission checks have test cases for allowed and denied scenarios
 - [ ] No test-only hacks that weaken production code
 

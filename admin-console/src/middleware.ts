@@ -13,8 +13,14 @@ import {
 const ADMIN_SESSION_COOKIE = "admin_session";
 const ADMIN_ROLE_COOKIE = "admin_role";
 
+function withQuery(pathname: string, key: string, value: string) {
+  const separator = pathname.includes("?") ? "&" : "?";
+  return `${pathname}${separator}${key}=${encodeURIComponent(value)}`;
+}
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const reason = request.nextUrl.searchParams.get("reason");
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set(ADMIN_PATHNAME_HEADER, pathname);
 
@@ -40,7 +46,9 @@ export function middleware(request: NextRequest) {
 
     return NextResponse.redirect(
       new URL(
-        isAdminRole(role) ? resolveAdminHomePath(role) : "/access-boundary",
+        isAdminRole(role)
+            ? resolveAdminHomePath(role)
+            : withQuery("/access-boundary", "reason", "role_required"),
         request.url,
       ),
     );
@@ -48,10 +56,12 @@ export function middleware(request: NextRequest) {
 
   if (pathname === "/access-boundary") {
     if (!session) {
-      return NextResponse.redirect(new URL("/login", request.url));
+      return NextResponse.redirect(
+        new URL(withQuery("/login", "error", "session_required"), request.url),
+      );
     }
 
-    if (isAdminRole(role)) {
+    if (isAdminRole(role) && reason !== "access_denied") {
       return NextResponse.redirect(
         new URL(resolveAdminHomePath(role), request.url),
       );
@@ -66,16 +76,20 @@ export function middleware(request: NextRequest) {
 
   if (isProtectedPlatformPath(pathname)) {
     if (!session) {
-      return NextResponse.redirect(new URL("/login", request.url));
+      return NextResponse.redirect(
+        new URL(withQuery("/login", "error", "session_required"), request.url),
+      );
     }
 
     if (!isAdminRole(role)) {
-      return NextResponse.redirect(new URL("/access-boundary", request.url));
+      return NextResponse.redirect(
+        new URL(withQuery("/access-boundary", "reason", "role_required"), request.url),
+      );
     }
 
     if (!isAdminRoleAllowed(role, pathname)) {
       return NextResponse.redirect(
-        new URL(resolveAdminHomePath(role), request.url),
+        new URL(withQuery("/access-boundary", "reason", "access_denied"), request.url),
       );
     }
   }

@@ -4,10 +4,10 @@ Status: Active
 Authority: Operational
 Surface: public-website
 Domains: landing, marketing, homepage, acquisition
-Last updated: 2026-03-16
+Last updated: 2026-04-18
 Retrieve when:
 - changing the public homepage route, hero copy, homepage CTA targets, or shared marketing shell behavior
-- deciding whether landing content comes from live screen code or from structural content-service files
+- deciding whether landing content comes from live screen code or shared marketing shell files
 Related files:
 - public-website/src/app/(marketing)/page.tsx
 - public-website/src/app/(marketing)/layout.tsx
@@ -43,22 +43,15 @@ Authoritative:
 - [page.tsx](/Users/andremacmini/Deliberry/public-website/src/app/(marketing)/page.tsx) for route ownership
 - [layout.tsx](/Users/andremacmini/Deliberry/public-website/src/app/(marketing)/layout.tsx) for shared marketing shell behavior
 
-Derived or structural only:
-
-- [public-website/src/shared/data/content-service.ts](/Users/andremacmini/Deliberry/public-website/src/shared/data/content-service.ts)
-- [public-website/src/shared/data/public-content-repository.ts](/Users/andremacmini/Deliberry/public-website/src/shared/data/public-content-repository.ts)
-
-Those shared data files describe a structural content boundary, but they are not the live truth for the homepage route today.
-
 ## What Is Still Static, Hardcoded, Partial, or Retrieval-Shim-Only
 
 - Homepage content is hardcoded in the screen component.
 - Trust metrics, testimonials, and value statements are static presentation content.
 - There is no live CMS, repository-backed landing content, or runtime personalization path.
+- The unused shared public content seam was removed on 2026-04-18 so homepage truth stays single-source.
 
 ## Known Risks
 
-- Editing [content-service.ts](/Users/andremacmini/Deliberry/public-website/src/shared/data/content-service.ts) will not change the live homepage unless the route is explicitly rewired.
 - Marketing-shell link changes in [layout.tsx](/Users/andremacmini/Deliberry/public-website/src/app/(marketing)/layout.tsx) can drift away from landing CTAs if changed separately.
 - Static marketing claims can become stale because they are manually maintained in screen code.
 
@@ -67,7 +60,6 @@ Those shared data files describe a structural content boundary, but they are not
 - Start in [page.tsx](/Users/andremacmini/Deliberry/public-website/src/app/(marketing)/page.tsx) to confirm the route owner.
 - Change live homepage content in [landing-screen.tsx](/Users/andremacmini/Deliberry/public-website/src/features/landing/presentation/landing-screen.tsx).
 - Change shared header/footer behavior in [layout.tsx](/Users/andremacmini/Deliberry/public-website/src/app/(marketing)/layout.tsx).
-- Treat [content-service.ts](/Users/andremacmini/Deliberry/public-website/src/shared/data/content-service.ts) and [public-content-repository.ts](/Users/andremacmini/Deliberry/public-website/src/shared/data/public-content-repository.ts) as future structural boundaries unless the live route is intentionally moved onto them.
 
 ## Related Filemaps
 

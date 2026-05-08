@@ -115,6 +115,20 @@ export class InMemoryMerchantRepository {
             trend: `${activeOrderCount} active`,
             trendDirection: "neutral" as const,
           }
+        : kpi.label === "Avg Prep Time"
+          ? {
+              ...kpi,
+              value: store.avgPrepTime,
+              trend: "Current store default",
+              trendDirection: "neutral" as const,
+            }
+          : kpi.label === "Today's Rating"
+            ? {
+                ...kpi,
+                value: store.rating.toFixed(1),
+                trend: `${store.reviewCount} review${store.reviewCount === 1 ? "" : "s"}`,
+                trendDirection: "neutral" as const,
+              }
         : kpi,
     );
     const alerts = [

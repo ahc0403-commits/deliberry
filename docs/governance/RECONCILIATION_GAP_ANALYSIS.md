@@ -31,11 +31,11 @@ Baseline: Final Full-System QA (reviews/final_full_system_qa.md -- PASS verdict)
 ### GAP-001: CurrencyCode excludes ARS, includes VND
 
 - **Rule Violated**: R-012
-- **Description**: The canonical `CurrencyCode` type was `'USD' | 'VND'` but the product operates in Argentina.
+- **Description**: The canonical `CurrencyCode` type was misaligned with the Vietnam market baseline.
 - **File**: `shared/types/common.types.ts:4`
 - **Severity**: CRITICAL
 - **Status**: RESOLVED (2026-03-14, Wave 0 + Wave 1)
-- **Resolution**: CurrencyCode updated to `'ARS' | 'USD'`. VND removed. Currency utility updated to support ARS formatting.
+- **Resolution**: CurrencyCode was aligned to the VND/USD baseline. Currency utility was updated to support VND as canonical market currency with USD as the secondary documented currency.
 
 ### GAP-002: Order status 3-way divergence
 
@@ -66,7 +66,7 @@ Baseline: Final Full-System QA (reviews/final_full_system_qa.md -- PASS verdict)
 - **File**: `shared/types/common.types.ts:5`
 - **Severity**: HIGH
 - **Status**: RESOLVED (2026-03-14, Wave 1)
-- **Resolution**: `MoneyAmount` changed to branded type `number & { readonly __brand: 'centavos' }`. `Centavos` alias added. JSDoc documents the constraint. `formatMoney` updated to accept centavos and divide by 100.
+- **Resolution**: `MoneyAmount` changed to a branded integer money type. JSDoc documents the constraint. `formatMoney` was updated to accept integer money values with currency-aware formatting.
 
 ### GAP-005: No audit trail infrastructure
 
@@ -83,7 +83,7 @@ Baseline: Final Full-System QA (reviews/final_full_system_qa.md -- PASS verdict)
 - **File**: `shared/utils/date.ts`, mock data across all surfaces
 - **Severity**: HIGH
 - **Status**: PARTIALLY RESOLVED (2026-03-14, Wave 1)
-- **Resolution**: Date utility updated with `BUENOS_AIRES_TZ`, `toDisplayTime`, `toBusinessDate`, `isValidUTCTimestamp`. `ISODateTimeUTC` branded type added. Mock data date format update deferred to Wave 2. API validation deferred to Wave 3.
+- **Resolution**: Date utility updated with display-timezone conversion helpers, `toBusinessDate`, and `isValidUTCTimestamp`. `ISODateTimeUTC` branded type added. Mock data date format update deferred to Wave 2. API validation deferred to Wave 3.
 
 ---
 
@@ -114,7 +114,7 @@ Baseline: Final Full-System QA (reviews/final_full_system_qa.md -- PASS verdict)
 - **File**: `shared/validation/order.schema.json`
 - **Severity**: MEDIUM
 - **Status**: RESOLVED (2026-03-14, Wave 1)
-- **Resolution**: Added `enum` constraint with all 9 canonical status values. Added `total_centavos` as integer type. Added `currency` field.
+- **Resolution**: Added `enum` constraint with all 9 canonical status values. Added integer order total fields and a `currency` field.
 
 ### GAP-013: No dispute status enum defined
 
@@ -144,7 +144,7 @@ Baseline: Final Full-System QA (reviews/final_full_system_qa.md -- PASS verdict)
 - **File**: `shared/utils/currency.ts`
 - **Severity**: LOW
 - **Status**: RESOLVED (2026-03-14, Wave 0 + Wave 1)
-- **Resolution**: Utility rewritten to accept centavos and format for ARS (es-AR) and USD (en-US). Added `parseToCentavos` helper. VND removed.
+- **Resolution**: Utility was rewritten to accept integer money values and now formats for the VND/USD baseline. A legacy parser helper name may still remain until a later cleanup pass.
 
 ### GAP-012: Date utility has no timezone handling
 
@@ -153,16 +153,16 @@ Baseline: Final Full-System QA (reviews/final_full_system_qa.md -- PASS verdict)
 - **File**: `shared/utils/date.ts`
 - **Severity**: LOW
 - **Status**: RESOLVED (2026-03-14, Wave 1)
-- **Resolution**: Added `BUENOS_AIRES_TZ`, `toDisplayTime`, `toBusinessDate`, `isValidUTCTimestamp`.
+- **Resolution**: Added display-timezone helpers, `toDisplayTime`, `toBusinessDate`, and `isValidUTCTimestamp`.
 
 ### GAP-014: Mock data uses float money values
 
 - **Rule Violated**: R-010, R-011
-- **Description**: Mock data across merchant and admin surfaces uses float amounts (e.g., 18.5, 8456.50) instead of integer centavos.
+- **Description**: Mock data across merchant and admin surfaces uses float amounts (e.g., 18.5, 8456.50) instead of integer money values.
 - **File**: `merchant-console/src/shared/data/merchant-mock-data.ts`, `admin-console/src/shared/data/admin-mock-data.ts`
 - **Severity**: LOW
 - **Status**: RESOLVED (2026-03-16, Wave 2A-1 + Wave 2A-2)
-- **Resolution**: All merchant-console mock money fields converted to integer centavos (Wave 2A-1). All admin-console mock money fields converted to integer centavos (Wave 2A-2). All display components on both surfaces updated to divide centavos by 100 for rendering. Affected admin fields: `mockPlatformOrders.total`, `mockDisputes.amount`, `mockPlatformSettlements` (grossAmount/commission/netAmount), `mockMerchants.totalRevenue`, `mockCampaigns` (budget/spent), `mockWeeklyOrders.revenue`.
+- **Resolution**: All merchant-console mock money fields converted to integer money values (Wave 2A-1). All admin-console mock money fields converted to integer money values (Wave 2A-2). Display components on both surfaces were updated to follow currency-aware rendering rules. Affected admin fields: `mockPlatformOrders.total`, `mockDisputes.amount`, `mockPlatformSettlements` (grossAmount/commission/netAmount), `mockMerchants.totalRevenue`, `mockCampaigns` (budget/spent), `mockWeeklyOrders.revenue`.
 
 ### GAP-015: Mock data uses informal date strings
 
@@ -188,8 +188,8 @@ Baseline: Final Full-System QA (reviews/final_full_system_qa.md -- PASS verdict)
 All CRITICAL and LOW gaps are resolved. One HIGH gap (GAP-005: audit trail) remains deferred to Wave 5.
 
 **Wave 2A-1 progress (2026-03-16)**: GAP-014 partially resolved for merchant-console.
-**Wave 2A-2 progress (2026-03-16)**: GAP-014 fully resolved — admin-console mock money fields converted to centavos and display components updated.
-**Wave 2A-3 progress (2026-03-16)**: public-website scanned — no numeric mock money fields exist; surface contains only placeholder string content and marketing copy. No centavo conversions required. Typecheck passes.
-**Wave 2A-4 progress (2026-03-16)**: shared/ scanned — two validation schemas had money fields typed as `"type": "number"` instead of `"type": "integer"`: `settlement.schema.json` (amount) and `menu.schema.json` (price). Both fixed to `"type": "integer"` with centavo constraint description. All other shared/ files contain no numeric mock money values. All three web surface typechecks pass.
+**Wave 2A-2 progress (2026-03-16)**: GAP-014 fully resolved — admin-console mock money fields converted to integer money values and display components updated.
+**Wave 2A-3 progress (2026-03-16)**: public-website scanned — no numeric mock money fields exist; surface contains only placeholder string content and marketing copy. No money-value conversions required. Typecheck passes.
+**Wave 2A-4 progress (2026-03-16)**: shared/ scanned — two validation schemas had money fields typed as `"type": "number"` instead of `"type": "integer"`: `settlement.schema.json` (amount) and `menu.schema.json` (price). Both fixed to `"type": "integer"` with minor-money-unit constraint description. All other shared/ files contain no numeric mock money values. All three web surface typechecks pass.
 **Wave 2B-1 progress (2026-03-16)**: GAP-015 fully resolved — all informal date/time strings replaced with UTC ISO 8601 timestamps across merchant-console and admin-console mock data. All three web surface typechecks pass.
 **Wave 2B-2 progress (2026-03-16)**: Mock data canonical derivation complete — `MerchantOrder.status`, `Promotion.type`, `SettlementRecord.status` (merchant-console) and `PlatformOrder.status`, `PlatformDispute.status`, `PlatformSettlement.status` (admin-console) now derive from canonical types via domain adapters. `PROMOTION_TYPES` extended with `percentage` and `fixed` per R-042. Both domain adapters extended with additional canonical exports. All three web surface typechecks pass.

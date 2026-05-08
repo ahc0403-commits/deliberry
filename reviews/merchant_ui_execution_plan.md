@@ -64,7 +64,7 @@ All components built on a unified CSS token system:
 File: `merchant-console/src/shared/data/merchant-mock-data.ts`
 - 20+ type definitions for operational entities
 - Rich mock instances: 1 store, 4 KPIs, 7 orders, 8 categories, 20 menu items, 6 reviews, 4 promotions, 5 settlement records, analytics metrics, 7-day revenue, 5 top items, 4 alerts
-- All data uses realistic Argentine food delivery context
+- All data uses realistic Vietnam-market food delivery context
 
 ## 3. Hierarchy and Layout Rules
 
@@ -122,7 +122,7 @@ Reviews show pending/responded filter tabs. Unresponded reviews have accent bord
 
 File: `merchant-console/src/shared/data/merchant-mock-data.ts`
 
-Realistic mock data for "Sabor Criollo Kitchen", an Argentine restaurant in Buenos Aires:
+Realistic mock data for "Saigon Home Kitchen", a Vietnam-market restaurant in Ho Chi Minh City:
 - 7 orders across all statuses (new → cancelled) with real item names, modifiers, addresses
 - 20 menu items across 8 categories (Empanadas, Parrilla, Milanesas, Pizzas, etc.)
 - 6 reviews with varying ratings and response states

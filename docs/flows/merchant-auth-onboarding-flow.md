@@ -50,9 +50,9 @@ Describe the real current merchant entry flow from login into onboarding and the
 ## What Is Authoritative vs Derived In This Flow
 
 - Authoritative:
-  - session and onboarding cookie values
+  - `merchant-console/src/shared/auth/merchant-session.ts` access-state composition
   - redirect decisions in auth access helpers
-  - cookie writes in server actions
+  - session and onboarding writes in server actions / auth adapter
 - Derived:
   - `readMerchantAccessState()` aggregate object
   - visible login and onboarding copy
@@ -60,10 +60,10 @@ Describe the real current merchant entry flow from login into onboarding and the
 
 ## Known Shallow, Partial, Fixture-Backed, or Local-Only Limits
 
-- Login is demo-safe only; credentials are not validated.
-- Merchant identity is hardcoded during sign-in.
-- Onboarding completion is only a cookie flag.
-- The flow is route-real and coherent, but it is not backed by a real auth provider or merchant verification process.
+- Under `demo-cookie` authority, login is demo-safe only; credentials are not validated and merchant identity is seeded locally.
+- Under `supabase` authority, merchant sign-in is real Supabase password auth and onboarding completion persists to `public.merchant_profiles.onboarding_complete`.
+- Neither authority path represents a verified merchant approval or business-review workflow yet.
+- The flow is route-real and coherent, but public merchant acquisition still happens separately through the manual `/merchant` handoff route on `public-website`.
 
 ## Common Edit Mistakes
 

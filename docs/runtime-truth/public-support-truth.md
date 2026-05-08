@@ -4,7 +4,7 @@ Status: Active
 Authority: Operational
 Surface: public-website
 Domains: support, customer-help, public-marketing
-Last updated: 2026-03-17
+Last updated: 2026-04-18
 Retrieve when:
 - changing the `/support` route, support-page content, route imports, or marketing-shell support links
 - checking the live implementation folder because the route name and feature-folder name do not match
@@ -48,8 +48,6 @@ Authoritative:
 Derived, structural, or retrieval-shim-only:
 
 - [public-website/src/features/support/README.md](/Users/andremacmini/Deliberry/public-website/src/features/support/README.md) is a retrieval aid, not the live implementation
-- [public-website/src/shared/data/content-service.ts](/Users/andremacmini/Deliberry/public-website/src/shared/data/content-service.ts)
-- [public-website/src/shared/data/public-content-repository.ts](/Users/andremacmini/Deliberry/public-website/src/shared/data/public-content-repository.ts)
 
 ## What Is Still Static, Hardcoded, Partial, or Retrieval-Shim-Only
 
@@ -57,12 +55,12 @@ Derived, structural, or retrieval-shim-only:
 - The `features/support/` folder is currently a retrieval-shim-only cluster for documentation, not the live route implementation.
 - There is no live ticketing integration, contact form submission path, or backend support system on this route.
 - The page now uses support-safe wording and does not claim live chat, live tracking, password-reset flows, or guaranteed refund automation.
+- The unused shared public content seam was removed on 2026-04-18 so `/support` truth stays single-source.
 
 ## Known Risks
 
 - The route-to-folder mismatch can mislead agents into editing `features/support/` instead of the live `features/customer-support/` implementation.
-- Shared content-service files can be mistaken for live support truth even though the route does not use them.
-- Static support contact content can drift from legal or marketing references because it is manually maintained.
+- - Static support contact content can drift from legal or marketing references because it is manually maintained.
 
 ## Safe Modification Guidance
 

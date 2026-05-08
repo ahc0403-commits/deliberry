@@ -83,7 +83,7 @@ export function PublicTermsScreen() {
               </div>
 
               <h2>1. About Deliberry</h2>
-              <p>Deliberry is a food delivery platform that connects customers with local restaurants in Buenos Aires, Argentina. We act as an intermediary between customers and restaurants — we are not a restaurant and do not prepare food.</p>
+              <p>Deliberry is a food delivery platform that connects customers with local restaurants in Ho Chi Minh City, Vietnam. We act as an intermediary between customers and restaurants — we are not a restaurant and do not prepare food.</p>
 
               <h2>2. Eligibility</h2>
               <p>You must be at least 18 years old to use Deliberry. By creating an account, you confirm that you meet this requirement and that the information you provide is accurate and complete.</p>
@@ -95,10 +95,10 @@ export function PublicTermsScreen() {
               <p>When you place an order through Deliberry, you are entering into a purchase agreement with the restaurant, not with Deliberry. Deliberry facilitates the transaction and coordinates delivery. Menu availability and pricing are set by each restaurant and may vary.</p>
 
               <h2>5. Pricing and payment</h2>
-              <p>Prices displayed in the app include the item price plus applicable delivery fees. A platform service fee may apply to certain orders. All prices are shown in Argentine Pesos (ARS). Payment method selection happens during checkout, and live charge timing depends on the current payment flow available in the app.</p>
+              <p>Prices displayed in the app include the item price plus applicable delivery fees. A platform service fee may apply to certain orders. All prices are shown in Vietnamese Dong (VND). Payment method selection happens during checkout. Card and alternate pay methods remain future-ready or sandbox-only until a live payment flow is explicitly enabled.</p>
 
               <h2>6. Cancellations</h2>
-              <p>You may cancel an order within 2 minutes of placing it for a full refund. Once a restaurant has accepted and begun preparing your order, cancellations are subject to our Refund Policy. Deliberry reserves the right to cancel orders in cases of suspected fraud or system errors.</p>
+              <p>Cancellation handling depends on the current order stage and available support path. Once a restaurant has accepted and begun preparing your order, cancellations are subject to our Refund Policy. Deliberry reserves the right to cancel orders in cases of suspected fraud or system errors.</p>
 
               <h2>7. Delivery</h2>
               <p>Delivery times are estimates and may vary due to traffic, weather, or restaurant preparation time. Deliberry is not liable for delays caused by circumstances outside our reasonable control. It is your responsibility to provide accurate delivery details. Re-delivery fees may apply if an order cannot be delivered due to incorrect information.</p>
@@ -123,7 +123,7 @@ export function PublicTermsScreen() {
               <p>To the fullest extent permitted by law, Deliberry&apos;s liability for any claim arising from the use of the service is limited to the amount you paid for the order in question. We are not liable for indirect, incidental, or consequential damages.</p>
 
               <h2>12. Governing law</h2>
-              <p>These terms are governed by the laws of Argentina. Any disputes will be subject to the exclusive jurisdiction of the courts of Buenos Aires.</p>
+              <p>These terms are governed by the laws of Vietnam. Any disputes will be subject to the exclusive jurisdiction of the courts of Ho Chi Minh City.</p>
 
               <h2>13. Changes to these terms</h2>
               <p>We may update these terms. We will notify you of material changes at least 30 days in advance via email or in-app notification. Continued use after the effective date constitutes acceptance.</p>

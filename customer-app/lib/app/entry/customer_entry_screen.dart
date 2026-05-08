@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../core/data/customer_runtime_controller.dart';
+import '../../core/i18n/app_localizations.dart';
 import '../../core/session/customer_session_controller.dart';
 import '../../core/theme/app_theme.dart';
+import '../../features/common/presentation/widgets.dart';
 import '../router/route_names.dart';
 
 class CustomerEntryScreen extends StatefulWidget {
@@ -94,18 +96,14 @@ class _EntryLandingScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
+      backgroundColor: AppTheme.backgroundGrey,
+      body: ScrollableSafeContent(
+        padding: const EdgeInsets.only(bottom: 24),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(
-              flex: 5,
-              child: _HeroSection(),
-            ),
-            Expanded(
-              flex: 4,
-              child: _BottomSection(),
-            ),
+            _HeroSection(),
+            _BottomSection(),
           ],
         ),
       ),
@@ -116,78 +114,55 @@ class _EntryLandingScreen extends StatelessWidget {
 class _HeroSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
     return Container(
       width: double.infinity,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFFFF4B3A),
-            Color(0xFFFF7A35),
-            Color(0xFFFFB74D),
-          ],
-          stops: [0.0, 0.55, 1.0],
-        ),
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      decoration: BoxDecoration(
+        color: AppTheme.inkColor,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [AppTheme.softShadow(alpha: 0.16)],
       ),
       child: Stack(
         children: [
-          // Decorative circles
           Positioned(
-            top: -40,
-            right: -40,
+            top: 28,
+            right: 24,
             child: Container(
-              width: 160,
-              height: 160,
+              width: 96,
+              height: 132,
               decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.08),
+                color: AppTheme.white.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(28),
               ),
             ),
           ),
           Positioned(
-            bottom: 20,
-            left: -30,
+            bottom: 28,
+            right: 92,
             child: Container(
-              width: 120,
-              height: 120,
+              width: 74,
+              height: 74,
               decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.06),
+                color: AppTheme.secondaryColor.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(24),
               ),
             ),
           ),
-          Positioned(
-            top: 60,
-            left: 30,
-            child: Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.10),
-              ),
-            ),
-          ),
-          // Content
           Padding(
             padding: const EdgeInsets.fromLTRB(32, 48, 32, 32),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Logo mark
                 Container(
                   width: 56,
                   height: 56,
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppTheme.surfaceMuted,
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.15),
-                        blurRadius: 20,
-                        offset: const Offset(0, 8),
-                      ),
+                      AppTheme.softShadow(alpha: 0.1),
                     ],
                   ),
                   child: const Center(
@@ -197,7 +172,7 @@ class _HeroSection extends StatelessWidget {
                         fontSize: 28,
                         fontWeight: FontWeight.w900,
                         color: AppTheme.primaryColor,
-                        letterSpacing: -1,
+                        letterSpacing: 0,
                       ),
                     ),
                   ),
@@ -208,31 +183,38 @@ class _HeroSection extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 42,
                     fontWeight: FontWeight.w900,
-                    color: Colors.white,
-                    letterSpacing: -1.5,
+                    color: AppTheme.white,
+                    letterSpacing: 0,
                     height: 1.0,
                   ),
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  'Food & groceries delivered\nfast to your door.',
+                  l10n.text('entry.tagline'),
                   style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w400,
-                    color: Colors.white.withValues(alpha: 0.88),
+                    color: AppTheme.white.withValues(alpha: 0.88),
                     height: 1.4,
                   ),
                 ),
-                const Spacer(),
-                // Trust indicators
-                Row(
+                const SizedBox(height: 48),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
                   children: [
-                    _TrustBadge(icon: Icons.bolt, label: '20 min avg'),
-                    const SizedBox(width: 12),
                     _TrustBadge(
-                        icon: Icons.storefront_outlined, label: '500+ stores'),
-                    const SizedBox(width: 12),
-                    _TrustBadge(icon: Icons.star_rounded, label: '4.8 rating'),
+                      icon: Icons.bolt,
+                      label: l10n.text('entry.trust.time'),
+                    ),
+                    _TrustBadge(
+                      icon: Icons.storefront_outlined,
+                      label: l10n.text('entry.trust.stores'),
+                    ),
+                    _TrustBadge(
+                      icon: Icons.star_rounded,
+                      label: l10n.text('entry.trust.rating'),
+                    ),
                   ],
                 ),
               ],
@@ -255,21 +237,21 @@ class _TrustBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.18),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+        color: AppTheme.white.withValues(alpha: 0.11),
+        borderRadius: BorderRadius.circular(11),
+        border: Border.all(color: AppTheme.white.withValues(alpha: 0.15)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: Colors.white, size: 14),
+          Icon(icon, color: AppTheme.white, size: 14),
           const SizedBox(width: 5),
           Text(
             label,
             style: const TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: Colors.white,
+              color: AppTheme.white,
             ),
           ),
         ],
@@ -281,23 +263,25 @@ class _TrustBadge extends StatelessWidget {
 class _BottomSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+      padding: const EdgeInsets.fromLTRB(24, 32, 24, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
-            'Get started today',
+          Text(
+            l10n.text('entry.startTitle'),
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w800,
-              color: Color(0xFF1A1A2E),
-              letterSpacing: -0.5,
+              color: AppTheme.inkColor,
+              letterSpacing: 0,
             ),
           ),
           const SizedBox(height: 6),
           Text(
-            'Sign in with Zalo or Kakao, continue as guest, or use phone verification as fallback.',
+            l10n.text('entry.startBody'),
             style: TextStyle(
               fontSize: 14,
               color: AppTheme.textSecondary,
@@ -309,19 +293,19 @@ class _BottomSection extends StatelessWidget {
             onPressed: () {
               Navigator.of(context).pushNamed(RouteNames.auth);
             },
-            child: const Text('Get Started'),
+            child: Text(l10n.text('entry.getStarted')),
           ),
           const SizedBox(height: 12),
           OutlinedButton(
             onPressed: () {
               Navigator.of(context).pushNamed(RouteNames.guest);
             },
-            child: const Text('Continue as Guest'),
+            child: Text(l10n.text('entry.guest')),
           ),
-          const Spacer(),
+          const SizedBox(height: 20),
           Center(
             child: Text(
-              'By continuing you agree to our Terms & Privacy Policy',
+              l10n.text('entry.terms'),
               style: TextStyle(
                 fontSize: 11,
                 color: AppTheme.textSecondary,

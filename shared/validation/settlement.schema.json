@@ -4,8 +4,10 @@
   "type": "object",
   "properties": {
     "settlement_id": { "type": "string", "minLength": 1 },
-    "state": { "type": "string" },
-    "amount": { "type": "integer", "minimum": 0, "description": "Settlement amount in integer centavos. R-010, R-011." }
+    "state": { "type": "string", "enum": ["pending", "calculated", "received", "disputed", "adjusted"] },
+    "next_state": { "type": "string", "enum": ["received"] },
+    "amount": { "type": "integer", "minimum": 0, "description": "Settlement amount in integer minor money units. For VND, values are stored as whole dong amounts. R-010, R-011." }
   },
-  "required": ["settlement_id", "state", "amount"]
+  "required": ["settlement_id", "state", "amount"],
+  "additionalProperties": false
 }

@@ -39,7 +39,7 @@ Related files:
 9. EXECUTION_PLAN.md -- This document
 10. PR_CHECKLIST_CONSTITUTIONAL.md -- PR review checklist
 11. QA_CHECKLIST_CONSTITUTIONAL.md -- QA validation checklist
-12. Minimal code fixes: CurrencyCode (ARS), currency utility (ARS support), order status enum (add `in_transit`, `disputed`)
+12. Minimal code fixes: CurrencyCode baseline, currency utility, order status enum (add `in_transit`, `disputed`)
 
 **Status**: COMPLETE
 
@@ -50,9 +50,9 @@ Related files:
 **Scope**: Fix all shared contract types, constants, and utilities to match governance rules.
 
 **Completed Deliverables**:
-1. DONE: Fix `CurrencyCode` in `shared/types/common.types.ts` -> `'ARS' | 'USD'` (remove VND)
-2. DONE: Fix `MoneyAmount` -> branded integer centavo type with JSDoc constraint
-3. DONE: Add `Centavos` alias and `ISODateTimeUTC` branded type
+1. DONE: Fix `CurrencyCode` in `shared/types/common.types.ts` to the canonical market baseline
+2. DONE: Fix `MoneyAmount` -> branded integer money type with JSDoc constraint
+3. DONE: Add supporting money/date branded types
 4. DONE: Add `draft`, `in_transit`, `disputed` to `ORDER_STATUSES`
 5. DONE: Rename `ready_for_delivery` -> `ready` (with deprecation comment)
 6. DONE: Fix settlement status: remove `_placeholder` suffixes (`processing`, `paid`), add `failed`
@@ -60,9 +60,9 @@ Related files:
 8. DONE: Add `PAYMENT_STATUSES` enum (pending, captured, failed, refunded, partially_refunded)
 9. DONE: Add `DISPUTE_STATUSES` enum (open, investigating, escalated, resolved)
 10. DONE: Add `PaymentStatus` and `DisputeStatus` derived types
-11. DONE: Update `shared/utils/currency.ts` -- formatMoney accepts centavos, parseToCentavos added
-12. DONE: Update `shared/utils/date.ts` -- BUENOS_AIRES_TZ, toDisplayTime, toBusinessDate, isValidUTCTimestamp
-13. DONE: Update `shared/api/order.contract.json` with canonical status enum and centavo fields
+11. DONE: Update `shared/utils/currency.ts` -- formatMoney accepts integer money values, legacy parser helper retained
+12. DONE: Update `shared/utils/date.ts` -- display timezone/date business helpers added
+13. DONE: Update `shared/api/order.contract.json` with canonical status enum and integer money fields
 14. DONE: Update `shared/validation/order.schema.json` with enum constraint and integer money type
 15. DONE: Update `shared/constants/domain.constants.json` (Flutter JSON bridge)
 16. DONE: Update `customer-app` Dart bridge with canonical statuses
@@ -76,15 +76,15 @@ Related files:
 24. DONE: Update RECONCILIATION_GAP_ANALYSIS.md with resolved gaps
 
 **Remaining items (deferred to Wave 2)**:
-- ~~Convert merchant-console mock data float money values to integer centavos~~ DONE Wave 2A-1 (2026-03-16)
-- ~~Convert admin-console mock data float money values to integer centavos~~ DONE Wave 2A-2 (2026-03-16)
-- ~~Update merchant-console display components to divide by 100~~ DONE Wave 2A-1 (2026-03-16)
-- ~~Update admin-console display components to divide by 100~~ DONE Wave 2A-2 (2026-03-16)
+- ~~Convert merchant-console mock data float money values to integer minor money units~~ DONE Wave 2A-1 (2026-03-16)
+- ~~Convert admin-console mock data float money values to integer minor money units~~ DONE Wave 2A-2 (2026-03-16)
+- ~~Update merchant-console display components to follow currency-aware rendering rules~~ DONE Wave 2A-1 (2026-03-16)
+- ~~Update admin-console display components to follow currency-aware rendering rules~~ DONE Wave 2A-2 (2026-03-16)
 - ~~Scan public-website mock data for float money values~~ DONE Wave 2A-3 (2026-03-16) — no numeric money fields found; surface is placeholder-string-only
 - ~~Scan shared/ fixture/schema files for float money values~~ DONE Wave 2A-4 (2026-03-16) — settlement.schema.json and menu.schema.json money fields fixed to integer type
 - ~~Add UTC timezone context to mock timestamp strings~~ DONE Wave 2B-1 (2026-03-16) — all informal date strings replaced with UTC ISO 8601 in merchant-console and admin-console mock data
 - ~~Derive mock data status types from canonical OrderStatus type~~ DONE Wave 2B-2 (2026-03-16)
-- Add runtime centavo assertion utility
+- Add runtime money-unit assertion utility
 
 **Dependencies**: Wave 0 (governance documents establish the rules these changes implement).
 
@@ -94,15 +94,15 @@ Related files:
 - Mitigation: deprecation comment during transition; run typecheck after each change
 
 **Acceptance Criteria**:
-- [x] `CurrencyCode` is `'ARS' | 'USD'` -- no VND references remain
-- [x] `MoneyAmount` has centavo constraint documented
+- [x] `CurrencyCode` is `'VND' | 'USD'` with VND as the canonical market currency
+- [x] `MoneyAmount` has integer minor-money-unit constraints documented
 - [x] `ORDER_STATUSES` includes all 9 canonical values
 - [x] `SETTLEMENT_STATES` has no `_placeholder` suffixes
 - [x] `AUTH_ACTOR_TYPES` includes `rider`, `guest`, and `system`
 - [x] `PAYMENT_STATUSES` enum exists
 - [x] `DISPUTE_STATUSES` enum exists
-- [x] Currency utility formats ARS correctly
-- [x] Date utility converts UTC to Buenos Aires display time
+- [x] Currency utility formats VND correctly
+- [x] Date utility converts UTC to Ho Chi Minh City display time
 - [ ] `npm run typecheck` passes for all web surfaces
 - [ ] `npm run build` passes for all web surfaces
 
@@ -113,27 +113,27 @@ Related files:
 **Scope**: Align all surface-local mock data with canonical contracts from Wave 1.
 
 **Deliverables**:
-1. Convert all float money values to integer centavos in mock data
-2. Update display components to divide by 100 for rendering
+1. Convert all float money values to integer minor money units in mock data
+2. Update display components to format VND and USD according to canonical currency rules
 3. Add UTC timezone context to mock timestamp strings (suffix with `Z`)
 4. Derive mock data status types from canonical OrderStatus type (import from domain.ts)
 5. Remove superseded placeholder state files
 6. Align customer-app mock data with canonical contracts (via JSON bridge)
-7. Add runtime centavo assertion utility
+7. Add runtime money-unit assertion utility
 
 **Dependencies**: Wave 1 (canonical contracts must be fixed first).
 
 **Risks**:
 - Mock data changes may break UI rendering if components expect old formats
-- Centavo conversion requires updating display logic to divide by 100
+- Currency-unit conversion requires updating display logic to respect per-currency formatting rules
 - Mitigation: update display components in same PR as mock data changes
 
 **Acceptance Criteria**:
 - [x] All mock data order statuses match `ORDER_STATUSES` canonical enum (Wave 2B-2)
-- [x] All mock data money values are integer centavos (Wave 2A-1 through 2A-4)
+- [x] All mock data money values are integer minor money units (Wave 2A-1 through 2A-4)
 - [x] All mock data timestamps are UTC ISO 8601 with `Z` suffix (Wave 2B-1)
 - [ ] No `_placeholder` suffixes in mock data
-- [ ] No `VND` references in mock data
+- [x] Mock data reflects the VND market baseline where currency is surfaced
 - [ ] All surfaces build and typecheck cleanly
 
 ---
@@ -148,7 +148,7 @@ Related files:
 3. Implement dispute flow with linkage to order and payment flows
 4. Implement idempotency layer (idempotency key on all mutations)
 5. Implement compensation logic (payment failure -> auto-cancel order)
-6. Implement settlement period calculation using Buenos Aires business dates
+6. Implement settlement period calculation using Ho Chi Minh City business dates
 7. Add build-time cross-surface import scan
 
 **Dependencies**: Wave 1 (canonical enums), Wave 2 (aligned mock data for testing).
@@ -164,7 +164,7 @@ Related files:
 - [ ] Forbidden transitions throw explicit errors
 - [ ] Idempotency keys prevent duplicate mutations
 - [ ] Payment failure triggers order cancellation
-- [ ] Settlement periods calculated correctly for Buenos Aires timezone
+- [ ] Settlement periods calculated correctly for Ho Chi Minh City timezone
 
 ---
 

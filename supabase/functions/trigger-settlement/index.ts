@@ -1,7 +1,9 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 import {
+  assertSettlementRuntimeEnabled,
   runSettlementGeneration,
+  SettlementRuntimeGuardError,
   validateWindow,
 } from "../_shared/settlement-core.ts";
 
@@ -98,6 +100,20 @@ Deno.serve(async (request) => {
     }, request);
   }
 
+  try {
+    assertSettlementRuntimeEnabled();
+  } catch (error) {
+    if (error instanceof SettlementRuntimeGuardError) {
+      return jsonResponse(503, {
+        error_code: error.code,
+        message: error.message,
+        details: error.details,
+      }, request);
+    }
+
+    throw error;
+  }
+
   let payload: TriggerRequest;
   try {
     payload = (await request.json()) as TriggerRequest;
@@ -133,10 +149,17 @@ Deno.serve(async (request) => {
       scope: payload.restaurant_id?.trim() || "all_restaurants",
     }, request);
   } catch (error) {
+    if (error instanceof SettlementRuntimeGuardError) {
+      return jsonResponse(503, {
+        error_code: error.code,
+        message: error.message,
+        details: error.details,
+      }, request);
+    }
+
     return jsonResponse(500, {
       error_code: "settlement_generation_failed",
       message: error instanceof Error ? error.message : String(error),
     }, request);
   }
 });
-

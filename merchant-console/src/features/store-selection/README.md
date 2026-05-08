@@ -58,10 +58,10 @@ This feature has split truth: selected store is stored in a cookie, but the avai
 
 ## Known Limitations
 
-- The store list is a single demo option plus a disabled fake add-store card.
-- Store lookup is not repository-backed.
-- Selected-store persistence is cookie-only and local to the current browser/session context.
-- The redirect target is hardcoded to `demo-store`.
+- Under `demo-cookie` authority, the store list is a single seeded demo option.
+- Under `supabase` authority, memberships are repository-backed, but the screen still acts as a thin presentation layer over selected-store truth.
+- Selected-store persistence is authority-dependent: local cookie in demo mode, `set_merchant_default_store` in Supabase mode.
+- There is still no self-serve add-store or merchant-provisioning path from this screen.
 
 ## Safe Modification Guidance
 

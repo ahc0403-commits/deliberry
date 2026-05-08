@@ -12,6 +12,7 @@ import {
 } from "./admin-mock-data";
 
 export type DashboardData = {
+  activeOrderCount: number;
   kpis: PlatformKPI[];
   alerts: PlatformAlert[];
   recentOrders: PlatformOrder[];
@@ -45,7 +46,14 @@ export type SystemManagementData = {
 
 export class InMemoryAdminRepository {
   getDashboardData(): DashboardData {
-    return { kpis: mockPlatformKPIs, alerts: mockPlatformAlerts, recentOrders: mockPlatformOrders.slice(0, 5) };
+    return {
+      activeOrderCount: mockPlatformOrders.filter((order) =>
+        ["pending", "confirmed", "preparing", "ready", "in_transit"].includes(order.status),
+      ).length,
+      kpis: mockPlatformKPIs,
+      alerts: mockPlatformAlerts,
+      recentOrders: mockPlatformOrders.slice(0, 5),
+    };
   }
   getUsersData(): UsersData { return { users: mockUsers }; }
   getMerchantsData(): MerchantsData { return { merchants: mockMerchants }; }

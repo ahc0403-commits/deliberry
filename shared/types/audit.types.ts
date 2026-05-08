@@ -21,6 +21,7 @@ export type AuditResourceType =
   | "User"
   | "Merchant"
   | "Store"
+  | "Review"
   | "Dispute"
   | "SupportTicket";
 

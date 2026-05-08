@@ -4,7 +4,7 @@ Status: Active
 Authority: Operational
 Surface: merchant-console
 Domains: orders, store-scope, query-read-model
-Last updated: 2026-04-15
+Last updated: 2026-04-18
 Retrieve when:
 - changing merchant order data reads or table/detail behavior
 - debugging store-scoped order rendering
@@ -34,6 +34,7 @@ Shows the narrow file cluster for merchant orders rendering, store-scope enforce
 - `merchant-console/src/features/orders/presentation/orders-screen.tsx`
 - `merchant-console/src/features/auth/server/access.ts`
 - `merchant-console/src/shared/data/merchant-order-runtime-service.ts`
+- `merchant-console/src/shared/data/merchant-shell-runtime-service.ts`
 - `merchant-console/src/shared/data/product-telemetry-service.ts`
 
 ## Source-of-Truth Files
@@ -56,7 +57,7 @@ The screen owns local UI state like active tab and selected order, but not autho
 ## High-Risk Edit Points
 
 - `ensureMerchantStoreScope` and redirect logic in `merchant-console/src/features/auth/server/access.ts`
-- Store ID boundary in `merchant-console/src/app/(console)/[storeId]/layout.tsx`
+- Store ID boundary and shell snapshot read in `merchant-console/src/app/(console)/[storeId]/layout.tsx`
 - `getMerchantOrdersRuntimeData` in `merchant-console/src/shared/data/merchant-order-runtime-service.ts`
 - Local action buttons and overlay state in `merchant-console/src/features/orders/presentation/orders-screen.tsx`
 

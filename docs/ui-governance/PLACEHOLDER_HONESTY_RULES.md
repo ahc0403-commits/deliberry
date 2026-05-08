@@ -40,9 +40,9 @@ The UI should feel like a polished product demo, not a broken prototype. Users a
 
 ### Mock Data Quality
 - Mock data MUST use realistic values (real-sounding names, plausible prices, correct currencies)
-- Mock data MUST use governance-compliant types (integer centavos, canonical statuses, UTC timestamps)
+- Mock data MUST use governance-compliant types (integer minor money units, canonical statuses, UTC timestamps)
 - Mock data MUST NOT use obviously fake values ("Test User", "$0.00", "AAAA-BBBB")
-- Mock data SHOULD represent the Buenos Aires market context (Argentine names, ARS currency, local addresses)
+- Mock data SHOULD represent the current Vietnam market context (Vietnamese-facing pricing, VND currency, local delivery context)
 
 ### Demo Notices
 - Screens that perform mutations (checkout, order placement) SHOULD show a subtle notice: "This is a demo — no real charges will be made"
@@ -122,12 +122,12 @@ The UI should feel like a polished product demo, not a broken prototype. Users a
 
 ## 9. Money Display Honesty
 
-- Data layer: integer centavos (e.g., 4250 for $42.50)
+- Data layer: integer minor money units (e.g., 42500 for ₫42,500)
 - Display layer: formatted currency string
-- Web surfaces: use `formatMoney(centavos, 'ARS')` from shared adapter (target state)
-- Mobile: use `formatCentavos(centavos)` local helper
-- Always include currency symbol ($)
-- Never display raw centavo values to users
+- Web surfaces: use `formatMoney(amount, 'VND')` from shared adapter (target state)
+- Mobile: use the customer money formatter that renders VND consistently
+- Always include the VND currency sign or equivalent VND label
+- Never display raw money-unit values to users
 - KPI display strings are presentation-layer formatted (documented as acceptable per R-013)
 
 ---

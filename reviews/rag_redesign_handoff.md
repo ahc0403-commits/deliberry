@@ -18,7 +18,7 @@ Purpose: Single-document handoff for any future agent starting UX/UI redesign or
 - **Guest auth gate**: Enforced at both data layer and UX layer in customer-app checkout
 - **CI governance scan**: `scripts/governance-scan.sh` passes clean
 - **Surface adapters**: Both web adapters re-export all canonical constants, types, and `formatMoney`
-- **Mock data**: All surfaces use integer centavos, canonical status enums, UTC ISO 8601 timestamps, canonical payment method names
+- **Mock data**: All surfaces use integer minor money units, canonical status enums, UTC ISO 8601 timestamps, canonical payment method names
 
 ### What Is NOT Live
 - **No database** — all data is in-memory mock
@@ -65,7 +65,7 @@ Purpose: Single-document handoff for any future agent starting UX/UI redesign or
 2. **shared/ is contract-only.** Types, constants, validation schemas, pure utilities, docs. No UI, no routing, no state.
 3. **Each surface owns its auth/session.** No cross-surface session sharing (R-073).
 4. **public-website is public-only.** No auth, no session, no route guards.
-5. **Money is integer centavos.** Always. No floats. Display via `formatMoney()` or `formatCentavos()`.
+5. **Money uses integer minor money units.** Always. No floats. Display via the surface money formatter or `formatMoney()`.
 6. **Timestamps are UTC ISO 8601.** Always end with `Z`. Display conversion at presentation layer.
 7. **Status values are canonical.** From `shared/constants/domain.constants.ts`. Display labels at presentation layer.
 8. **All mutations are placeholder.** No real persistence. Backend integration is the next major phase.

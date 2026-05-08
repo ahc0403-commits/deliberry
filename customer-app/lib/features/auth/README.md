@@ -53,9 +53,10 @@ Owns the signed-out and guest-entry screens for the customer app.
 
 ## Known Limitations
 
-- Phone auth and OTP are local/demo-safe flows only.
+- Phone auth and OTP are Supabase-backed fallback flows, but hosted SMS provider onboarding is intentionally deferred. The linked project still reports `phone: false` from `/auth/v1/settings` as of 2026-04-17, and that is the approved current hold state.
 - Guest entry is real local session behavior, not backend identity.
-- Social sign-in buttons are honest unavailable actions.
+- Zalo uses the customer Zalo exchange flow. Kakao and Google use Supabase
+  OAuth and require the matching Supabase provider configuration.
 
 ## Safe Modification Guidance
 

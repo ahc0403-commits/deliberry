@@ -10,15 +10,15 @@ Status: **CLOSED**
 
 ## Wave 2 Gaps Resolved
 
-### GAP-C01: Float dollars to integer centavos (CRITICAL) — RESOLVED
+### GAP-C01: Float money to integer money units (CRITICAL) — RESOLVED
 **Rules**: R-010, R-011
 **Changes**:
-- `mock_data.dart`: `MockStore.deliveryFee`, `MockMenuItem.price`, `MockOrder.total` types changed from `double` to `int`. All money literal values converted to centavos (e.g., `12.99` → `1299`, `2.99` → `299`).
+- `mock_data.dart`: `MockStore.deliveryFee`, `MockMenuItem.price`, `MockOrder.total` types changed from `double` to `int`. All money literal values converted to integer money units.
 - `mock_data.dart`: `MockCartItem.total` getter returns `int` (price × quantity).
 - `mock_data.dart`: `MockData.cartSubtotal`/`cartDeliveryFee`/`cartServiceFee`/`cartTotal` changed from `double` to `int`.
 - `customer_runtime_controller.dart`: All cart/fee/discount types changed from `double` to `int`. Promo discount `5.0` → `500`.
 - `widgets.dart`: `StoreCard.deliveryFee`, `MenuItemCard.price`, `OrderCard.total` changed from `double` to `int`. Display uses `(value / 100).toStringAsFixed(2)`.
-- Added `formatCentavos(int centavos)` helper in `mock_data.dart` for consistent presentation-layer formatting.
+- Added a dedicated money-format helper in `mock_data.dart` for consistent presentation-layer formatting.
 - Updated all presentation files: `cart_screen.dart`, `checkout_screen.dart`, `order_detail_screen.dart`, `order_status_screen.dart`, `store_screen.dart`, `menu_browsing_screen.dart`.
 
 ### GAP-C02: Display status strings to canonical enum values (CRITICAL) — RESOLVED
@@ -51,12 +51,12 @@ Status: **CLOSED**
 | 4 | `customer-app/lib/features/cart/presentation/cart_screen.dart` | C01 | All toStringAsFixed(2) → formatCentavos() |
 | 5 | `customer-app/lib/features/checkout/presentation/checkout_screen.dart` | C01 | All toStringAsFixed(2) → formatCentavos() |
 | 6 | `customer-app/lib/features/orders/presentation/orders_screen.dart` | C03 | date: → createdAt: in OrderCard |
-| 7 | `customer-app/lib/features/orders/presentation/order_detail_screen.dart` | C01, C02, C03 | Added mock_data import; centavo/status/date formatting |
-| 8 | `customer-app/lib/features/orders/presentation/order_status_screen.dart` | C01 | Added mock_data import; centavo formatting |
+| 7 | `customer-app/lib/features/orders/presentation/order_detail_screen.dart` | C01, C02, C03 | Added mock_data import; money/status/date formatting |
+| 8 | `customer-app/lib/features/orders/presentation/order_status_screen.dart` | C01 | Added mock_data import; money formatting |
 | 9 | `customer-app/lib/features/notifications/presentation/notifications_screen.dart` | C03 | time→createdAt; formatRelativeTime display |
 | 10 | `customer-app/lib/features/reviews/presentation/reviews_screen.dart` | C03 | order.date→formatOrderDate(order.createdAt) |
-| 11 | `customer-app/lib/features/store/presentation/store_screen.dart` | C01 | deliveryFee + cartTotal centavo formatting |
-| 12 | `customer-app/lib/features/store/presentation/menu_browsing_screen.dart` | C01 | cartTotal centavo formatting |
+| 11 | `customer-app/lib/features/store/presentation/store_screen.dart` | C01 | deliveryFee + cartTotal money formatting |
+| 12 | `customer-app/lib/features/store/presentation/menu_browsing_screen.dart` | C01 | cartTotal money formatting |
 
 **Total files changed**: 12 (within contract limit of customer-app only)
 

@@ -39,7 +39,6 @@ Describe the real current public marketing flow for the `/merchant` route.
 
 - [public-website/src/app/(marketing)/service/page.tsx](/Users/andremacmini/Deliberry/public-website/src/app/(marketing)/service/page.tsx)
 - [public-website/src/features/landing/presentation/landing-screen.tsx](/Users/andremacmini/Deliberry/public-website/src/features/landing/presentation/landing-screen.tsx)
-- [public-website/src/shared/data/content-service.ts](/Users/andremacmini/Deliberry/public-website/src/shared/data/content-service.ts)
 
 ## What Is Authoritative vs Derived in This Flow
 
@@ -51,8 +50,6 @@ Authoritative:
 
 Derived or structural only:
 
-- [content-service.ts](/Users/andremacmini/Deliberry/public-website/src/shared/data/content-service.ts)
-- [public-content-repository.ts](/Users/andremacmini/Deliberry/public-website/src/shared/data/public-content-repository.ts)
 
 Those files do not own the live route content for this flow today.
 
@@ -64,7 +61,6 @@ Those files do not own the live route content for this flow today.
 
 ## Common Edit Mistakes
 
-- Editing [content-service.ts](/Users/andremacmini/Deliberry/public-website/src/shared/data/content-service.ts) and expecting the live route to change.
 - Treating the `Submit application` button as live behavior when it is only presentational.
 - Updating shared nav links in [layout.tsx](/Users/andremacmini/Deliberry/public-website/src/app/(marketing)/layout.tsx) without reconciling in-screen CTAs and anchor links.
 

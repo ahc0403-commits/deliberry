@@ -14,7 +14,7 @@
 
 | File | Purpose |
 | --- | --- |
-| `admin-console/src/shared/data/admin-mock-data.ts` | Rich mock data with 20+ types and realistic Argentine delivery platform instances (users, merchants, stores, orders, disputes, tickets, settlements, finance, campaigns, announcements, categories, partners, health, feature flags, analytics) |
+| `admin-console/src/shared/data/admin-mock-data.ts` | Rich mock data with 20+ types and realistic Vietnam-market delivery platform instances (users, merchants, stores, orders, disputes, tickets, settlements, finance, campaigns, announcements, categories, partners, health, feature flags, analytics) |
 
 ## Updated Data Layer
 

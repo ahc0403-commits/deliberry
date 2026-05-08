@@ -4,8 +4,8 @@ Status: active
 Authority: operational
 Surface: cross-surface
 Domains: auth, session, permissions
-Last updated: 2026-04-11
-Last verified: 2026-04-11
+Last updated: 2026-05-06
+Last verified: 2026-05-06
 Retrieve when:
 - changing auth or session behavior across surfaces
 - checking approved non-live auth/session direction before runtime work
@@ -29,27 +29,39 @@ It does not allow `shared` to become a runtime auth layer.
 
 The repository currently has:
 
-- customer auth entry with Kakao, Zalo, guest, and phone fallback branches
+- customer auth entry with Zalo, Google, Kakao, guest, and phone fallback branches
 - customer session restoration and Supabase-backed authenticated runtime
 - merchant auth, onboarding, and store-selection routes with merchant-local cookie/session enforcement
 - admin auth and permission-boundary routes with admin-local cookie/session and route enforcement
 - public website that remains public-only
+- surface-local auth/access UX that now distinguishes session-required, session-expired, role-required, access-denied, and store-scope-mismatch states instead of collapsing them into one generic redirect outcome
 
 The repository still does **not** currently have:
 
 - completed live backend identity integration for merchant auth
 - completed live backend identity integration for admin auth
-- fully verified end-to-end live provider closure for all customer auth providers
+- fully verified end-to-end live provider closure for every exploratory customer auth provider
 
 ## Customer App Strategy
 
 ### Approved auth mechanism
 
 - customer auth is customer-local and provider-split at launch time
-- Kakao and Zalo are the active primary provider branches
+- Zalo, Google, and Kakao are the approved active customer provider branches
 - guest mode remains explicit
 - phone/OTP remains fallback only
 - onboarding remains a separate branch after auth decision
+- Apple remains intentionally disabled in the live product surface because it requires paid Apple Developer enrollment and is not part of the approved current provider set
+
+### Phone/OTP rollout decision (2026-04-17)
+
+- `customer-app` phone/OTP fallback code path is now Supabase-backed and session-adopting
+- linked project `gjcwxsezrovxcrpdnazc` still reports `phone: false` from `/auth/v1/settings`
+- provider onboarding for Vietnam SMS is an external-ops task, not a blocker for current product implementation work
+- therefore the approved current state is:
+  - keep the code path ready
+  - keep hosted phone provider disabled
+  - defer SMS provider onboarding until final integration / pre-QA closure
 
 ### Login handling direction
 
@@ -157,6 +169,9 @@ This means the callback chain is:
 ### Remaining auth blockers
 
 - Kakao live login still requires final browser-credential verification against the hosted project
+- Google is now wired through a Deliberry-dedicated Google OAuth web client and approved as the active non-Zalo social provider path for live product use
+- Phone/OTP fallback code path is now Supabase-backed in `customer-app`, but the linked project `gjcwxsezrovxcrpdnazc` still reports `phone: false` from `/auth/v1/settings` as of 2026-04-17. This is an intentional hold, not an active implementation blocker: dashboard enablement and test OTP readiness are deferred until final integration / pre-QA closure
+- Apple sign-in remains a deliberate hold, not a missing bug. Re-enable it only after Apple Developer enrollment, Apple credential issuance, and an explicit product decision to operate a paid Apple auth dependency
 - Zalo live login is functional; operator must rotate secrets (ZALO_APP_SECRET, SUPABASE_SERVICE_ROLE_KEY, VIETNAM_ZALO_PROXY_SHARED_SECRET) in Vercel dashboard
 - rate limiting on POST exchange endpoint is not yet configured (recommended: Vercel WAF rule)
 - review and payment flows remain separate scope and must not be used as auth proxies

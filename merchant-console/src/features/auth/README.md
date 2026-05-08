@@ -65,8 +65,8 @@ The authoritative truth is server-side cookie state plus redirect logic. The log
 ## Known Limitations
 
 - Auth is demo-safe cookie orchestration only.
-- Credentials are not validated against a real provider.
-- Onboarding completion is a cookie flag, not a verified business process.
+- Under `demo-cookie` authority, credentials are not validated against a real provider.
+- Under `supabase` authority, sign-in and onboarding persistence are real, but they still do not represent a verified merchant approval workflow.
 - Store-selection continuity depends on a selected-store cookie, not a backend merchant/store relationship.
 
 ## Safe Modification Guidance

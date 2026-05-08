@@ -2,6 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { readMerchantAuthAvailability } from "../../../shared/supabase/config";
 import {
   completeMerchantOnboardingSession,
   resolveMerchantAccessPath,
@@ -9,11 +10,40 @@ import {
   signOutMerchantSession,
 } from "../../../shared/auth/merchant-session";
 
+function redirectToLoginError(code: string): never {
+  redirect(`/login?error=${code}`);
+}
+
 export async function signInMerchantAction(formData: FormData) {
-  const access = await signInMerchantSession({
-    email: String(formData.get("email") ?? "").trim(),
-    password: String(formData.get("password") ?? ""),
-  });
+  const availability = readMerchantAuthAvailability();
+  if (!availability.available) {
+    redirectToLoginError("auth_unavailable");
+  }
+
+  const email = String(formData.get("email") ?? "").trim();
+  const password = String(formData.get("password") ?? "");
+
+  if (!email || !password) {
+    redirectToLoginError("missing_credentials");
+  }
+
+  let access;
+  try {
+    access = await signInMerchantSession({
+      email,
+      password,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    if (
+      message.includes("sign-in failed") ||
+      message.includes("Invalid login credentials")
+    ) {
+      redirectToLoginError("invalid_credentials");
+    }
+
+    redirectToLoginError("auth_unavailable");
+  }
   revalidatePath("/", "layout");
 
   redirect(
@@ -27,6 +57,11 @@ export async function signInMerchantAction(formData: FormData) {
 }
 
 export async function completeMerchantOnboardingAction() {
+  const availability = readMerchantAuthAvailability();
+  if (!availability.available) {
+    redirectToLoginError("auth_unavailable");
+  }
+
   const access = await completeMerchantOnboardingSession();
   revalidatePath("/", "layout");
 

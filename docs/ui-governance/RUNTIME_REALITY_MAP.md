@@ -4,8 +4,8 @@ Status: active
 Authority: operational
 Surface: customer-app
 Domains: runtime-truth, partial-support, mock-state
-Last updated: 2026-03-16
-Last verified: 2026-03-16
+Last updated: 2026-05-05
+Last verified: 2026-05-05
 Retrieve when:
 - checking whether a customer screen is state-real, flow-connected, or still partially fake
 - reviewing where the app currently over-promises runtime behavior
@@ -31,8 +31,8 @@ Related files:
 | --- | --- | --- | --- |
 | Entry | `customer-app/lib/app/entry/customer_entry_screen.dart` | mock-backed but flow-connected | session redirects are real; content is still static marketing UI |
 | Auth landing | `customer-app/lib/features/auth/presentation/auth_screen.dart` | mock-backed but flow-connected | phone path works; social sign-in is explicitly unavailable instead of fake |
-| Phone auth | `customer-app/lib/features/auth/presentation/auth_phone_screen.dart` | mock-backed but flow-connected | local validation + OTP handoff are coherent, but backend auth is excluded |
-| OTP | `customer-app/lib/features/auth/presentation/auth_otp_screen.dart` | mock-backed but flow-connected | local OTP flow is coherent; verification remains mock-only by scope |
+| Phone auth | `customer-app/lib/features/auth/presentation/auth_phone_screen.dart` | state-real | input validation is local, but OTP dispatch now uses Supabase-backed phone auth |
+| OTP | `customer-app/lib/features/auth/presentation/auth_otp_screen.dart` | state-real | OTP verification now adopts a real Supabase customer session before onboarding handoff |
 | Guest entry | `customer-app/lib/features/auth/presentation/guest_entry_screen.dart` | mock-backed but flow-connected | guest handoff is coherent |
 | Onboarding | `customer-app/lib/features/onboarding/presentation/onboarding_screen.dart` | mock-backed but flow-connected | completion handoff is real; onboarding content is still static |
 | Home | `customer-app/lib/features/home/presentation/home_screen.dart` | mock-backed but flow-connected | browse entry points are coherent; merchandising remains mock data |
@@ -46,13 +46,13 @@ Related files:
 | Orders list | `customer-app/lib/features/orders/presentation/orders_screen.dart` | state-real | active/history tabs now reflect the shared local order source |
 | Order detail | `customer-app/lib/features/orders/presentation/order_detail_screen.dart` | state-real | details, reorder, and review entry resolve from the same order record |
 | Order status | `customer-app/lib/features/orders/presentation/order_status_screen.dart` | mock-backed but flow-connected | order identity is real; status timeline is explicitly static, not realtime |
-| Profile | `customer-app/lib/features/profile/presentation/profile_screen.dart` | mock-backed but flow-connected | navigation is coherent; profile identity data is still static |
+| Profile | `customer-app/lib/features/profile/presentation/profile_screen.dart` | state-real | navigation is coherent; summary badges read shared runtime favorites/notification truth, display name resolves through runtime identity state, and promotions sheet reflects current promo/home fixture state |
 | Addresses | `customer-app/lib/features/addresses/presentation/addresses_screen.dart` | state-real | add/edit/delete/default operations wired through `CustomerRuntimeController` since Pass 2; changes are durable within the session (non-persisted to disk by design) |
-| Notifications | `customer-app/lib/features/notifications/presentation/notifications_screen.dart` | mock-backed but flow-connected | local read-state behavior is coherent |
+| Notifications | `customer-app/lib/features/notifications/presentation/notifications_screen.dart` | state-real | read state is runtime-owned and shared with profile/home |
 | Reviews | `customer-app/lib/features/reviews/presentation/reviews_screen.dart` | mock-backed but flow-connected | submission flow is coherent; review ownership/data remains mock-backed |
-| Settings | `customer-app/lib/features/settings/presentation/settings_screen.dart` | mock-backed but flow-connected | fake rows were neutralized with honest unavailable messaging |
+| Settings | `customer-app/lib/features/settings/presentation/settings_screen.dart` | state-real | notification/dark-mode preferences and profile-name edit are runtime-owned; change-phone now hands off into `/auth/phone` after a current-device sign-out/reset; destructive action clears current-device session/runtime data; support/legal rows now hand off to public-website routes |
 | Group order | `customer-app/lib/features/group_order/presentation/group_order_screen.dart` | visually complete but action-fake | create path is local-only; join remains explicitly unavailable |
-| Group order share | `customer-app/lib/features/group_order/presentation/group_order_share_screen.dart` | mock-backed but flow-connected | copy actions are real; shared room/member runtime remains stubbed |
+| Group order share | `customer-app/lib/features/group_order/presentation/group_order_share_screen.dart` | state-real | copy actions are real and local room/member state is runtime-owned for the current device session; cross-device sync remains unavailable |
 
 ## Placeholder Residue
 

@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { ArrowRight, ClipboardList, Eye, FileSearch, ShieldAlert, ShoppingBag, Truck } from "lucide-react";
-import { formatMoney } from "../../../shared/domain";
+import { formatMoney, toDisplayTime } from "../../../shared/domain";
 import type { PlatformOrder } from "../../../shared/data/admin-mock-data";
+import { useAdminI18n } from "../../../shared/i18n/client";
 
 const PAYMENT_LABELS: Record<string, string> = {
   cash: "Cash",
@@ -16,6 +17,7 @@ type Tab = "all" | "active" | "delivered" | "disputed";
 export function AdminOrdersScreen({ orders }: { orders: PlatformOrder[] }) {
   const [activeTab, setActiveTab] = useState<Tab>("all");
   const [selectedOrder, setSelectedOrder] = useState<PlatformOrder | null>(null);
+  const { raw } = useAdminI18n();
 
   const filtered = orders.filter((o) => {
     if (activeTab === "all") return true;
@@ -31,6 +33,14 @@ export function AdminOrdersScreen({ orders }: { orders: PlatformOrder[] }) {
     delivered: orders.filter((o) => o.status === "delivered").length,
     disputed: orders.filter((o) => ["disputed", "cancelled"].includes(o.status)).length,
   };
+  const reviewTone =
+    selectedOrder?.status === "disputed"
+      ? "Escalation watch"
+      : selectedOrder?.status === "cancelled"
+        ? "Cancellation review"
+        : selectedOrder?.status === "delivered"
+          ? "History check"
+          : "Live queue review";
 
   return (
     <div className="screen-container oversight-shell">
@@ -39,33 +49,33 @@ export function AdminOrdersScreen({ orders }: { orders: PlatformOrder[] }) {
           <div className="oversight-hero-copy">
             <div className="oversight-eyebrow">
               <ClipboardList size={14} />
-              Platform order oversight
+              {raw("Platform order oversight")}
             </div>
             <h1 className="oversight-title">Order Oversight</h1>
             <p className="oversight-subtitle">
-              Review queue health, jump between order segments, and inspect order context without implying live mutation inside the admin console.
+              {raw("Review queue health, jump between order segments, and inspect order context without implying live mutation inside the admin console.")}
             </p>
           </div>
           <div className="oversight-hero-note">
-            <div className="oversight-note-label">Queue mode</div>
-            <div className="oversight-note-value">Read-only governance review</div>
+            <div className="oversight-note-label">{raw("Queue mode")}</div>
+            <div className="oversight-note-value">{raw("Read-only governance review")}</div>
             <p className="oversight-note-text">
-              Order status here mirrors the persisted platform read model. Use the detail panel for oversight context and escalation signals only.
+              {raw("Order status here mirrors the persisted platform read model. Use the detail panel for oversight context and escalation signals only.")}
             </p>
           </div>
         </div>
         <div className="oversight-hero-meta">
           <div className="oversight-meta-chip">
             <ShoppingBag size={14} />
-            {counts.all} total orders in current queue
+            {raw("{count} total orders in current queue").replace("{count}", String(counts.all))}
           </div>
           <div className="oversight-meta-chip">
             <Truck size={14} />
-            {counts.active} active orders under watch
+            {raw("{count} active orders under watch").replace("{count}", String(counts.active))}
           </div>
           <div className="oversight-meta-chip">
             <ShieldAlert size={14} />
-            {counts.disputed} disputed or cancelled
+            {raw("{count} disputed or cancelled").replace("{count}", String(counts.disputed))}
           </div>
         </div>
       </section>
@@ -74,34 +84,34 @@ export function AdminOrdersScreen({ orders }: { orders: PlatformOrder[] }) {
         <div className="oversight-summary-card">
           <div className="oversight-summary-label">
             <ClipboardList size={14} />
-            Queue total
+            {raw("Queue total")}
           </div>
           <div className="oversight-summary-value">{counts.all}</div>
-          <div className="oversight-summary-meta">All platform orders currently available in the admin read model.</div>
+          <div className="oversight-summary-meta">{raw("All platform orders currently available in the admin read model.")}</div>
         </div>
         <div className="oversight-summary-card">
           <div className="oversight-summary-label">
             <Truck size={14} />
-            Active queue
+            {raw("Active queue")}
           </div>
           <div className="oversight-summary-value">{counts.active}</div>
-          <div className="oversight-summary-meta">Pending, confirmed, preparing, ready, and in-transit orders grouped for active triage.</div>
+          <div className="oversight-summary-meta">{raw("Pending, confirmed, preparing, ready, and in-transit orders grouped for active triage.")}</div>
         </div>
         <div className="oversight-summary-card">
           <div className="oversight-summary-label">
             <Eye size={14} />
-            Delivered
+            {raw("Delivered")}
           </div>
           <div className="oversight-summary-value">{counts.delivered}</div>
-          <div className="oversight-summary-meta">Completed deliveries stay available for review and history checks.</div>
+          <div className="oversight-summary-meta">{raw("Completed deliveries stay available for review and history checks.")}</div>
         </div>
         <div className="oversight-summary-card">
           <div className="oversight-summary-label">
             <FileSearch size={14} />
-            Escalated cases
+            {raw("Escalated cases")}
           </div>
           <div className="oversight-summary-value">{counts.disputed}</div>
-          <div className="oversight-summary-meta">Disputed and cancelled orders remain review-only in this phase.</div>
+          <div className="oversight-summary-meta">{raw("Disputed and cancelled orders remain review-only in this phase.")}</div>
         </div>
       </section>
 
@@ -112,7 +122,7 @@ export function AdminOrdersScreen({ orders }: { orders: PlatformOrder[] }) {
             className={`queue-tab ${activeTab === tab ? "queue-tab--active" : ""}`}
             onClick={() => setActiveTab(tab)}
           >
-            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            {raw(tab.charAt(0).toUpperCase() + tab.slice(1))}
             <span className="queue-tab-count">{counts[tab]}</span>
           </button>
         ))}
@@ -122,14 +132,14 @@ export function AdminOrdersScreen({ orders }: { orders: PlatformOrder[] }) {
         <section className="oversight-panel">
           <div className="oversight-panel-header">
             <div>
-              <h2 className="oversight-panel-title">Oversight Queue</h2>
+              <h2 className="oversight-panel-title">{raw("Oversight Queue")}</h2>
               <p className="oversight-panel-subtitle">
-                Select any row to inspect cross-surface order context. Queue actions stay intentionally non-mutating in the admin console.
+                {raw("Select any row to inspect cross-surface order context. Queue actions stay intentionally non-mutating in the admin console.")}
               </p>
             </div>
             <div className="table-inline-note">
               <ArrowRight size={13} />
-              Click a row to open the review pane
+              {raw("Click a row to open the review pane")}
             </div>
           </div>
           <div className="oversight-table-wrap">
@@ -149,9 +159,8 @@ export function AdminOrdersScreen({ orders }: { orders: PlatformOrder[] }) {
                 {filtered.map((order) => (
                   <tr
                     key={order.id}
-                    className={selectedOrder?.id === order.id ? "row-selected" : ""}
+                    className={`data-table-row-clickable${selectedOrder?.id === order.id ? " row-selected" : ""}`}
                     onClick={() => setSelectedOrder(selectedOrder?.id === order.id ? null : order)}
-                    style={{ cursor: "pointer" }}
                   >
                     <td>
                       <div className="oversight-row-primary">
@@ -164,7 +173,7 @@ export function AdminOrdersScreen({ orders }: { orders: PlatformOrder[] }) {
                     <td>{formatMoney(order.total)}</td>
                     <td className="text-muted">{PAYMENT_LABELS[order.paymentMethod] ?? order.paymentMethod}</td>
                     <td><span className={`status-badge status-badge--${order.status}`}>{order.status.replace("_", " ")}</span></td>
-                    <td className="text-muted">{order.createdAt}</td>
+                    <td className="text-muted">{toDisplayTime(order.createdAt)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -176,67 +185,81 @@ export function AdminOrdersScreen({ orders }: { orders: PlatformOrder[] }) {
           <aside className="oversight-panel">
             <div className="oversight-panel-header">
               <div>
-                <h3 className="oversight-panel-title">Order Review Pane</h3>
+                <h3 className="oversight-panel-title">{raw("Order Review Pane")}</h3>
                 <p className="oversight-panel-subtitle">
-                  Cross-surface context for governance review. This panel stays intentionally non-mutating.
+                  {raw("Cross-surface context for governance review. This panel stays intentionally non-mutating.")}
                 </p>
               </div>
-              <button className="btn-secondary btn-sm" onClick={() => setSelectedOrder(null)}>Close</button>
+              <button className="btn-secondary btn-sm" onClick={() => setSelectedOrder(null)}>{raw("Close")}</button>
             </div>
             <div className="oversight-pane">
+              <div className="oversight-review-banner">
+                <div>
+                  <div className="oversight-review-label">{raw("Review mode")}</div>
+                  <div className="oversight-review-title">{raw(reviewTone)}</div>
+                </div>
+                <div className="oversight-review-chips">
+                  <span className="btn-preview">Read-only</span>
+                  <span className="btn-preview">{PAYMENT_LABELS[selectedOrder.paymentMethod] ?? selectedOrder.paymentMethod}</span>
+                </div>
+              </div>
+
               <div className="oversight-pane-card">
                 <div className="oversight-pane-grid">
                   <div className="oversight-pane-stat">
-                    <div className="oversight-pane-stat-label">Order number</div>
+                    <div className="oversight-pane-stat-label">{raw("Order number")}</div>
                     <div className="oversight-pane-stat-value monospace">{selectedOrder.orderNumber}</div>
                   </div>
                   <div className="oversight-pane-stat">
-                    <div className="oversight-pane-stat-label">Status</div>
+                    <div className="oversight-pane-stat-label">{raw("Status")}</div>
                     <div className="oversight-pane-stat-value">
                       <span className={`status-badge status-badge--${selectedOrder.status}`}>{selectedOrder.status.replace("_", " ")}</span>
                     </div>
                   </div>
                   <div className="oversight-pane-stat">
-                    <div className="oversight-pane-stat-label">Customer</div>
+                    <div className="oversight-pane-stat-label">{raw("Customer")}</div>
                     <div className="oversight-pane-stat-value">{selectedOrder.customerName}</div>
                   </div>
                   <div className="oversight-pane-stat">
-                    <div className="oversight-pane-stat-label">Total</div>
+                    <div className="oversight-pane-stat-label">{raw("Total")}</div>
                     <div className="oversight-pane-stat-value">{formatMoney(selectedOrder.total)}</div>
                   </div>
                 </div>
               </div>
 
               <div className="oversight-pane-card">
-                <div className="oversight-pane-section-title">Operational context</div>
+                <div className="oversight-pane-section-title">{raw("Operational context")}</div>
                 <div className="oversight-pane-grid">
                   <div className="oversight-pane-stat">
-                    <div className="oversight-pane-stat-label">Store</div>
+                    <div className="oversight-pane-stat-label">{raw("Store")}</div>
                     <div className="oversight-pane-stat-value">{selectedOrder.storeName}</div>
                   </div>
                   <div className="oversight-pane-stat">
-                    <div className="oversight-pane-stat-label">Merchant</div>
+                    <div className="oversight-pane-stat-label">{raw("Merchant")}</div>
                     <div className="oversight-pane-stat-value">{selectedOrder.merchantName}</div>
                   </div>
                   <div className="oversight-pane-stat">
-                    <div className="oversight-pane-stat-label">Payment</div>
+                    <div className="oversight-pane-stat-label">{raw("Payment")}</div>
                     <div className="oversight-pane-stat-value">{PAYMENT_LABELS[selectedOrder.paymentMethod] ?? selectedOrder.paymentMethod}</div>
                   </div>
                   <div className="oversight-pane-stat">
-                    <div className="oversight-pane-stat-label">Created</div>
-                    <div className="oversight-pane-stat-value">{selectedOrder.createdAt}</div>
+                    <div className="oversight-pane-stat-label">{raw("Created")}</div>
+                    <div className="oversight-pane-stat-value">{toDisplayTime(selectedOrder.createdAt)}</div>
                   </div>
                 </div>
               </div>
 
               <div className="oversight-note">
-                Admin order actions are read-only in this console phase. Use this pane to review platform impact, then coordinate resolution outside the admin UI where required.
+                {raw("Admin order actions are read-only in this console phase. Use this pane to review platform impact, then coordinate resolution outside the admin UI where required.")}
               </div>
 
               <div className="oversight-actions">
-                {selectedOrder.status === "disputed" ? <span className="btn-preview">Dispute handled elsewhere</span> : null}
-                {selectedOrder.status === "cancelled" ? <span className="btn-preview">Cancellation review preview</span> : null}
-                <span className="btn-preview">History preview only</span>
+                <span className="oversight-actions-label">{raw("Escalation cues")}</span>
+                <div className="oversight-actions-list">
+                  {selectedOrder.status === "disputed" ? <span className="btn-preview btn-preview-disputed">{raw("Dispute handled elsewhere")}</span> : null}
+                  {selectedOrder.status === "cancelled" ? <span className="btn-preview btn-preview-cancelled">{raw("Cancellation review preview")}</span> : null}
+                  <span className="btn-preview btn-preview-history">{raw("History preview only")}</span>
+                </div>
               </div>
             </div>
           </aside>

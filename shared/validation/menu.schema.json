@@ -5,7 +5,7 @@
   "properties": {
     "item_id": { "type": "string", "minLength": 1 },
     "store_id": { "type": "string", "minLength": 1 },
-    "price": { "type": "integer", "minimum": 0, "description": "Item price in integer centavos. R-010, R-011." }
+    "price": { "type": "integer", "minimum": 0, "description": "Item price in integer minor money units. For VND, values are stored as whole dong amounts. R-010, R-011." }
   },
   "required": ["item_id", "store_id", "price"]
 }

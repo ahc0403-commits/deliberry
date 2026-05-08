@@ -50,7 +50,7 @@ Related files:
 | **Constitution Risks** | R-010–014 (money integrity), R-031 (no delete), R-074 (no real payment without review). |
 | **Decay Risks** | #2 Float Money (ACTIVE), #7 Nullable Abuse (AT RISK), #10 Audit Trail Absence (ACTIVE), #11 Currency Code Drift (ACTIVE). |
 | **Current Status** | STUB_ONLY — Payment method placeholders exist. No payment flow. |
-| **Required Changes** | Define payment status enum. Fix CurrencyCode (ARS). Fix MoneyAmount (integer centavos). Define payment contract. |
+| **Required Changes** | Define payment status enum. Keep CurrencyCode aligned to the VND/USD baseline. Keep MoneyAmount on integer minor money units. Define payment contract. |
 
 ---
 
@@ -60,12 +60,12 @@ Related files:
 |---|---|
 | **Identity Map** | Actors: `system` (calculates/processes), `finance_admin` (manages/overrides), `platform_admin` (full access). Entities: `Settlement`. |
 | **Structure Placement** | Canonical: `shared/constants/domain.constants.ts` (SETTLEMENT_STATES). Contract: `shared/api/settlement.contract.json`. Merchant: `merchant-console/src/features/settlement/`. Admin: `admin-console/src/features/settlements/`. |
-| **Core Flow** | `pending → processing → paid` with `failed → pending` retry. See FLOW.md Section 3. |
-| **Date Handling** | Required timestamps: `created_at`, `updated_at`, `settled_at`, `failed_at`. Settlement period cutoff: 23:59:59 Buenos Aires time. |
+| **Core Flow** | `pending → calculated → received` with `disputed` and `adjusted` exception paths. See FLOW.md Section 3. |
+| **Date Handling** | Required timestamps: `created_at`, `updated_at`, `received_at`. Required period fields: `period_start`, `period_end`. Settlement period cutoff: 23:59:59 Ho Chi Minh City time. |
 | **Constitution Risks** | R-010–014 (money integrity), R-032 (no delete/modify), R-050 (UTC). |
 | **Decay Risks** | #2 Float Money (ACTIVE), #9 Temporary Workaround Permanence (ACTIVE — `_placeholder` suffixes), #11 Currency Code Drift (ACTIVE). |
-| **Current Status** | STUB_ONLY — Placeholder settlement states. No real settlement logic. |
-| **Required Changes** | Remove `_placeholder` suffixes from settlement states. Define settlement calculation logic. Implement settlement period cutoff. |
+| **Current Status** | PARTIAL_RUNTIME — Settlement schema is landed in source and on the linked Supabase project (`delivery_settlements`, `delivery_settlement_items`, `external_sales.settlement_id`). Settlement edge functions exist and compile, but runtime remains intentionally gated and merchant/admin settlement surfaces should still be treated as informational until rollout approval. |
+| **Required Changes** | Reconcile persisted settlement status values with canonical flow vocabulary, approve or reject runtime enablement explicitly, and only then allow schema-backed settlement automation to leave gated mode. |
 
 ---
 

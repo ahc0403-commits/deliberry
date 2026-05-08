@@ -39,10 +39,10 @@ Purpose: Minimum viable backend foundation + runtime wiring implementation order
 
 | Table | Source Contract | Key Constraints |
 |-------|----------------|-----------------|
-| `orders` | `OrderSummary` + `order.schema.json` | status enum, centavo integers, per-status timestamps, no DELETE |
-| `order_items` | `OrderItem` type | FK to orders, centavo price |
-| `payments` | `PAYMENT_STATUSES` | status enum, centavo amount, no DELETE |
-| `settlements` | `SETTLEMENT_STATES` | status enum, centavo amounts, periodStart/End dates, no DELETE |
+| `orders` | `OrderSummary` + `order.schema.json` | status enum, integer money units, per-status timestamps, no DELETE |
+| `order_items` | `OrderItem` type | FK to orders, integer money-unit price |
+| `payments` | `PAYMENT_STATUSES` | status enum, integer money-unit amount, no DELETE |
+| `settlements` | `SETTLEMENT_STATES` | status enum, integer money-unit amounts, periodStart/End dates, no DELETE |
 | `disputes` | `DISPUTE_STATUSES` | status enum, FK to orders, no DELETE |
 | `support_tickets` | `SUPPORT_TICKET_STATUSES` | status enum |
 | `merchants` | Mock data types | FK to auth.users |
@@ -52,7 +52,7 @@ Purpose: Minimum viable backend foundation + runtime wiring implementation order
 **Migration naming**: `YYYYMMDDHHMMSS_create_core_tables.sql`
 
 **Rules**:
-- All money columns: `integer NOT NULL` (centavos)
+- All money columns: `integer NOT NULL` (minor money units)
 - All status columns: `text NOT NULL CHECK (value IN (...))` using canonical enum values
 - All timestamps: `timestamptz` (UTC)
 - No `CASCADE DELETE` on orders, payments, settlements, disputes (R-030–033)

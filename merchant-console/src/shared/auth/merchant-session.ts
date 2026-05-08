@@ -8,9 +8,16 @@ import { supabaseMerchantAuthAdapter } from "./supabase-merchant-auth-adapter";
 export const MERCHANT_SESSION_COOKIE = "merchant_session";
 export const MERCHANT_ONBOARDING_COOKIE = "merchant_onboarding_complete";
 export const MERCHANT_STORE_COOKIE = "merchant_selected_store";
+export const MERCHANT_PATHNAME_HEADER = "x-merchant-pathname";
 export const DEMO_MERCHANT_ID = "11111111-1111-4111-8111-111111111111";
 export const DEMO_MERCHANT_NAME = "Demo Merchant";
 export const DEMO_STORE_ID = "demo-store";
+export const MERCHANT_COOKIE_OPTIONS = {
+  httpOnly: true,
+  sameSite: "lax" as const,
+  secure: process.env.NODE_ENV === "production",
+  path: "/",
+};
 
 // R-020: Every mutation must be attributed to an authenticated actor.
 // R-023: Merchant access must be store-scoped.
@@ -29,6 +36,13 @@ export type MerchantAccessState = {
   membershipCount: number;
   authority: "supabase" | "demo-cookie" | "none";
 };
+
+export type MerchantAccessReason =
+  | "session_required"
+  | "onboarding_required"
+  | "no_store_membership"
+  | "no_store_selected"
+  | "store_scope_mismatch";
 
 async function readDemoMerchantSession(): Promise<MerchantSession | null> {
   const store = await cookies();
@@ -104,6 +118,7 @@ export async function readMerchantAccessState(): Promise<MerchantAccessState> {
     const memberships = session
       ? [{
           storeId: DEMO_STORE_ID,
+          storeName: "Saigon Home Kitchen",
           actorType: session.actorType,
           isDefault: selectedStoreId === DEMO_STORE_ID,
         }]
@@ -145,8 +160,9 @@ export async function signInMerchantSession(input: {
     store.set(
       MERCHANT_SESSION_COOKIE,
       JSON.stringify(session),
+      MERCHANT_COOKIE_OPTIONS,
     );
-    store.set(MERCHANT_ONBOARDING_COOKIE, "false");
+    store.set(MERCHANT_ONBOARDING_COOKIE, "false", MERCHANT_COOKIE_OPTIONS);
     store.delete(MERCHANT_STORE_COOKIE);
     return buildAccessState({
       session,
@@ -154,6 +170,7 @@ export async function signInMerchantSession(input: {
       selectedStoreId: null,
       memberships: [{
         storeId: DEMO_STORE_ID,
+        storeName: "Saigon Home Kitchen",
         actorType: "merchant_owner",
         isDefault: false,
       }],
@@ -192,7 +209,7 @@ export async function completeMerchantOnboardingSession(): Promise<MerchantAcces
   }
 
   const store = await cookies();
-  store.set(MERCHANT_ONBOARDING_COOKIE, "true");
+  store.set(MERCHANT_ONBOARDING_COOKIE, "true", MERCHANT_COOKIE_OPTIONS);
 
   return buildAccessState({
     session: access.session,
@@ -223,7 +240,7 @@ export async function selectMerchantStoreSession(storeId: string): Promise<Merch
   }
 
   const store = await cookies();
-  store.set(MERCHANT_STORE_COOKIE, storeId);
+  store.set(MERCHANT_STORE_COOKIE, storeId, MERCHANT_COOKIE_OPTIONS);
 
   return buildAccessState({
     session: access.session,
@@ -255,21 +272,25 @@ export function resolveMerchantAccessPath(input: {
   onboardingComplete: boolean;
   selectedStoreId: string | null;
   membershipCount?: number;
+  reason?: MerchantAccessReason;
 }): string {
+  const withReason = (pathname: string, reason?: MerchantAccessReason) =>
+    reason ? `${pathname}?reason=${reason}` : pathname;
+
   if (!input.hasSession) {
-    return "/login";
+    return withReason("/login", input.reason);
   }
 
   if (!input.onboardingComplete) {
-    return "/onboarding";
+    return withReason("/onboarding", input.reason ?? "onboarding_required");
   }
 
   if ((input.membershipCount ?? 0) === 0) {
-    return "/select-store";
+    return withReason("/select-store", input.reason ?? "no_store_membership");
   }
 
   if (!input.selectedStoreId) {
-    return "/select-store";
+    return withReason("/select-store", input.reason ?? "no_store_selected");
   }
 
   return `/${input.selectedStoreId}/dashboard`;

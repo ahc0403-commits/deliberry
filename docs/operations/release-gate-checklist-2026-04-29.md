@@ -4,8 +4,8 @@ Status: active
 Authority: operational
 Surface: customer-app, merchant-console, admin-console, public-website, shared, supabase
 Domains: release-gates, launch-readiness, qa-evidence, rollback
-Last updated: 2026-05-04
-Last verified: 2026-05-04
+Last updated: 2026-05-06
+Last verified: 2026-05-06
 
 ## Purpose
 
@@ -42,6 +42,12 @@ It is not a scope document. It is a release-evidence document.
 - `docs/operations/payment-production-rollout-checklist-2026-05-04.md`
 - `docs/operations/physical-target-device-qa-execution-plan-2026-05-04.md`
 - `docs/operations/physical-target-device-qa-evidence-template-2026-05-04.md`
+- `docs/operations/local-rc-cross-surface-regression-matrix-2026-05-06.md`
+- `docs/operations/local-rc-release-hardening-summary-2026-05-06.md`
+- `docs/operations/hosted-parity-smoke-findings-2026-05-06.md`
+- `docs/customer_app_go_live_checklist_20260506.md`
+- `docs/admin_console_go_live_checklist_20260506.md`
+- `docs/merchant_console_go_live_checklist_20260321.md`
 - `docs/06-guardrails.md`
 
 ## Current Baseline
@@ -89,6 +95,8 @@ It is not a scope document. It is a release-evidence document.
 - Rollout checklist: `docs/operations/payment-production-rollout-checklist-2026-05-04.md`
 - Sandbox guardrail smoke evidence: `docs/operations/vnpay-sandbox-guardrail-smoke-2026-05-04.md`
 - Sandbox guardrail re-run artifact: `output/vnpay-guardrail-smoke/phase1-vnpay-guardrail-smoke-2026-05-04T05-56-17.237Z/summary.json`
+- Sandbox guardrail GitHub run: `25303735665`
+- Sandbox guardrail GitHub artifact id: `6777507788`
 - [ ] Binding payment guardrail is revised to allow live verification.
 - [ ] Production VNPAY credentials are stored server-side only.
 - [ ] IPN-owned payment-state transition design is approved and implemented.
@@ -116,6 +124,7 @@ It is not a scope document. It is a release-evidence document.
 - [x] Governed target-browser QA evidence is attached across supported mobile, tablet, and desktop browser widths.
 - Physical device plan: `docs/operations/physical-target-device-qa-execution-plan-2026-05-04.md`
 - Physical device evidence template: `docs/operations/physical-target-device-qa-evidence-template-2026-05-04.md`
+- Physical device readiness packet: `docs/operations/physical-target-device-qa-readiness-packet-2026-05-06.md`
 - [ ] Physical target-device QA is complete across supported mobile, tablet, and desktop devices.
 - [x] Rollback evidence is fully attached across UI deploy, Edge Function deploy, and additive migration disablement.
 
@@ -151,3 +160,6 @@ Remaining blocker note:
 3. Track workflow hygiene separately:
    - artifact retention policy
    - optional split of long customer smoke sections if runtime grows
+4. Treat `docs/operations/local-rc-cross-surface-regression-matrix-2026-05-06.md` as the current local RC regression baseline until hosted parity evidence supersedes it.
+5. Use `docs/customer_app_go_live_checklist_20260506.md`, `docs/admin_console_go_live_checklist_20260506.md`, and `docs/merchant_console_go_live_checklist_20260321.md` as the surface-level operational checkpoints before any hosted release claim.
+6. Treat `docs/operations/hosted-parity-smoke-findings-2026-05-06.md` as the current hosted parity source of truth; public anonymous routes, merchant anonymous login, and the refreshed governed deployed boundary workflow (`25420411267`) are now green against the current aliases.

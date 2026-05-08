@@ -6,6 +6,7 @@ export type MerchantAuthIdentity = {
 
 export type MerchantStoreMembership = {
   storeId: string;
+  storeName: string;
   actorType: "merchant_owner" | "merchant_staff";
   isDefault: boolean;
 };

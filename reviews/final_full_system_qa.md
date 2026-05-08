@@ -99,7 +99,7 @@ This table is historical QA evidence from 2026-03-16, not the current runtime ba
 
 **Shared widgets file:** `customer-app/lib/features/common/presentation/widgets.dart` — 15 reusable components (StoreCard, MenuItemCard, QuantityControl, PriceRow, CategoryChipRow, etc.). VERIFIED EXISTS.
 
-**Mock data layer:** `customer-app/lib/core/data/mock_data.dart` — typed model classes (MockStore, MockCartItem, etc.) with realistic Argentine delivery data. VERIFIED EXISTS.
+**Mock data layer:** `customer-app/lib/core/data/mock_data.dart` — typed model classes (MockStore, MockCartItem, etc.) with realistic Vietnam-market delivery data. VERIFIED EXISTS.
 
 **Theme:** `customer-app/lib/core/theme/app_theme.dart` — Material 3 theme with coral-red `#FF4B3A` primary. VERIFIED EXISTS.
 
@@ -126,7 +126,7 @@ This table is historical QA evidence from 2026-03-16, not the current runtime ba
 - `orders-screen.tsx` — `"use client"`, tabbed Active/Completed/Cancelled with counts, full data table, slide-out order detail panel with contextual action buttons. REAL_UI.
 - `menu-screen.tsx` — category filter chips, search input (HTML `placeholder` attribute — not copy), menu item rows with emoji, availability toggles. REAL_UI.
 
-**Data layer:** `merchant-console/src/shared/data/merchant-mock-data.ts` — 20+ types, realistic Argentine restaurant data for "Sabor Criollo Kitchen". VERIFIED EXISTS.
+**Data layer:** `merchant-console/src/shared/data/merchant-mock-data.ts` — 20+ types, realistic Vietnam-market restaurant data for "Saigon Home Kitchen". VERIFIED EXISTS.
 
 **Scaffold usage:** `MerchantFeatureScaffold` exists only in its definition file. No production screen imports it. VERIFIED CLEAN.
 

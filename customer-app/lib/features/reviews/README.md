@@ -29,7 +29,7 @@ Owns the customer reviews screen and the post-order feedback handoff from order 
 - Review reads and writes flow through `customer-app/lib/core/data/customer_runtime_controller.dart`
 - Signed-in persistence flows through `customer-app/lib/core/data/supabase_customer_runtime_gateway.dart`
 
-The route is real and review submission is persisted for signed-in customers. Order-linked review entry remains the real feedback path; profile does not manufacture standalone review context.
+The route is real and review submission is persisted for signed-in customers. Saved review data now hydrates back into runtime by `orderId`, so order detail and `/reviews` stay aligned after refresh. Order-linked review entry remains the real feedback path; profile does not manufacture standalone review context.
 
 ## Key Files to Read First
 
@@ -52,9 +52,9 @@ The route is real and review submission is persisted for signed-in customers. Or
 
 ## Known Limitations
 
-- Reviews are persisted for signed-in customers, but the UI still carries some preview-oriented copy and fallback states.
-- When `/reviews` is opened without a valid `orderId`, the screen degrades into an honest preview state and sends the user back to `/orders`.
-- The primary review-entry path is now `order detail -> /reviews`.
+- Reviews are persisted for signed-in customers and now rehydrate into runtime by `orderId`, but they still depend on valid order-linked context from the orders flow.
+- When `/reviews` is opened without a valid `orderId`, the screen falls back to an honest no-context state and sends the user back to `/orders`.
+- The primary review-entry path is `order detail -> /reviews`, and order detail now keeps the review CTA disabled until delivery is complete.
 
 ## Safe Modification Guidance
 

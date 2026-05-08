@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../core/data/customer_runtime_controller.dart';
+import '../../../core/i18n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 
 class GroupOrderShareScreen extends StatelessWidget {
@@ -25,15 +27,26 @@ class GroupOrderShareScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final previewCode = roomCode ?? 'LOCAL-0000';
+    final runtime = CustomerRuntimeController.instance;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Invite Preview'),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
+    return ListenableBuilder(
+      listenable: runtime,
+      builder: (context, _) {
+        final room = runtime.groupOrderRoom;
+        final previewCode = roomCode ?? room?.code ?? 'LOCAL-0000';
+        final participants = room != null && room.code == previewCode
+            ? room.participants
+            : const <GroupOrderParticipant>[];
+        final participantCountLabel =
+            context.l10n.localParticipantCountLabel(participants.length);
+
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(context.l10n.raw('Invite Preview')),
+          ),
+          body: ListView(
+            padding: const EdgeInsets.all(20),
+            children: [
           const SizedBox(height: 20),
 
           Container(
@@ -54,7 +67,9 @@ class GroupOrderShareScreen extends StatelessWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'This is a local preview of the host invite flow. Other participants cannot join from this screen yet.',
+                    context.l10n.raw(
+                      'This is a local room view. Invite copy works, and the participant list reflects joins made on this same device only.',
+                    ),
                     style: Theme.of(context).textTheme.bodySmall!.copyWith(
                           color: AppTheme.textSecondary,
                         ),
@@ -70,14 +85,14 @@ class GroupOrderShareScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(28),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppTheme.white,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: AppTheme.borderColor),
             ),
-            child: Column(
-              children: [
-                Text(
-                  'Local Preview Code',
+              child: Column(
+                children: [
+                  Text(
+                  context.l10n.raw('Local Room Code'),
                   style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                         color: AppTheme.textSecondary,
                       ),
@@ -95,10 +110,10 @@ class GroupOrderShareScreen extends StatelessWidget {
                   onPressed: () => _copyInvite(
                     context,
                     text: previewCode,
-                    message: 'Preview code copied.',
+                    message: context.l10n.raw('Room code copied.'),
                   ),
                   icon: const Icon(Icons.copy_rounded, size: 18),
-                  label: const Text('Copy Code'),
+                  label: Text(context.l10n.raw('Copy Code')),
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size(180, 44),
                   ),
@@ -114,22 +129,22 @@ class GroupOrderShareScreen extends StatelessWidget {
             onPressed: () => _copyInvite(
               context,
               text:
-                  'Deliberry invite preview: use code $previewCode to review the shared-order concept.',
-              message: 'Preview invite copied.',
+                  'Deliberry local group order room: use code $previewCode on this device to review the shared-order flow.',
+              message: context.l10n.raw('Local invite copied.'),
             ),
             icon: const Icon(Icons.share_rounded),
-            label: const Text('Copy Preview Invite'),
+            label: Text(context.l10n.raw('Copy Preview Invite')),
           ),
           const SizedBox(height: 12),
           OutlinedButton.icon(
             onPressed: () => _copyInvite(
               context,
               text:
-                  'Preview only: $previewCode. Live join is not supported yet.',
-              message: 'Preview message copied.',
+                  'Local room only: $previewCode. This code works on this device for preview joins only.',
+              message: context.l10n.raw('Local room message copied.'),
             ),
             icon: const Icon(Icons.message_rounded),
-            label: const Text('Copy Preview Message'),
+            label: Text(context.l10n.raw('Copy Preview Message')),
           ),
 
           const SizedBox(height: 32),
@@ -138,7 +153,7 @@ class GroupOrderShareScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppTheme.white,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: AppTheme.borderColor),
             ),
@@ -149,7 +164,7 @@ class GroupOrderShareScreen extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Preview Participants',
+                      context.l10n.raw('Preview Participants'),
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     Container(
@@ -160,28 +175,48 @@ class GroupOrderShareScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        '1 local host',
+                        participantCountLabel,
                         style: Theme.of(context).textTheme.labelMedium,
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 16),
-                _memberRow(context, 'You', 'Preview host'),
-                const SizedBox(height: 8),
-                Center(
-                  child: Text(
-                    'Live participant updates are not available yet.',
-                    style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                          fontStyle: FontStyle.italic,
-                        ),
-                  ),
-                ),
+                if (participants.isEmpty)
+                  Center(
+                    child: Text(
+                      context.l10n.raw(
+                        'Create or join a local room from the previous screen to populate this participant list.',
+                      ),
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                            color: AppTheme.textSecondary,
+                          ),
+                    ),
+                  )
+                else
+                  ...participants.asMap().entries.map((entry) {
+                    final participant = entry.value;
+                    return Padding(
+                      padding: EdgeInsets.only(
+                        bottom: entry.key == participants.length - 1 ? 0 : 8,
+                      ),
+                      child: _memberRow(
+                        context,
+                        participant.name,
+                        participant.role == 'host'
+                            ? context.l10n.raw('Preview host')
+                            : context.l10n.raw('Local member'),
+                      ),
+                    );
+                  }),
               ],
             ),
           ),
-        ],
-      ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -198,10 +233,10 @@ class GroupOrderShareScreen extends StatelessWidget {
             radius: 18,
             backgroundColor: AppTheme.primaryColor,
             child: Text(
-              'Y',
+              name.isEmpty ? '?' : name.substring(0, 1).toUpperCase(),
               style: Theme.of(context).textTheme.titleSmall!.copyWith(
                     fontWeight: FontWeight.w700,
-                    color: Colors.white,
+                    color: AppTheme.white,
                   ),
             ),
           ),

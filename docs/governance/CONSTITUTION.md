@@ -61,11 +61,11 @@ R-005: Each web surface MUST use a surface-local adapter as the only import boun
 
 ### 3.2 Money Integrity
 
-R-010: All monetary values MUST be stored and computed as integer centavos (e.g., $42.50 = 4250).
+R-010: All monetary values MUST be stored and computed as integer minor money units. For VND, values are stored as whole dong amounts.
 R-011: Floating-point types MUST NOT be used for any monetary field in contracts, schemas, or domain models.
-R-012: The canonical currency for this platform is ARS (Argentine Peso). USD support is secondary. VND MUST NOT be used.
-R-013: All money display MUST use `formatMoney(centavos: number, currency: 'ARS' | 'USD')` — never inline formatting.
-R-014: Settlement, refund, commission, and adjustment amounts MUST use the same centavo-integer representation.
+R-012: The canonical currency for this platform is VND (Vietnamese Dong). USD support is secondary.
+R-013: All money display MUST use `formatMoney(amount: number, currency: 'VND' | 'USD')` — never inline formatting.
+R-014: Settlement, refund, commission, and adjustment amounts MUST use the same integer money-unit representation.
 
 ### 3.3 Identity and Permissions
 

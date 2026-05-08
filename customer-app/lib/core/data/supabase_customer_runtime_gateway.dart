@@ -122,6 +122,21 @@ class SupabaseCustomerRuntimeGateway implements CustomerRuntimeGateway {
   }
 
   @override
+  Future<CustomerFavoriteStoresSnapshot> readFavoriteStores() async {
+    final preferences = await _readActorPreferences();
+    final rawStoreIds =
+        (preferences['favorite_store_ids'] as List?)?.whereType<String>() ??
+            const <String>[];
+    final normalizedStoreIds = rawStoreIds
+        .map((storeId) => storeId.trim())
+        .where((storeId) => storeId.isNotEmpty)
+        .toSet()
+        .toList();
+
+    return CustomerFavoriteStoresSnapshot(storeIds: normalizedStoreIds);
+  }
+
+  @override
   Future<CustomerProfileIdentity> readProfileIdentity() async {
     final client = await _requireClient();
     final user = client?.auth.currentUser;
@@ -492,7 +507,7 @@ class SupabaseCustomerRuntimeGateway implements CustomerRuntimeGateway {
       rating: 4.7,
       reviewCount: 0,
       deliveryTime: '30-40 min',
-      deliveryFee: 299,
+      deliveryFee: 29900,
       imageColor: AppTheme.primaryColor,
       distance: 'Saved',
     );
@@ -835,20 +850,85 @@ class SupabaseCustomerRuntimeGateway implements CustomerRuntimeGateway {
       ),
     );
 
+    final preferences = await _readActorPreferences();
+    preferences['notifications_enabled'] = input.notificationsEnabled;
+    preferences['dark_mode_enabled'] = input.darkModeEnabled;
+
     await client.from('actor_profiles').upsert({
       'id': user.id,
       'actor_type': actorType,
       'display_name': customerName,
       'phone_number':
           user.phone ?? CustomerSessionController.instance.phoneNumber,
-      'preferences_json': {
-        'notifications_enabled': input.notificationsEnabled,
-        'dark_mode_enabled': input.darkModeEnabled,
-      },
+      'preferences_json': preferences,
       'updated_at': now.toIso8601String(),
     });
 
     return readSettingsPreferences();
+  }
+
+  @override
+  Future<CustomerFavoriteStoresSnapshot> saveFavoriteStores(
+    CustomerFavoriteStoresSnapshot input,
+  ) async {
+    final client = await _requireClient();
+    final user = client?.auth.currentUser;
+    if (client == null || user == null) {
+      throw StateError('Customer Supabase session is unavailable.');
+    }
+
+    final now = DateTime.now().toUtc();
+    final actorType = _resolveActorType(user);
+    final customerName = await _resolveStoredDisplayName(
+      client,
+      user,
+      _resolveCustomerName(
+        user,
+        user.phone ?? CustomerSessionController.instance.phoneNumber ?? '',
+      ),
+    );
+
+    final preferences = await _readActorPreferences();
+    preferences['favorite_store_ids'] = input.storeIds
+        .map((storeId) => storeId.trim())
+        .where((storeId) => storeId.isNotEmpty)
+        .toSet()
+        .toList();
+
+    await client.from('actor_profiles').upsert({
+      'id': user.id,
+      'actor_type': actorType,
+      'display_name': customerName,
+      'phone_number':
+          user.phone ?? CustomerSessionController.instance.phoneNumber,
+      'preferences_json': preferences,
+      'updated_at': now.toIso8601String(),
+    });
+
+    return readFavoriteStores();
+  }
+
+  Future<Map<String, dynamic>> _readActorPreferences() async {
+    final client = await _requireClient();
+    final user = client?.auth.currentUser;
+    if (client == null || user == null) {
+      throw StateError('Customer Supabase session is unavailable.');
+    }
+
+    final response = await client
+        .from('actor_profiles')
+        .select('preferences_json')
+        .eq('id', user.id)
+        .maybeSingle();
+
+    if (response == null) {
+      return <String, dynamic>{};
+    }
+
+    final row = Map<String, dynamic>.from(response);
+    return Map<String, dynamic>.from(
+      row['preferences_json'] as Map? ?? const <String, dynamic>{},
+    );
   }
 
   Future<String> _resolveStoredDisplayName(

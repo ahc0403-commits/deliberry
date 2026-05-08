@@ -97,6 +97,32 @@ else
   echo "PASS: No float money types in validation schemas"
 fi
 
+# 7. Next.js monorepo tracing scan
+echo ""
+echo "--- 7. Next.js monorepo tracing scan ---"
+TRACE_FAIL=0
+for surface in merchant-console admin-console public-website; do
+  if grep -q "outputFileTracingRoot" "$ROOT/$surface/next.config.ts" 2>/dev/null; then
+    echo "PASS: $surface/next.config.ts declares outputFileTracingRoot"
+  else
+    echo "FAIL: $surface/next.config.ts is missing outputFileTracingRoot"
+    TRACE_FAIL=1
+  fi
+done
+if [ "$TRACE_FAIL" -ne 0 ]; then
+  FAIL=1
+fi
+
+# 8. Repo-root Vercel link scan
+echo ""
+echo "--- 8. Repo-root Vercel link scan ---"
+if [ -f "$ROOT/.vercel/project.json" ]; then
+  echo "FAIL: Repo-root .vercel/project.json detected. Keep Vercel links surface-local only."
+  FAIL=1
+else
+  echo "PASS: No repo-root .vercel/project.json"
+fi
+
 echo ""
 echo "=== Scan complete ==="
 if [ "$FAIL" -ne 0 ]; then

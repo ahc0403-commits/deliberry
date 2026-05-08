@@ -2,7 +2,7 @@ import {
   createMerchantServerSupabaseClient,
   createMerchantServiceSupabaseClient,
 } from "../supabase/client";
-import { readMerchantAuthAuthority } from "../supabase/config";
+import { HO_CHI_MINH_TZ } from "../../../../shared/utils/date";
 import {
   buildMerchantRuntimeEvent,
   buildMerchantRuntimeFailureClass,
@@ -10,11 +10,19 @@ import {
 } from "./runtime-observability-service";
 import { formatMoney } from "../domain";
 import {
+  resolveMerchantRuntimeSupabaseClientMode,
+} from "./merchant-runtime-compatibility";
+import {
   mockKPIs,
   mockRecentAlerts,
   mockStore,
+  type AnalyticsMetric,
+  type DailyRevenue,
   type MerchantReview,
+  type MenuCategory,
+  type MenuItem,
   type MerchantOrder,
+  type TopSellingItem,
 } from "./merchant-mock-data";
 import { ExternalSalesService } from "./external-sales-service";
 import type {
@@ -23,10 +31,14 @@ import type {
   MerchantReadCursor,
   MerchantReviewsQuery,
   MerchantRuntimeRepository,
+  MerchantStoreShellSnapshot,
 } from "./merchant-runtime-repository";
 import type {
+  AnalyticsData,
   DashboardData,
+  MenuData,
   OrdersData,
+  SettlementData,
   SettingsData,
   StoreManagementData,
 } from "./merchant-repository";
@@ -89,6 +101,20 @@ type PersistedStoreRow = {
   } | null;
 };
 
+type PersistedMenuItemRow = {
+  id: string;
+  store_id: string;
+  name: string;
+  description: string;
+  category: string;
+  price_centavos: number;
+  image_color_hex: string;
+  image_storage_path: string | null;
+  is_popular: boolean;
+  is_available: boolean;
+  sort_order: number;
+};
+
 type PersistedReviewRow = {
   id: string;
   order_id: string;
@@ -107,6 +133,36 @@ type PersistedReviewRow = {
         order_number: string | null;
       }[]
     | null;
+};
+
+type PersistedSettlementRow = {
+  id: string;
+  restaurant_id: string;
+  period_start: string;
+  period_end: string;
+  gross_total: number;
+  total_deductions: number;
+  net_settlement: number;
+  status: SettlementData["records"][number]["status"];
+  received_at: string | null;
+};
+
+type PersistedSettlementItemRow = {
+  settlement_id: string;
+  item_type: string;
+  amount: number;
+};
+
+type PersistedSettlementLinkedSaleRow = {
+  settlement_id: string | null;
+};
+
+type MerchantDashboardKpiRpcRow = {
+  active_order_count: number;
+  ready_order_count: number;
+  gross_revenue_centavos: number;
+  non_cancelled_order_count: number;
+  review_count: number;
 };
 
 function mapPersistedOrder(row: PersistedOrderRow): MerchantOrder {
@@ -172,9 +228,171 @@ function mapPersistedReview(row: PersistedReviewRow): MerchantReview {
   };
 }
 
+function mapPersistedMenuItems(
+  rows: PersistedMenuItemRow[],
+  resolveImageUrl: (path: string) => string,
+): { categories: MenuCategory[]; items: MenuItem[] } {
+  const categoriesByName = new Map<string, MenuCategory>();
+  const items = rows.map((row) => {
+    const categoryName = row.category.trim() || "Menu";
+    const categoryId = categoryName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "menu";
+    const existingCategory = categoriesByName.get(categoryName);
+    categoriesByName.set(categoryName, {
+      id: categoryId,
+      name: categoryName,
+      sortOrder: existingCategory?.sortOrder ?? categoriesByName.size,
+      itemCount: (existingCategory?.itemCount ?? 0) + 1,
+      active: true,
+    });
+
+    return {
+      id: row.id,
+      name: row.name,
+      description: row.description,
+      price: row.price_centavos,
+      categoryId,
+      categoryName,
+      available: row.is_available,
+      popular: row.is_popular,
+      imageUrl: row.image_storage_path ? resolveImageUrl(row.image_storage_path) : "",
+      preparationTime: "15-25 min",
+    };
+  });
+
+  return {
+    categories: [...categoriesByName.values()].sort((a, b) => a.sortOrder - b.sortOrder),
+    items,
+  };
+}
+
+function buildRecentDailyRevenue(orders: MerchantOrder[]): DailyRevenue[] {
+  const weekdayFormatter = new Intl.DateTimeFormat("en-US", {
+    weekday: "short",
+    timeZone: HO_CHI_MINH_TZ,
+  });
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
+
+  const buckets = Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(today);
+    date.setUTCDate(today.getUTCDate() - (6 - index));
+    return {
+      key: date.toISOString().slice(0, 10),
+      day: weekdayFormatter.format(date),
+      revenue: 0,
+      orders: 0,
+    };
+  });
+
+  const bucketsByKey = new Map(buckets.map((bucket) => [bucket.key, bucket]));
+
+  for (const order of orders) {
+    if (order.status === "cancelled") continue;
+    const bucket = bucketsByKey.get(order.createdAt.slice(0, 10));
+    if (!bucket) continue;
+    bucket.revenue += order.total;
+    bucket.orders += 1;
+  }
+
+  return buckets.map(({ key: _key, ...bucket }) => bucket);
+}
+
+function buildTopSellingItems(orders: MerchantOrder[]): TopSellingItem[] {
+  const totalsByItemName = new Map<string, TopSellingItem>();
+
+  for (const order of orders) {
+    if (order.status === "cancelled") continue;
+    for (const item of order.items) {
+      const existing = totalsByItemName.get(item.name) ?? {
+        name: item.name,
+        orders: 0,
+        revenue: 0,
+      };
+      existing.orders += item.quantity;
+      existing.revenue += item.price * item.quantity;
+      totalsByItemName.set(item.name, existing);
+    }
+  }
+
+  return [...totalsByItemName.values()]
+    .sort((left, right) => {
+      if (right.orders !== left.orders) {
+        return right.orders - left.orders;
+      }
+      return right.revenue - left.revenue;
+    })
+    .slice(0, 5);
+}
+
+function buildRuntimeAnalyticsMetrics(input: {
+  orders: MerchantOrder[];
+  reviews: MerchantReview[];
+  menuItemCount: number;
+  visibleMenuItemCount: number;
+  avgPrepTime: string;
+}): AnalyticsMetric[] {
+  const { orders, reviews, menuItemCount, visibleMenuItemCount, avgPrepTime } = input;
+  const nonCancelledOrders = orders.filter((order) => order.status !== "cancelled");
+  const deliveredOrders = orders.filter((order) => order.status === "delivered");
+  const activeOrders = orders.filter((order) =>
+    ["pending", "confirmed", "preparing", "ready", "in_transit"].includes(order.status),
+  );
+  const totalRevenue = nonCancelledOrders.reduce((sum, order) => sum + order.total, 0);
+  const averageOrderValue = nonCancelledOrders.length > 0
+    ? Math.round(totalRevenue / nonCancelledOrders.length)
+    : 0;
+  const completionRate = orders.length > 0
+    ? (deliveredOrders.length / orders.length) * 100
+    : 0;
+  const respondedReviewCount = reviews.filter((review) => review.responded).length;
+  const pendingReviewCount = reviews.length - respondedReviewCount;
+  const reviewResponseRate = reviews.length > 0
+    ? (respondedReviewCount / reviews.length) * 100
+    : 0;
+
+  return [
+    {
+      label: "Recorded Revenue",
+      value: formatMoney(totalRevenue),
+      change: `${nonCancelledOrders.length} non-cancelled order${nonCancelledOrders.length === 1 ? "" : "s"}`,
+      changeDirection: "neutral",
+    },
+    {
+      label: "Recorded Orders",
+      value: String(orders.length),
+      change: `${activeOrders.length} active right now`,
+      changeDirection: "neutral",
+    },
+    {
+      label: "Avg Order Value",
+      value: formatMoney(averageOrderValue),
+      change: `${visibleMenuItemCount}/${menuItemCount} visible menu item${menuItemCount === 1 ? "" : "s"}`,
+      changeDirection: "neutral",
+    },
+    {
+      label: "Completion Rate",
+      value: `${completionRate.toFixed(1)}%`,
+      change: `${deliveredOrders.length} delivered`,
+      changeDirection: completionRate >= 90 ? "up" : completionRate >= 70 ? "neutral" : "down",
+    },
+    {
+      label: "Avg Prep Window",
+      value: avgPrepTime,
+      change: "Store profile default",
+      changeDirection: "neutral",
+    },
+    {
+      label: "Review Response Rate",
+      value: `${reviewResponseRate.toFixed(1)}%`,
+      change: `${pendingReviewCount} awaiting response`,
+      changeDirection: pendingReviewCount === 0 ? "up" : "neutral",
+    },
+  ];
+}
+
 export class SupabaseMerchantRuntimeRepository implements MerchantRuntimeRepository {
   private async createRuntimeSupabaseClient() {
-    if (readMerchantAuthAuthority() === "demo-cookie") {
+    if (resolveMerchantRuntimeSupabaseClientMode() === "service") {
       return createMerchantServiceSupabaseClient();
     }
 
@@ -226,13 +444,13 @@ export class SupabaseMerchantRuntimeRepository implements MerchantRuntimeReposit
       throw new Error(error.message);
     }
 
-    const snapshot = data as {
-      active_order_count: number;
-      ready_order_count: number;
-      gross_revenue_centavos: number;
-      non_cancelled_order_count: number;
-      review_count: number;
-    };
+    const snapshot = (Array.isArray(data) ? data[0] : data) as
+      | MerchantDashboardKpiRpcRow
+      | null;
+
+    if (!snapshot) {
+      throw new Error(`Merchant dashboard KPI snapshot for ${storeId} was empty.`);
+    }
 
     return {
       activeOrderCount: snapshot.active_order_count ?? 0,
@@ -243,9 +461,38 @@ export class SupabaseMerchantRuntimeRepository implements MerchantRuntimeReposit
     };
   }
 
+  private async getPendingReviewCount(storeId: string): Promise<number> {
+    const supabase = await this.createRuntimeSupabaseClient();
+    const { count, error } = await supabase
+      .from("customer_reviews")
+      .select("id", { count: "exact", head: true })
+      .eq("store_id", storeId)
+      .is("response_text", null);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return count ?? 0;
+  }
+
+  async getStoreShellSnapshot(storeId: string): Promise<MerchantStoreShellSnapshot> {
+    const [storeRow, kpiSnapshot, pendingReviewCount] = await Promise.all([
+      this.readPersistedStore(storeId),
+      this.getDashboardKpiSnapshot(storeId),
+      this.getPendingReviewCount(storeId),
+    ]);
+
+    return {
+      storeName: storeRow.name,
+      activeOrderCount: kpiSnapshot.activeOrderCount,
+      pendingReviewCount,
+    };
+  }
+
   async getDashboardData(storeId: string): Promise<DashboardData> {
     // P1: Use exact KPI snapshot RPC instead of deriving from bounded slices.
-    const [kpiSnapshot, ordersData, reviewsData] = await Promise.all([
+    const [kpiSnapshot, ordersData, reviewsData, menuData] = await Promise.all([
       this.getDashboardKpiSnapshot(storeId),
       this.getOrdersData({
         storeId,
@@ -255,6 +502,7 @@ export class SupabaseMerchantRuntimeRepository implements MerchantRuntimeReposit
         storeId,
         limit: MERCHANT_DASHBOARD_REVIEW_LIMIT,
       }),
+      this.getMenuData(storeId),
     ]);
 
     const kpis = mockKPIs.map((kpi) => {
@@ -276,8 +524,27 @@ export class SupabaseMerchantRuntimeRepository implements MerchantRuntimeReposit
         };
       }
 
+      if (kpi.label === "Avg Prep Time") {
+        return {
+          ...kpi,
+          value: ordersData.store.avgPrepTime,
+          trend: "Current store default",
+          trendDirection: "neutral" as const,
+        };
+      }
+
+      if (kpi.label === "Today's Rating") {
+        return {
+          ...kpi,
+          value: ordersData.store.rating.toFixed(1),
+          trend: `${ordersData.store.reviewCount} review${ordersData.store.reviewCount === 1 ? "" : "s"}`,
+          trendDirection: "neutral" as const,
+        };
+      }
+
       return kpi;
     });
+    const visibleMenuItemCount = menuData.items.filter((item) => item.available).length;
     const alerts = [
       ...(kpiSnapshot.activeOrderCount > 0
         ? [
@@ -301,6 +568,23 @@ export class SupabaseMerchantRuntimeRepository implements MerchantRuntimeReposit
             },
           ]
         : []),
+      ...(visibleMenuItemCount > 0
+        ? [
+            {
+              id: "merchant-visible-menu-items-persisted",
+              type: "success" as const,
+              message: `${visibleMenuItemCount} menu item${visibleMenuItemCount === 1 ? "" : "s"} visible to customers`,
+              time: "",
+            },
+          ]
+        : [
+            {
+              id: "merchant-no-visible-menu-items-persisted",
+              type: "warning" as const,
+              message: "No menu items are currently visible to customers",
+              time: "",
+            },
+          ]),
       ...(kpiSnapshot.reviewCount > 0
         ? [
             {
@@ -313,7 +597,6 @@ export class SupabaseMerchantRuntimeRepository implements MerchantRuntimeReposit
             },
           ]
         : []),
-      ...mockRecentAlerts.filter((alert) => !alert.id.startsWith("merchant-active-orders")),
     ].slice(0, 4);
 
     return {
@@ -504,8 +787,43 @@ export class SupabaseMerchantRuntimeRepository implements MerchantRuntimeReposit
     return updatedOrder;
   }
 
-  async getMenuData(): Promise<never> {
-    throw new Error("Menu persistence cutover is not part of Phase 3.");
+  async getMenuData(storeId: string): Promise<MenuData> {
+    const supabase = await this.createRuntimeSupabaseClient();
+    const [{ data, error }, store] = await Promise.all([
+      supabase
+        .from("store_menu_items")
+        .select(`
+          id,
+          store_id,
+          name,
+          description,
+          category,
+          price_centavos,
+          image_color_hex,
+          image_storage_path,
+          is_popular,
+          is_available,
+          sort_order
+        `)
+        .eq("store_id", storeId)
+        .order("sort_order", { ascending: true })
+        .order("name", { ascending: true }),
+      this.readPersistedStore(storeId),
+    ]);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    const mapped = mapPersistedMenuItems(
+      (data ?? []) as PersistedMenuItemRow[],
+      (path) => supabase.storage.from("menu-item-images").getPublicUrl(path).data.publicUrl,
+    );
+
+    return {
+      ...mapped,
+      store: mapPersistedStore(store),
+    };
   }
   async getStoreManagementData(storeId: string) {
     return {
@@ -569,15 +887,21 @@ export class SupabaseMerchantRuntimeRepository implements MerchantRuntimeReposit
       throw new Error("Review response cannot be empty.");
     }
 
+    const { error: rpcError } = await supabase.rpc(
+      "respond_to_customer_review_with_audit",
+      {
+        p_review_id: input.reviewId,
+        p_store_id: input.storeId,
+        p_response_text: normalizedResponse,
+      },
+    );
+
+    if (rpcError) {
+      throw new Error(rpcError.message);
+    }
+
     const { data: updatedRow, error } = await supabase
       .from("customer_reviews")
-      .update({
-        response_text: normalizedResponse,
-        response_created_at: new Date().toISOString(),
-        response_actor_id: input.actorId,
-      })
-      .eq("id", input.reviewId)
-      .eq("store_id", input.storeId)
       .select(`
         id,
         order_id,
@@ -591,6 +915,8 @@ export class SupabaseMerchantRuntimeRepository implements MerchantRuntimeReposit
           order_number
         )
       `)
+      .eq("id", input.reviewId)
+      .eq("store_id", input.storeId)
       .maybeSingle();
 
     if (error) {
@@ -619,11 +945,133 @@ export class SupabaseMerchantRuntimeRepository implements MerchantRuntimeReposit
   async getPromotionsData(): Promise<never> {
     throw new Error("Promotions persistence cutover is not part of Phase 3.");
   }
-  async getSettlementData(): Promise<never> {
-    throw new Error("Settlement persistence cutover is not part of Phase 3.");
+  async getSettlementData(storeId: string): Promise<SettlementData> {
+    const supabase = await this.createRuntimeSupabaseClient();
+    const storePromise = this.readPersistedStore(storeId);
+    const settlementsPromise = supabase
+      .from("delivery_settlements")
+      .select(`
+        id,
+        restaurant_id,
+        period_start,
+        period_end,
+        gross_total,
+        total_deductions,
+        net_settlement,
+        status,
+        received_at
+      `)
+      .eq("restaurant_id", storeId)
+      .order("period_start", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(50);
+
+    const [storeRow, { data: settlements, error: settlementsError }] =
+      await Promise.all([storePromise, settlementsPromise]);
+
+    if (settlementsError) {
+      throw new Error(settlementsError.message);
+    }
+
+    const settlementRows = (settlements ?? []) as PersistedSettlementRow[];
+    const settlementIds = settlementRows.map((row) => row.id);
+
+    let itemRows: PersistedSettlementItemRow[] = [];
+    let linkedSalesRows: PersistedSettlementLinkedSaleRow[] = [];
+
+    if (settlementIds.length > 0) {
+      const [{ data: items, error: itemsError }, { data: linkedSales, error: linkedSalesError }] =
+        await Promise.all([
+          supabase
+            .from("delivery_settlement_items")
+            .select("settlement_id, item_type, amount")
+            .in("settlement_id", settlementIds),
+          supabase
+            .from("external_sales")
+            .select("settlement_id")
+            .in("settlement_id", settlementIds),
+        ]);
+
+      if (itemsError) {
+        throw new Error(itemsError.message);
+      }
+      if (linkedSalesError) {
+        throw new Error(linkedSalesError.message);
+      }
+
+      itemRows = (items ?? []) as PersistedSettlementItemRow[];
+      linkedSalesRows = (linkedSales ?? []) as PersistedSettlementLinkedSaleRow[];
+    }
+
+    const itemsBySettlementId = new Map<string, PersistedSettlementItemRow[]>();
+    for (const item of itemRows) {
+      const existing = itemsBySettlementId.get(item.settlement_id) ?? [];
+      existing.push(item);
+      itemsBySettlementId.set(item.settlement_id, existing);
+    }
+
+    const orderCountsBySettlementId = new Map<string, number>();
+    for (const row of linkedSalesRows) {
+      if (!row.settlement_id) continue;
+      orderCountsBySettlementId.set(
+        row.settlement_id,
+        (orderCountsBySettlementId.get(row.settlement_id) ?? 0) + 1,
+      );
+    }
+
+    return {
+      records: settlementRows.map((row) => {
+        const items = itemsBySettlementId.get(row.id) ?? [];
+        const commission = items
+          .filter((item) => item.item_type === "platform_commission")
+          .reduce((sum, item) => sum + Number(item.amount ?? 0), 0);
+        const nonCommissionDeductions = items
+          .filter((item) => item.item_type !== "platform_commission")
+          .reduce((sum, item) => sum + Number(item.amount ?? 0), 0);
+
+        return {
+          id: row.id,
+          periodStart: row.period_start,
+          periodEnd: row.period_end,
+          orderCount: orderCountsBySettlementId.get(row.id) ?? 0,
+          grossAmount: row.gross_total,
+          commission,
+          adjustments: nonCommissionDeductions === 0 ? 0 : -nonCommissionDeductions,
+          netAmount: row.net_settlement,
+          status: row.status,
+          receivedAt: row.received_at ?? undefined,
+        };
+      }),
+      store: mapPersistedStore(storeRow),
+    };
   }
-  async getAnalyticsData(): Promise<never> {
-    throw new Error("Analytics persistence cutover is not part of Phase 3.");
+  async getAnalyticsData(storeId: string): Promise<AnalyticsData> {
+    const [ordersData, reviewsData, menuData] = await Promise.all([
+      this.getOrdersData({
+        storeId,
+        limit: 200,
+      }),
+      this.getReviewsData({
+        storeId,
+        limit: 100,
+      }),
+      this.getMenuData(storeId),
+    ]);
+
+    const visibleMenuItemCount = menuData.items.filter((item) => item.available).length;
+
+    return {
+      metrics: buildRuntimeAnalyticsMetrics({
+        orders: ordersData.orders,
+        reviews: reviewsData.reviews,
+        menuItemCount: menuData.items.length,
+        visibleMenuItemCount,
+        avgPrepTime: ordersData.store.avgPrepTime,
+      }),
+      topItems: buildTopSellingItems(ordersData.orders),
+      dailyRevenue: buildRecentDailyRevenue(ordersData.orders),
+      store: ordersData.store,
+    };
   }
   async getSettingsData(storeId: string): Promise<SettingsData> {
     const data = await this.readPersistedStore(storeId);

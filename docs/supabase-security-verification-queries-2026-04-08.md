@@ -297,4 +297,4 @@ These are NOT verified by the queries above — they are separate items:
 2. **F6 FIXED** (commit `7fb8181`): PKCE/session storage migrated to `flutter_secure_storage`. iOS Keychain / Android EncryptedSharedPreferences.
 3. **Secret rotation**: VN proxy shared secret and Vercel CLI token rotation are operator actions, not verifiable via SQL.
 4. **Public-website redeploy**: CORS hardening is live only after redeployment with `CUSTOMER_AUTH_ALLOWED_ORIGINS`.
-5. **Settlement edge function fixes**: Source-fixed but redeployment status not confirmed from SQL.
+5. **Settlement edge functions**: Source-fixed and now intentionally gated until schema-backed settlement rollout is approved. `20260417120000_add_settlement_runtime_schema.sql` was applied to the linked project on 2026-04-17; keep `ENABLE_SETTLEMENT_RUNTIME` unset until rollout approval. SQL verification does not confirm function deployment state.

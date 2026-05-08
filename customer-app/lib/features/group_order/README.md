@@ -4,7 +4,7 @@ Status: Active
 Authority: Operational
 Surface: customer-app
 Domains: group-order, invite-preview, partial-support
-Last updated: 2026-03-17
+Last updated: 2026-05-05
 Retrieve when:
 - editing the group-order preview flow
 - checking whether invite, join, or share behavior is real or intentionally partial
@@ -24,9 +24,10 @@ Owns the customer group-order preview flow.
 
 ## Source of Truth
 
-- Route ownership and preview-code threading live in `customer-app/lib/app/router/app_router.dart`
-- Preview-code generation and host/join UI live in `group_order_screen.dart`
-- Invite-preview display and copy actions live in `group_order_share_screen.dart`
+- Route ownership and route argument threading live in `customer-app/lib/app/router/app_router.dart`
+- Local room code and participant state live in `customer-app/lib/core/data/customer_runtime_controller.dart`
+- Host/join UI live in `group_order_screen.dart`
+- Invite/share display and copy actions live in `group_order_share_screen.dart`
 
 ## Key Files to Read First
 
@@ -47,19 +48,19 @@ Owns the customer group-order preview flow.
 
 ## Known Limitations
 
-- This is a local preview flow only.
-- Join-room is intentionally unavailable.
-- Invite/share actions copy preview text only.
-- There is no shared room state or shared-cart truth.
+- This is a local room flow only.
+- Join-room works only for a room created on the same device in the current runtime session.
+- Invite/share actions copy local-room text only.
+- There is no cross-device room state or shared-cart truth.
 
 ## Safe Modification Guidance
 
-- Keep honesty and limited-scope copy intact unless real runtime support exists.
+- Keep honesty and limited-scope copy intact unless real cross-device runtime support exists.
 - Change preview route behavior in `app_router.dart`.
 - Change preview UI and copy actions in the two screen files.
 
 ## What Not to Change Casually
 
-- Do not make the preview code look like a real backend room id.
-- Do not imply live join or participant sync without runtime support.
+- Do not make the local room code look like a real backend room id.
+- Do not imply cross-device join or participant sync without runtime support.
 - Do not hide the current partial-support state behind polished but deceptive UI.

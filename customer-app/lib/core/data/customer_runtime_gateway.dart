@@ -21,6 +21,14 @@ class CustomerSettingsPreferences {
   final bool darkModeEnabled;
 }
 
+class CustomerFavoriteStoresSnapshot {
+  const CustomerFavoriteStoresSnapshot({
+    required this.storeIds,
+  });
+
+  final List<String> storeIds;
+}
+
 class CustomerProfileIdentity {
   const CustomerProfileIdentity({
     this.displayName,
@@ -140,6 +148,10 @@ abstract class CustomerRuntimeGateway {
   Future<CustomerSettingsPreferences> readSettingsPreferences();
   Future<CustomerSettingsPreferences> saveSettingsPreferences(
     CustomerSettingsPreferences input,
+  );
+  Future<CustomerFavoriteStoresSnapshot> readFavoriteStores();
+  Future<CustomerFavoriteStoresSnapshot> saveFavoriteStores(
+    CustomerFavoriteStoresSnapshot input,
   );
   Future<CustomerProfileIdentity> readProfileIdentity();
   Future<CustomerProfileIdentity> saveProfileIdentity(

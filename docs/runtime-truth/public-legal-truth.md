@@ -4,10 +4,10 @@ Status: Active
 Authority: Operational
 Surface: public-website
 Domains: legal, privacy, terms, refund-policy
-Last updated: 2026-03-17
+Last updated: 2026-04-28
 Retrieve when:
 - changing live legal-route copy, legal-layout behavior, policy dates, contact details, or legal cross-links
-- checking whether public legal content comes from route screens or from shared repository files
+- checking whether public legal content comes from route screens or legal shell files
 Related files:
 - public-website/src/app/(legal)/layout.tsx
 - public-website/src/app/(legal)/privacy/page.tsx
@@ -54,13 +54,6 @@ Authoritative:
 - The three legal `page.tsx` route files for route ownership
 - [layout.tsx](/Users/andremacmini/Deliberry/public-website/src/app/(legal)/layout.tsx) for legal-shell structure
 
-Derived or structural only:
-
-- [public-website/src/shared/data/content-service.ts](/Users/andremacmini/Deliberry/public-website/src/shared/data/content-service.ts)
-- [public-website/src/shared/data/public-content-repository.ts](/Users/andremacmini/Deliberry/public-website/src/shared/data/public-content-repository.ts)
-
-Those shared files are not the live truth for the legal routes today.
-
 ## What Is Still Static, Hardcoded, Partial, or Retrieval-Shim-Only
 
 - Policy copy, dates, and contact details are hardcoded in the legal screen files.
@@ -68,6 +61,10 @@ Those shared files are not the live truth for the legal routes today.
 - There is no repository-backed legal publishing path or document versioning system.
 - Refund-policy wording is now aligned to the current support route and email-based support flow, not to live in-app cancellation, report-issue, or chat mechanics.
 - Privacy and terms wording now stay aligned to payment-method-selection and order-progress truth rather than claiming live payment capture or real-time delivery tracking.
+- Privacy copy no longer claims active production payment processing or live PCI-backed verification in the current product phase.
+- Terms copy now states that card and alternate pay methods remain future-ready or sandbox-only until live payment is explicitly enabled.
+- Refund-policy copy now frames card/pay refund timing around live-flow availability plus support confirmation instead of implying a universal live charge path.
+- The unused shared public content seam was removed on 2026-04-18 so legal truth stays single-source.
 
 ## Known Risks
 

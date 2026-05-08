@@ -70,7 +70,7 @@ Describe the current merchant orders journey from store-scoped route entry into 
 - Editing the screen as if it owns order truth instead of reading from the repository layer.
 - Treating action buttons as operational without adding a real write path.
 - Changing order route behavior without checking store-scope enforcement in the layout and access helpers.
-- Reintroducing `merchantQueryServices` as the live orders owner after this route has already migrated.
+- Reintroducing `merchantQueryServices` or treating its deprecated alias as the live orders owner after this route has already migrated.
 
 ## Related Filemaps
 

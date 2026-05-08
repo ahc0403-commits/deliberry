@@ -1,6 +1,13 @@
 import "./globals.css";
 import type { ReactNode } from "react";
 
+import {
+  PublicI18nProvider,
+  PublicLanguageDock,
+  PublicTextLocalizer,
+} from "../shared/i18n/client";
+import { getTranslations } from "../shared/i18n/server";
+
 export const metadata = {
   title: "Deliberry",
   description: "Public Website",
@@ -9,10 +16,18 @@ export const metadata = {
   },
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const { locale, messages } = await getTranslations();
+
   return (
-    <html lang="en">
-      <body>{children}</body>
+    <html lang={locale}>
+      <body>
+        <PublicI18nProvider locale={locale} messages={messages}>
+          {children}
+          <PublicTextLocalizer />
+          <PublicLanguageDock />
+        </PublicI18nProvider>
+      </body>
     </html>
   );
 }

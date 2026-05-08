@@ -4,8 +4,8 @@ Status: active
 Authority: operational
 Surface: customer-app
 Domains: store, menu, cart-entry
-Last updated: 2026-03-16
-Last verified: 2026-03-16
+Last updated: 2026-05-05
+Last verified: 2026-05-05
 Retrieve when:
 - editing store detail or menu browsing routes
 - changing selected-store truth, add-to-cart behavior, or menu composition
@@ -26,7 +26,7 @@ Own the customer browse-to-menu entry for one selected store and hand off into c
 ## Source of truth
 
 - Mutable truth is split:
-  - selected store, menu add-to-cart, and cart continuity live in [customer_runtime_controller.dart](/Users/andremacmini/Deliberry/customer-app/lib/core/data/customer_runtime_controller.dart)
+  - selected store, favorite-store state, menu add-to-cart, and cart continuity live in [customer_runtime_controller.dart](/Users/andremacmini/Deliberry/customer-app/lib/core/data/customer_runtime_controller.dart)
   - menu/store fixture content comes from [mock_data.dart](/Users/andremacmini/Deliberry/customer-app/lib/core/data/mock_data.dart)
 - Route ownership and shell boundaries come from [app_router.dart](/Users/andremacmini/Deliberry/customer-app/lib/app/router/app_router.dart) and [NAVIGATION_TRUTH_MAP.md](/Users/andremacmini/Deliberry/docs/ui-governance/NAVIGATION_TRUTH_MAP.md)
 
@@ -55,7 +55,7 @@ Own the customer browse-to-menu entry for one selected store and hand off into c
 ## Known limitations / partial-support truth
 
 - Store content is mock-backed, not backend-backed.
-- `StoreDetailScreen` still contains honesty-limited actions such as unavailable favorites.
+- Favorite stores are runtime-owned and persist only for signed-in Supabase-backed customer sessions.
 - `store_screen.dart` and `menu_browsing_screen.dart` intentionally share the same runtime truth, but they still remain two separate route implementations and can drift if edited independently.
 
 ## Safe modification guidance

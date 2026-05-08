@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../../../app/router/route_names.dart';
 import '../../../core/data/customer_runtime_controller.dart';
 import '../../../core/data/mock_data.dart';
+import '../../../core/i18n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../common/presentation/widgets.dart';
 
@@ -52,6 +53,28 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
     );
   }
 
+  Future<void> _handleFavoriteToggle(MockStore store) async {
+    final runtime = CustomerRuntimeController.instance;
+    final wasFavorited = runtime.isStoreFavorited(store.id);
+
+    try {
+      final isFavorited = await runtime.toggleFavoriteStore(store.id);
+      if (!mounted) return;
+      _showMessage(
+        isFavorited
+            ? context.l10n.favoriteAdded(store.name)
+            : context.l10n.favoriteRemoved(store.name),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      _showMessage(
+        wasFavorited
+            ? context.l10n.raw('We could not update favorites right now.')
+            : context.l10n.raw('We could not save that favorite right now.'),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final runtime = CustomerRuntimeController.instance;
@@ -60,6 +83,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
       listenable: runtime,
       builder: (context, _) {
         final store = runtime.resolveStore(widget.storeId);
+        final isFavorited = runtime.isStoreFavorited(store.id);
         final categories = runtime
             .menuItemsForStore(store.id)
             .map((item) => item.category)
@@ -86,15 +110,15 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                 expandedHeight: 240,
                 pinned: true,
                 stretch: true,
-                backgroundColor: store.imageColor.withValues(alpha: 0.95),
-                foregroundColor: Colors.white,
+                backgroundColor: AppTheme.inkColor,
+                foregroundColor: AppTheme.white,
                 leading: Padding(
                   padding: const EdgeInsets.all(8),
                   child: CircleAvatar(
-                    backgroundColor: Colors.black.withValues(alpha: 0.25),
+                    backgroundColor: AppTheme.inkColor.withValues(alpha: 0.58),
                     child: IconButton(
                       icon: const Icon(Icons.arrow_back_rounded, size: 20),
-                      color: Colors.white,
+                      color: AppTheme.white,
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                   ),
@@ -103,26 +127,32 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                   Padding(
                     padding: const EdgeInsets.all(8),
                     child: CircleAvatar(
-                      backgroundColor: Colors.black.withValues(alpha: 0.25),
+                      backgroundColor:
+                          AppTheme.inkColor.withValues(alpha: 0.58),
                       child: IconButton(
-                        icon:
-                            const Icon(Icons.favorite_border_rounded, size: 20),
-                        color: Colors.white,
-                        tooltip: 'Favorites are not available yet',
-                        onPressed: () => _showMessage(
-                          'Favorites are not available yet in this build.',
+                        icon: Icon(
+                          isFavorited
+                              ? Icons.favorite_rounded
+                              : Icons.favorite_border_rounded,
+                          size: 20,
                         ),
+                        color: AppTheme.white,
+                        tooltip: isFavorited
+                            ? context.l10n.raw('Remove from favorites')
+                            : context.l10n.raw('Save to favorites'),
+                        onPressed: () => _handleFavoriteToggle(store),
                       ),
                     ),
                   ),
                   Padding(
                     padding: const EdgeInsets.only(right: 8, top: 8, bottom: 8),
                     child: CircleAvatar(
-                      backgroundColor: Colors.black.withValues(alpha: 0.25),
+                      backgroundColor:
+                          AppTheme.inkColor.withValues(alpha: 0.58),
                       child: IconButton(
                         icon: const Icon(Icons.share_rounded, size: 20),
-                        color: Colors.white,
-                        tooltip: 'Copy store name',
+                        color: AppTheme.white,
+                        tooltip: context.l10n.raw('Copy store name'),
                         onPressed: () async {
                           await Clipboard.setData(
                             ClipboardData(text: '${store.name} on Deliberry'),
@@ -143,8 +173,8 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
-                              store.imageColor.withValues(alpha: 0.4),
-                              store.imageColor.withValues(alpha: 0.85),
+                              store.imageColor.withValues(alpha: 0.92),
+                              AppTheme.primaryColor.withValues(alpha: 0.74),
                             ],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
@@ -160,30 +190,30 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                               width: 80,
                               height: 80,
                               decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.2),
-                                shape: BoxShape.circle,
+                                color: AppTheme.white.withValues(alpha: 0.14),
+                                borderRadius: BorderRadius.circular(24),
                               ),
                               child: Icon(
                                 Icons.storefront_rounded,
                                 size: 44,
-                                color: Colors.white.withValues(alpha: 0.9),
+                                color: AppTheme.white.withValues(alpha: 0.9),
                               ),
                             ),
                             const SizedBox(height: 12),
                             Text(
                               store.name,
                               style: const TextStyle(
-                                color: Colors.white,
+                                color: AppTheme.white,
                                 fontSize: 24,
                                 fontWeight: FontWeight.w800,
-                                letterSpacing: -0.3,
+                                letterSpacing: 0,
                               ),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               store.cuisine,
                               style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.85),
+                                color: AppTheme.white.withValues(alpha: 0.85),
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -201,13 +231,13 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
-                              color: AppTheme.primaryColor,
-                              borderRadius: BorderRadius.circular(10),
+                              color: AppTheme.inkColor,
+                              borderRadius: BorderRadius.circular(9),
                             ),
                             child: Text(
                               store.promoText!,
                               style: const TextStyle(
-                                color: Colors.white,
+                                color: AppTheme.white,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -220,7 +250,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
               ),
               SliverToBoxAdapter(
                 child: Container(
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.surface,
                   padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -231,44 +261,39 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                         children: [
                           InfoPill(
                             icon: Icons.storefront_rounded,
-                            label: 'Store details',
+                            label: store.cuisine,
                             highlight: true,
                           ),
                           InfoPill(
                             icon: Icons.shopping_cart_outlined,
                             label: runtime.cartItemCount > 0
                                 ? '${runtime.cartItemCount} item${runtime.cartItemCount == 1 ? '' : 's'} in cart'
-                                : 'Cart starts here',
+                                : context.l10n.raw('Cart starts here'),
                           ),
+                          if (isFavorited)
+                            InfoPill(
+                              icon: Icons.favorite_rounded,
+                              label: context.l10n.raw('Saved to favorites'),
+                            ),
                         ],
                       ),
                       const SizedBox(height: 16),
                       Row(
                         children: [
-                          RatingStars(rating: store.rating, size: 16),
-                          const SizedBox(width: 6),
-                          Text(
-                            store.rating.toStringAsFixed(1),
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
+                          Expanded(
+                            child: DeliveryMetaRow(
+                              rating: store.rating,
+                              deliveryTime: store.deliveryTime,
+                              deliveryFee: store.deliveryFee,
+                              distance: store.distance,
                             ),
                           ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '(${store.reviewCount} reviews)',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: AppTheme.textSecondary,
-                            ),
-                          ),
-                          const Spacer(),
                           TextButton(
                             onPressed: () => Navigator.of(context).pushNamed(
                               RouteNames.storeMenu,
                               arguments: store.id,
                             ),
-                            child: const Text('Open menu'),
+                            child: Text(context.l10n.raw('Menu')),
                           ),
                         ],
                       ),
@@ -283,8 +308,8 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                           _InfoChip(
                             icon: Icons.delivery_dining_rounded,
                             label: store.deliveryFee == 0
-                                ? 'Free delivery'
-                                : '\$${formatCentavos(store.deliveryFee)} delivery',
+                                ? context.l10n.raw('Free delivery')
+                                : '${formatCustomerMoney(store.deliveryFee)} delivery',
                             highlight: store.deliveryFee == 0,
                           ),
                           const SizedBox(width: 10),
@@ -306,7 +331,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
               ),
               SliverToBoxAdapter(
                 child: Container(
-                  color: Colors.white,
+                  color: AppTheme.white,
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -317,7 +342,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Start here, then move into cart when you are ready.',
+                        'Tap items to add them to your cart.',
                         style: TextStyle(
                           fontSize: 13,
                           color: AppTheme.textSecondary,
@@ -331,7 +356,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                 pinned: true,
                 delegate: _CategoryHeaderDelegate(
                   child: Container(
-                    color: Colors.white,
+                    color: AppTheme.white,
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
                     child: CategoryChipRow(
                       categories: categories,
@@ -354,20 +379,20 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                       storeId: store.id,
                       item: item,
                     ),
-                    emptyTitle: 'No items in this category',
-                    emptySubtitle: 'Try a different category',
+                    emptyTitle: context.l10n.raw('No items in this category'),
+                    emptySubtitle: context.l10n.raw('Try a different category'),
                   ),
                 ),
               ),
             ],
           ),
           bottomNavigationBar: BottomCTABar(
-            label: runtime.cartItemCount > 0 ? 'View Cart' : 'Start Order',
+            label: runtime.cartItemCount > 0 ? 'View cart' : 'Browse menu',
             sublabel: runtime.cartItemCount > 0
                 ? '${runtime.cartItemCount} items'
                 : store.name,
             trailingText: runtime.cartItemCount > 0
-                ? '\$${formatCentavos(runtime.cartTotal)}'
+                ? formatCustomerMoney(runtime.cartTotal)
                 : null,
             onPressed: () => Navigator.of(context).pushNamed(
               runtime.cartItemCount > 0

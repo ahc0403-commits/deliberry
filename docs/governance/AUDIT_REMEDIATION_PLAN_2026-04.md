@@ -238,18 +238,18 @@ Two live mutation paths violate currency governance:
 
 Make all persisted write paths comply with canonical money rules:
 
-- ARS is primary
+- VND is primary
 - USD is secondary only when explicitly justified
-- VND is never used
+- no undocumented currency is used
 
 ### Work Items
 
-1. Fix `merchant-console/src/shared/data/external-sales-service.ts` to stop writing `VND`.
-2. Decide whether `create_customer_order` should default to `ARS` or derive currency from store/platform settings.
+1. Fix persisted write paths to use the canonical VND baseline where the product owns the currency decision.
+2. Decide whether `create_customer_order` should default to `VND` or derive currency from store/platform settings.
 3. Remove any implicit `USD` default that lacks a documented business basis.
 4. Search all write paths, seeders, migrations, and service functions for hardcoded currency values.
 5. Add a lightweight enforcement check in code review or CI:
-   - fail on new `"VND"` literals in governed code
+   - fail on undocumented currency literals in governed code
    - flag hardcoded `"USD"` in write paths unless explicitly allowed
 6. Reconcile any docs still describing outdated currency assumptions.
 

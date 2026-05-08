@@ -4,7 +4,7 @@ Status: Active
 Authority: Operational
 Surface: admin-console
 Domains: retrieval, admin-console, auth, permissions, dashboard, users, orders, disputes, customer-service, merchants, stores, settlements, finance, marketing, announcements, catalog, b2b, analytics, reporting, system-management
-Last updated: 2026-03-17
+Last updated: 2026-04-18
 Retrieve when:
 - starting admin-console implementation or debugging work
 - determining which admin route docs to read before editing
@@ -36,6 +36,7 @@ Platform-facing admin console for login, access-boundary selection, and platform
 ## Runtime-Truth Docs to Read Next
 
 - [docs/runtime-truth/admin-auth-session-truth.md](/Users/andremacmini/Deliberry/docs/runtime-truth/admin-auth-session-truth.md)
+- [docs/runtime-truth/admin-dashboard-truth.md](/Users/andremacmini/Deliberry/docs/runtime-truth/admin-dashboard-truth.md)
 - [docs/runtime-truth/admin-permissions-truth.md](/Users/andremacmini/Deliberry/docs/runtime-truth/admin-permissions-truth.md)
 - [docs/runtime-truth/admin-orders-truth.md](/Users/andremacmini/Deliberry/docs/runtime-truth/admin-orders-truth.md)
 - [docs/runtime-truth/admin-disputes-truth.md](/Users/andremacmini/Deliberry/docs/runtime-truth/admin-disputes-truth.md)
@@ -101,6 +102,6 @@ Platform-facing admin console for login, access-boundary selection, and platform
 - Orders or disputes change:
   - relevant runtime-truth doc -> relevant filemap -> feature README -> screen code
 - Dashboard, users, or customer-service change:
-  - feature README -> query-service/repository read path -> screen code
+  - runtime-truth doc -> feature README -> runtime repository read path -> screen code
 - Any admin long-tail route change:
   - relevant feature README -> `admin-query-services.ts` -> `admin-repository.ts` -> screen code

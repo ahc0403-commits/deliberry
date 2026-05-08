@@ -4,8 +4,8 @@ Status: active
 Authority: operational
 Surface: customer-app
 Domains: auth, guest, onboarding, session
-Last updated: 2026-03-16
-Last verified: 2026-03-16
+Last updated: 2026-05-06
+Last verified: 2026-05-06
 Retrieve when:
 - changing signed-out entry, phone auth, guest entry, or onboarding handoff
 - debugging why a user lands on the wrong auth/onboarding route
@@ -71,9 +71,13 @@ Document the real current auth, guest, and onboarding route flow in the customer
 
 ## Known shallow / partial / local-only limits
 
-- Phone auth and OTP are local/demo-safe flows, not backend verification.
+- Phone auth and OTP now use Supabase-backed customer session adoption, but end-to-end live verification still depends on the linked project's phone provider/test OTP readiness. As of 2026-04-17, the linked project still reports `phone: false` from `/auth/v1/settings`.
+- This is an intentional hold. We are keeping the phone fallback code path ready while deferring hosted SMS provider onboarding until final integration / pre-QA closure.
+- Customer-facing auth copy should describe phone sign-in as environment-dependent while that provider-disabled hold remains in place.
+- Callback, phone-entry, and OTP surfaces now normalize common auth failure states before rendering them, so provider-disabled, runtime-missing, invalid-code, and callback-adoption failures do not fall through as raw infrastructure strings.
 - Onboarding completion changes local session state first, then clears the remote `needs_onboarding` flag best-effort.
 - Kakao and Zalo now share one callback detector and one session adoption owner, but provider launch remains adapter-local.
+- The approved visible social provider set is now Zalo, Google, and Kakao. Apple is held out of the customer UI until there is an explicit product decision to absorb Apple Developer paid enrollment.
 - Final auth UI copy cleanup is not part of this callback architecture refactor.
 
 ## Common edit mistakes

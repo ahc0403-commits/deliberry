@@ -4,7 +4,8 @@ Status: Active
 Authority: Operational
 Surface: merchant-console
 Domains: auth, session, onboarding, access-boundary
-Last updated: 2026-04-15
+Last updated: 2026-05-06
+Last verified: 2026-05-06
 Retrieve when:
 - changing merchant login, onboarding, or sign-out behavior
 - debugging merchant auth redirects or unexpected session loss
@@ -13,6 +14,9 @@ Related files:
 - merchant-console/src/shared/auth/merchant-session.ts
 - merchant-console/src/features/auth/server/access.ts
 - merchant-console/src/features/auth/server/auth-actions.ts
+- merchant-console/src/shared/auth/supabase-merchant-auth-adapter.ts
+- merchant-console/middleware.ts
+- docs/operations/merchant-registration-first-use-audit-2026-04-22.md
 
 ## Purpose
 
@@ -29,6 +33,7 @@ Identify where merchant auth and onboarding access truth actually lives today.
 - `MERCHANT_SESSION_COOKIE`: serialized `merchantId`, `merchantName`, and `actorType`
 - `MERCHANT_ONBOARDING_COOKIE`: onboarding completion flag
 - Redirect state derived from `session`, `onboardingComplete`, and `selectedStoreId`
+- Supabase-authority onboarding persistence in `public.merchant_profiles.onboarding_complete`
 
 ## What Screens and Routes Depend on It
 
@@ -39,24 +44,30 @@ Identify where merchant auth and onboarding access truth actually lives today.
 - `merchant-console/src/app/(console)/[storeId]/layout.tsx`
 - `merchant-console/src/features/auth/presentation/login-screen.tsx`
 - `merchant-console/src/features/onboarding/presentation/onboarding-screen.tsx`
+- merchant first-use path verified on 2026-04-22:
+  - `/login`
+  - `/onboarding`
+  - `/select-store`
+  - `/${storeId}/dashboard`
 
 ## What Is Authoritative vs Derived
 
 - Authoritative:
-  - cookie values read by `readMerchantSession`
-  - cookie value read by `isMerchantOnboardingComplete`
+  - `readMerchantAccessState()` and related session writes in `merchant-session.ts`
+  - Supabase session snapshot and merchant-profile persistence in `supabase-merchant-auth-adapter.ts`
   - server redirect decisions in `ensureMerchantConsoleAccess`, `ensureMerchantStoreScope`, and `redirectMerchantIfSessionExists`
 - Derived:
-  - `readMerchantAccessState()` object composed from cookie reads
   - `resolveMerchantAccessPath()` return value
   - any login or onboarding text rendered by presentation components
 
 ## What Is Still Shallow, Partial, Fixture-Backed, or Local-Only
 
-- Auth remains demo-safe for sign-in credential flow.
-- Merchant identity is still seeded by `signInMerchantAction`.
-- Onboarding completion is still represented by a cookie flag, not a verified business workflow.
-- Session continuity now supports a Supabase authority branch in `merchant-session.ts`, even though cookie/session orchestration is still the dominant route-level owner.
+- Under `demo-cookie` authority, auth remains demo-safe for sign-in credential flow and merchant identity is still locally seeded.
+- Under demo-cookie authority, onboarding completion is still represented by a cookie flag. Under Supabase authority, it persists through `public.merchant_profiles.onboarding_complete`. Neither path is a verified business approval workflow yet.
+- Session continuity now supports a Supabase authority branch in `merchant-session.ts`; middleware should stay permissive there so cookie-only demo guards do not override the server access helpers.
+- Merchant login may still lead into a fixture-backed dashboard after first use; route continuity is real, but first-use operational visibility is not fully live.
+- Redirects now carry explicit reasons such as `session_required`, `onboarding_required`, `no_store_selected`, `no_store_membership`, and `store_scope_mismatch` so login, onboarding, and store-selection screens can explain the current access boundary.
+- Demo-cookie authority is now surfaced on login, onboarding, and store-selection screens instead of only being implicit in config.
 
 ## Known Risks
 
@@ -67,8 +78,10 @@ Identify where merchant auth and onboarding access truth actually lives today.
 ## Safe Modification Guidance
 
 - Change session shape and cookie semantics in `merchant-session.ts` first.
+- Keep `middleware.ts` aligned with the current authority model before changing route-edge behavior.
 - Change redirect rules in `access.ts` second.
-- Change cookie write behavior in `auth-actions.ts` third.
+- Change adapter-backed persistence in `supabase-merchant-auth-adapter.ts` third.
+- Change write behavior in `auth-actions.ts` fourth.
 - Change presentation files last, after route and cookie behavior are stable.
 
 ## Related Filemaps

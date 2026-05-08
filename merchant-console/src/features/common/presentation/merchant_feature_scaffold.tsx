@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useMerchantI18n } from "../../../shared/i18n/client";
 
 type FeatureAction = {
   href: string;
@@ -26,6 +29,8 @@ export function MerchantFeatureScaffold({
   guardrails = [],
   actions = [],
 }: MerchantFeatureScaffoldProps) {
+  const { raw } = useMerchantI18n();
+
   return (
     <article className="feature-scaffold">
       <div className="feature-scaffold-header">
@@ -33,25 +38,25 @@ export function MerchantFeatureScaffold({
         <p>{description}</p>
         <div className="feature-meta">
           <span className="feature-badge">
-            <span className="feature-badge-label">Owner</span>
+            <span className="feature-badge-label">{raw("Owner")}</span>
             {ownership}
           </span>
         </div>
       </div>
 
       {flowFocus ? (
-        <div className="feature-flow-focus">{flowFocus}</div>
+        <div className="feature-flow-focus">{raw(flowFocus)}</div>
       ) : null}
 
-      <div className="feature-placeholder-state">{placeholderState}</div>
+      <div className="feature-placeholder-state">{raw(placeholderState)}</div>
 
       {sections.length > 0 ? (
         <div>
-          <p className="feature-sections-label">Structural sections</p>
+          <p className="feature-sections-label">{raw("Structural sections")}</p>
           <div className="feature-sections-grid">
             {sections.map((section) => (
               <div key={section} className="section-card">
-                {section}
+                {raw(section)}
               </div>
             ))}
           </div>
@@ -60,11 +65,11 @@ export function MerchantFeatureScaffold({
 
       {guardrails.length > 0 ? (
         <div>
-          <p className="feature-guardrails-label">Merchant guardrails</p>
+          <p className="feature-guardrails-label">{raw("Merchant guardrails")}</p>
           <div className="feature-guardrails">
             {guardrails.map((item) => (
               <span key={item} className="guardrail-tag">
-                {item}
+                {raw(item)}
               </span>
             ))}
           </div>
@@ -73,11 +78,11 @@ export function MerchantFeatureScaffold({
 
       {actions.length > 0 ? (
         <div>
-          <p className="feature-actions-label">Next merchant routes</p>
+          <p className="feature-actions-label">{raw("Next merchant routes")}</p>
           <div className="feature-actions">
             {actions.map((action) => (
               <Link key={action.href} href={action.href} className="action-link">
-                {action.label}
+                {raw(action.label)}
               </Link>
             ))}
           </div>

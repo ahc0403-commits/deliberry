@@ -1,9 +1,24 @@
 {
   "domain": "support",
   "consumers": ["public-website", "admin-console", "merchant-console"],
+  "production_scope": {
+    "status": "public_contact_plus_limited_admin_audited_status_transitions",
+    "notes": [
+      "Public support remains content/contact oriented.",
+      "Admin customer-service may perform audited support-ticket status transitions only.",
+      "Assignment, internal notes, customer replies, and refund or payment adjustments are not approved."
+    ]
+  },
   "requests": [
     { "name": "submit_inquiry", "required": ["channel", "subject"] },
-    { "name": "list_support_cases", "required": [] }
+    { "name": "list_support_cases", "required": [] },
+    { "name": "transition_support_ticket_status", "required": ["case_id", "next_status"] }
   ],
-  "responses": ["support_case_summary", "support_channel_summary"]
+  "responses": ["support_case_summary", "support_channel_summary", "support_status_transition_result"],
+  "not_approved": [
+    "assign_support_case",
+    "add_support_internal_note",
+    "reply_to_support_case",
+    "refund_or_payment_adjustment_from_support"
+  ]
 }

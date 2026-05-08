@@ -27,10 +27,10 @@
   "promotion_types": ["percentage", "fixed", "free_delivery", "coupon", "discount"],
   "settlement_states": [
     "pending",
-    "scheduled",
-    "processing",
-    "paid",
-    "failed"
+    "calculated",
+    "received",
+    "disputed",
+    "adjusted"
   ],
   "dispute_statuses": [
     "open",

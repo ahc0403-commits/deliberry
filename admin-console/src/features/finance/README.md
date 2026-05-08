@@ -4,19 +4,18 @@ Status: Active
 Authority: Operational
 Surface: admin-console
 Domains: finance, settlement-review, admin
-Last updated: 2026-03-17
+Last updated: 2026-05-04
 Retrieve when:
 - editing the admin finance route
-- checking whether finance behavior is fixture-backed or locally derived
+- checking whether finance behavior is runtime-backed or locally derived
 Related files:
 - admin-console/src/app/(platform)/finance/page.tsx
 - admin-console/src/features/finance/presentation/finance-screen.tsx
-- admin-console/src/shared/data/admin-query-services.ts
-- admin-console/src/shared/data/admin-repository.ts
+- admin-console/src/shared/data/supabase-admin-runtime-repository.ts
 
 ## Purpose
 
-Owns the platform finance route and its fixture-backed financial review tables and summaries.
+Owns the platform finance route and its runtime-backed financial review tables and summaries.
 
 ## Primary Routes and Screens
 
@@ -26,17 +25,16 @@ Owns the platform finance route and its fixture-backed financial review tables a
 ## Source of Truth
 
 - Route ownership lives in `admin-console/src/app/(platform)/finance/page.tsx`
-- Read-path truth flows through `admin-console/src/shared/data/admin-query-services.ts`
-- Repository truth lives in `admin-console/src/shared/data/admin-repository.ts`
+- Read-path truth flows through `admin-console/src/shared/data/supabase-admin-runtime-repository.ts`
+- Finance summary truth is derived from landed settlement rows plus store lookups in `supabase-admin-runtime-repository.ts`
 
-The route is access-enforced. Finance data is fixture-backed and read-only.
+The route is access-enforced. Finance data is runtime-backed. This route remains visibility-first; the only approved mutation is a narrow manual received acknowledgment on the separate settlement oversight route.
 
 ## Key Files to Read First
 
 - `admin-console/src/app/(platform)/finance/page.tsx`
 - `admin-console/src/features/finance/presentation/finance-screen.tsx`
-- `admin-console/src/shared/data/admin-query-services.ts`
-- `admin-console/src/shared/data/admin-repository.ts`
+- `admin-console/src/shared/data/supabase-admin-runtime-repository.ts`
 
 ## Related Shared and Domain Files
 
@@ -51,9 +49,10 @@ The route is access-enforced. Finance data is fixture-backed and read-only.
 
 ## Known Limitations
 
-- Finance rows are fixture-backed.
+- Finance rows are derived from the current settlement read model.
 - Filters and exports are local UI affordances.
-- There is no live finance backend or reconciliation flow.
+- There is no live finance backend, payout execution flow, or automated reconciliation flow.
+- Manual settlement acknowledgment is approved only through the settlement oversight route for `calculated -> received`.
 
 ## Safe Modification Guidance
 
@@ -64,5 +63,6 @@ The route is access-enforced. Finance data is fixture-backed and read-only.
 ## What Not to Change Casually
 
 - Do not treat finance exports as live integrations.
-- Do not bypass `adminQueryServices`.
+- Do not bypass `supabase-admin-runtime-repository.ts` for finance summary truth.
 - Do not add persistence claims without real runtime support.
+- Do not describe settlement acknowledgment as payout execution or payment verification.

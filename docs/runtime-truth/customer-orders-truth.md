@@ -4,8 +4,8 @@ Status: active
 Authority: operational
 Surface: customer-app
 Domains: orders, order-records, reorder, status
-Last updated: 2026-04-16
-Last verified: 2026-04-16
+Last updated: 2026-05-06
+Last verified: 2026-05-06
 Retrieve when:
 - changing order creation, lookup, detail rendering, or reorder behavior
 - debugging order-id continuity across list, detail, status, and reviews
@@ -28,7 +28,9 @@ Document where order truth lives after checkout and how list/detail/status scree
 
 - hydrated active/history order records for the signed-in customer
 - persisted order creation input and line items
+- persisted `public.orders.line_items_summary` snapshots for checkout items; the current runtime schema does not use a separate customer order-items table
 - order lookup by id
+- order-linked persisted review cache and lookup by `orderId`
 - reorder source items and selected store restoration
 
 ## What screens depend on it
@@ -36,6 +38,7 @@ Document where order truth lives after checkout and how list/detail/status scree
 - [orders_screen.dart](/Users/andremacmini/Deliberry/customer-app/lib/features/orders/presentation/orders_screen.dart)
 - [order_detail_screen.dart](/Users/andremacmini/Deliberry/customer-app/lib/features/orders/presentation/order_detail_screen.dart)
 - [order_status_screen.dart](/Users/andremacmini/Deliberry/customer-app/lib/features/orders/presentation/order_status_screen.dart)
+- [order_completion_screen.dart](/Users/andremacmini/Deliberry/customer-app/lib/features/orders/presentation/order_completion_screen.dart)
 - [reviews_screen.dart](/Users/andremacmini/Deliberry/customer-app/lib/features/reviews/presentation/reviews_screen.dart)
 - checkout submission path in [checkout_screen.dart](/Users/andremacmini/Deliberry/customer-app/lib/features/checkout/presentation/checkout_screen.dart)
 
@@ -52,14 +55,20 @@ Document where order truth lives after checkout and how list/detail/status scree
   - order detail/status/review screen content that resolves from a record
 - Presentation-only:
   - static timeline rendering in [order_status_screen.dart](/Users/andremacmini/Deliberry/customer-app/lib/features/orders/presentation/order_status_screen.dart)
+  - completion-screen copy and CTA hierarchy in [order_completion_screen.dart](/Users/andremacmini/Deliberry/customer-app/lib/features/orders/presentation/order_completion_screen.dart)
 
 ## What is still shallow / partial / local-only
 
 - Order creation and order reads are persisted for authenticated customers.
+- Customer identity persists through the unified `public.actor_profiles` table with `actor_type = 'customer'`.
+- Line items are stored as denormalized JSONB on `public.orders.line_items_summary`.
 - Order status progression is not live and not event-driven.
 - Order records are still normalized into screen-facing view models inside `CustomerRuntimeController`.
-- Reviews read order identity coherently and persist through the Supabase-backed runtime path when valid order-linked context is present.
-- `/reviews` now expects a valid order-linked context; without one, the screen degrades to an honest preview state and sends the user back to `/orders`.
+- Reviews read order identity coherently, persist through the Supabase-backed runtime path when valid order-linked context is present, and now hydrate back into runtime so order detail and `/reviews` stay aligned after refresh.
+- `/reviews` now expects a valid order-linked context; without one, the screen degrades to an honest no-context state and sends the user back to `/orders`.
+- `order_detail_screen.dart` keeps the review CTA disabled until the order is marked `delivered`, so writable review entry does not over-promise earlier in the order lifecycle.
+- Cash orders may still route through `/orders/completion`, but VNPAY sandbox card/pay orders route directly to `/orders/status` with payment remaining `pending`.
+- Customer-facing order-completion copy now avoids the phrase `Order complete` so pre-contract payment placeholder flows do not read as gateway-confirmed success.
 
 ## Known risks
 
@@ -75,7 +84,7 @@ Document where order truth lives after checkout and how list/detail/status scree
   - detail/status route reads
   - reorder into cart
   - reviews entry from order detail
-- Preserve the persisted review submission path through `submitOrderReview` and the gateway RPC owner.
+- Preserve the persisted review submission path through `submitOrderReview`, the gateway RPC owner, and the runtime review cache keyed by `orderId`.
 - Preserve one `orderId` path across router and screen constructors.
 
 ## Related filemaps

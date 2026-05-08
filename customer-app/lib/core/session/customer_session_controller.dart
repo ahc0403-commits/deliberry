@@ -228,19 +228,73 @@ class CustomerSessionController extends ChangeNotifier {
   Future<void> requestOtp({
     String phoneNumber = '+0000000000',
   }) async {
+    await CustomerSupabaseClient.ensureInitialized();
+    final client = CustomerSupabaseClient.maybeClient;
+    if (client == null) {
+      throw StateError(
+        'Customer Supabase runtime config is missing. Set SUPABASE_URL and SUPABASE_ANON_KEY.',
+      );
+    }
+
+    await _authAdapter.signOut();
     _identity = null;
     _lastAuthError = null;
     _phoneNumber = phoneNumber;
+
+    await client.auth.signInWithOtp(
+      phone: phoneNumber,
+      data: {
+        'actor_type': 'customer',
+        'provider': 'phone',
+        'needs_onboarding': true,
+      },
+    );
+
     _status = CustomerAuthStatus.otpPending;
     await _persist();
     notifyListeners();
   }
 
-  Future<void> verifyOtp() async {
-    _identity = null;
+  Future<void> verifyOtp({
+    required String token,
+  }) async {
+    final trimmedToken = token.trim();
+    if (trimmedToken.isEmpty) {
+      throw StateError('Customer phone OTP cannot be empty.');
+    }
+
+    final phoneNumber = _phoneNumber;
+    if (phoneNumber == null || phoneNumber.trim().isEmpty) {
+      throw StateError(
+        'Customer phone OTP verification requires a previously-entered phone number.',
+      );
+    }
+
+    await CustomerSupabaseClient.ensureInitialized();
+    final client = CustomerSupabaseClient.maybeClient;
+    if (client == null) {
+      throw StateError(
+        'Customer Supabase runtime config is missing. Set SUPABASE_URL and SUPABASE_ANON_KEY.',
+      );
+    }
+
     _lastAuthError = null;
-    _status = CustomerAuthStatus.onboardingRequired;
-    await _persist();
+    await client.auth.verifyOTP(
+      phone: phoneNumber,
+      token: trimmedToken,
+      type: OtpType.sms,
+    );
+
+    final authenticatedIdentity =
+        await _authAdapter.restoreAuthenticatedIdentity();
+    if (authenticatedIdentity == null) {
+      throw StateError(
+        'Customer phone OTP verification completed without a restorable authenticated identity.',
+      );
+    }
+
+    await _applyAuthenticatedIdentity(authenticatedIdentity);
+    _lastAuthError = null;
     notifyListeners();
   }
 

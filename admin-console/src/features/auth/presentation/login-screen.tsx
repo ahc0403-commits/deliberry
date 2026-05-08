@@ -5,10 +5,23 @@ const LOGIN_ERROR_COPY: Record<string, string> = {
   invalid_credentials: "The admin email or password is not valid.",
   admin_profile_missing: "The authenticated user is not linked to an admin profile yet.",
   auth_unavailable: "Admin auth is temporarily unavailable. Please retry in a moment.",
+  session_required: "Sign in to continue into the admin console.",
+  session_expired: "Your admin session expired or no longer matches the hosted identity. Sign in again.",
+  access_denied: "That section is not available for your current admin role.",
 };
 
-export function AdminLoginScreen({ error }: { error?: string | null }) {
-  const errorCopy = error ? LOGIN_ERROR_COPY[error] ?? null : null;
+export function AdminLoginScreen({
+  error,
+  authUnavailable = false,
+}: {
+  error?: string | null;
+  authUnavailable?: boolean;
+}) {
+  const errorCopy = authUnavailable
+    ? LOGIN_ERROR_COPY.auth_unavailable
+    : error
+        ? LOGIN_ERROR_COPY[error] ?? null
+        : null;
 
   return (
     <div className="auth-entry-shell">
@@ -44,6 +57,7 @@ export function AdminLoginScreen({ error }: { error?: string | null }) {
             type="email"
             className="auth-input"
             placeholder="admin@deliberry.com"
+            disabled={authUnavailable}
             required
           />
         </div>
@@ -55,6 +69,7 @@ export function AdminLoginScreen({ error }: { error?: string | null }) {
             type="password"
             className="auth-input"
             placeholder="Enter your password"
+            disabled={authUnavailable}
             required
           />
         </div>
@@ -63,7 +78,7 @@ export function AdminLoginScreen({ error }: { error?: string | null }) {
             {errorCopy}
           </div>
         ) : null}
-        <button type="submit" className="auth-btn-primary">
+        <button type="submit" className="auth-btn-primary" disabled={authUnavailable}>
           Sign in to Admin Console
         </button>
       </form>

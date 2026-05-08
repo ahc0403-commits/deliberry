@@ -8,7 +8,7 @@ import {
   type RuntimeObservabilityFailureClass,
   type RuntimeObservabilityOperatorSummary,
   type RuntimeObservabilityThresholdSummary,
-} from "../domain";
+} from "../merchant-governed-domain";
 import { createMerchantServiceSupabaseClient } from "../supabase/client";
 
 export async function recordMerchantRuntimeObservabilityEvent(

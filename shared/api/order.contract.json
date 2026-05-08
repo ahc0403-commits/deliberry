@@ -4,13 +4,35 @@
   "status_enum": ["draft", "pending", "confirmed", "preparing", "ready", "in_transit", "delivered", "cancelled", "disputed"],
   "requests": [
     { "name": "list_orders", "required": [] },
-    { "name": "get_order", "required": ["order_id"] }
+    { "name": "get_order", "required": ["order_id"] },
+    {
+      "name": "create_customer_order",
+      "required": [
+        "store_id",
+        "payment_method",
+        "delivery_address",
+        "line_items",
+        "estimated_delivery_at",
+        "idempotency_key"
+      ],
+      "notes": "Production-critical mutation. Caller must provide one idempotency_key per intentional submit action. Payment status must remain pending for card/pay sandbox or future-ready methods until payment guardrails are revised."
+    },
+    {
+      "name": "update_merchant_order_status",
+      "required": [
+        "order_id",
+        "store_id",
+        "next_status",
+        "idempotency_key"
+      ],
+      "notes": "Production-critical mutation. Caller must provide one idempotency_key per intentional status change. Store membership must be enforced server-side."
+    }
   ],
   "responses": ["order_summary", "order_detail", "order_status_summary"],
-  "monetary_fields_note": "All monetary fields (total, subtotal, delivery_fee, item_price) are integer centavos. currency is 'ARS' | 'USD'.",
+  "monetary_fields_note": "All monetary fields (total, subtotal, delivery_fee, item_price) are integer minor money units. VND values are whole dong amounts. currency is 'VND' | 'USD'.",
   "example_order_total": {
-    "total_centavos": 4250,
-    "currency": "ARS",
-    "display": "$42.50"
+    "total_centavos": 425000,
+    "currency": "VND",
+    "display": "425.000 ₫"
   }
 }

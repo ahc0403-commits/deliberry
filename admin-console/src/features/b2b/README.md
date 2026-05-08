@@ -4,7 +4,7 @@ Status: Active
 Authority: Operational
 Surface: admin-console
 Domains: b2b, enterprise, admin
-Last updated: 2026-03-17
+Last updated: 2026-05-06
 Retrieve when:
 - editing the admin b2b route
 - checking whether enterprise controls are fixture-backed or local only
@@ -54,6 +54,8 @@ The route is access-enforced. B2B data is fixture-backed and read-only.
 - Enterprise account data is fixture-backed.
 - Local controls do not persist.
 - There is no live B2B administration backend.
+- Partner type/status labels and displayed contract dates now follow the admin locale layer.
+- Fixture company names now use the Vietnam-market baseline, but the underlying partner records remain snapshot-owned rather than runtime-authored.
 
 ## Safe Modification Guidance
 
@@ -64,5 +66,5 @@ The route is access-enforced. B2B data is fixture-backed and read-only.
 ## What Not to Change Casually
 
 - Do not describe local controls as persisted enterprise actions.
-- Do not bypass `adminQueryServices`.
+- Do not bypass `adminFixtureFacade`.
 - Do not assume B2B has deeper runtime support than the current fixtures provide.

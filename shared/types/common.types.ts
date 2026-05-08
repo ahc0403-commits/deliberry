@@ -1,16 +1,16 @@
 export type EntityId = string;
 export type ISODateString = string;
 export type ISODateTimeString = string;
-export type CurrencyCode = "ARS" | "USD";
+export type CurrencyCode = "VND" | "USD";
 
 /**
- * All monetary values MUST be integer centavos. Never float.
- * Example: $42.50 = 4250.
+ * All monetary values MUST be stored as integer minor money units. Never float.
+ * For VND, values are whole dong amounts. For USD, values are integer cents.
  * See CONSTITUTION.md R-010, R-011.
  */
 export type MoneyAmount = number & { readonly __brand: "centavos" };
 
-/** Alias for MoneyAmount — all values are integer centavos. */
+/** Legacy alias retained for compatibility with existing field names. */
 export type Centavos = MoneyAmount;
 
 /**

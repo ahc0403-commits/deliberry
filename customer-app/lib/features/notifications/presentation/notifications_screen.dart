@@ -1,157 +1,129 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/data/customer_runtime_controller.dart';
 import '../../../core/data/mock_data.dart'
-    show MockData, MockNotification, formatRelativeTime;
+    show MockNotification, formatRelativeTime;
+import '../../../core/i18n/app_localizations.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../common/presentation/widgets.dart';
 
-class NotificationsScreen extends StatefulWidget {
+class NotificationsScreen extends StatelessWidget {
   const NotificationsScreen({super.key});
 
   @override
-  State<NotificationsScreen> createState() => _NotificationsScreenState();
-}
-
-class _NotificationsScreenState extends State<NotificationsScreen> {
-  late List<MockNotification> _notifications;
-
-  @override
-  void initState() {
-    super.initState();
-    _notifications = List.from(MockData.notifications);
-  }
-
-  void _markAllRead() {
-    setState(() {
-      _notifications = _notifications
-          .map((n) => MockNotification(
-                id: n.id,
-                title: n.title,
-                body: n.body,
-                createdAt: n.createdAt,
-                icon: n.icon,
-                isRead: true,
-              ))
-          .toList();
-    });
-  }
-
-  void _markRead(int index) {
-    final n = _notifications[index];
-    if (!n.isRead) {
-      setState(() {
-        _notifications[index] = MockNotification(
-          id: n.id,
-          title: n.title,
-          body: n.body,
-          createdAt: n.createdAt,
-          icon: n.icon,
-          isRead: true,
-        );
-      });
-    }
-  }
-
-  int get _unreadCount => _notifications.where((n) => !n.isRead).length;
-
-  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.backgroundGrey,
-      appBar: AppBar(
-        title: const Text('Notifications'),
-        backgroundColor: Colors.white,
-        actions: [
-          if (_unreadCount > 0)
-            TextButton(
-              onPressed: _markAllRead,
-              child: const Text(
-                'Mark all read',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-              ),
-            ),
-        ],
-      ),
-      body: _notifications.isEmpty
-          ? _buildEmpty()
-          : Column(
-              children: [
-                Expanded(
-                  child: ListView(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-                    children: [
-                      FeatureHeroCard(
-                        eyebrow: 'Notifications',
-                        title: 'Stay on top of local account updates',
-                        subtitle:
-                            'This inbox is a demo-safe local feed. You can mark items as read here, but it does not sync with a backend inbox.',
-                        icon: Icons.notifications_active_rounded,
-                        badge:
-                            '$_unreadCount unread · ${_notifications.length} total',
-                      ),
-                      const SizedBox(height: 16),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          const InfoPill(
-                            icon: Icons.inbox_outlined,
-                            label: 'Mock-backed inbox',
-                            highlight: true,
-                          ),
-                          if (_unreadCount > 0)
-                            InfoPill(
-                              icon: Icons.mark_email_unread_outlined,
-                              label:
-                                  '$_unreadCount unread notification${_unreadCount > 1 ? 's' : ''}',
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      ...List.generate(_notifications.length, (index) {
-                        final notif = _notifications[index];
-                        return Padding(
-                          padding: EdgeInsets.only(
-                            bottom: index == _notifications.length - 1 ? 0 : 10,
-                          ),
-                          child: _NotificationTile(
-                            notification: notif,
-                            onTap: () => _markRead(index),
-                          ),
-                        );
-                      }),
-                    ],
+    final runtime = CustomerRuntimeController.instance;
+
+    return ListenableBuilder(
+      listenable: runtime,
+      builder: (context, _) {
+        final notifications = runtime.notifications;
+        final unreadCount = runtime.unreadNotificationCount;
+
+        return Scaffold(
+          backgroundColor: AppTheme.backgroundGrey,
+          appBar: AppBar(
+            title: Text(context.l10n.raw('Notifications')),
+            backgroundColor: AppTheme.white,
+            actions: [
+              if (unreadCount > 0)
+                TextButton(
+                  onPressed: runtime.markAllNotificationsRead,
+                  child: Text(
+                    context.l10n.raw('Mark all read'),
+                    style: const TextStyle(
+                        fontSize: 13, fontWeight: FontWeight.w600),
                   ),
                 ),
-              ],
-            ),
+            ],
+          ),
+          body: notifications.isEmpty
+              ? _buildEmpty(context)
+              : Column(
+                  children: [
+                    Expanded(
+                      child: ListView(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                        children: [
+                          FeatureHeroCard(
+                            eyebrow: 'Notifications',
+                            title: 'Stay on top of account activity',
+                            subtitle:
+                                context.l10n.text('notification.heroSubtitle'),
+                            icon: Icons.notifications_active_rounded,
+                            badge: context.l10n.notificationSummary(
+                              unread: unreadCount,
+                              total: notifications.length,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              InfoPill(
+                                icon: Icons.inbox_outlined,
+                                label: context.l10n
+                                    .text('notification.sessionInbox'),
+                                highlight: true,
+                              ),
+                              if (unreadCount > 0)
+                                InfoPill(
+                                  icon: Icons.mark_email_unread_outlined,
+                                  label:
+                                      context.l10n.unreadNotificationCountLabel(
+                                    unreadCount,
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          ...List.generate(notifications.length, (index) {
+                            final notif = notifications[index];
+                            return Padding(
+                              padding: EdgeInsets.only(
+                                bottom:
+                                    index == notifications.length - 1 ? 0 : 10,
+                              ),
+                              child: _NotificationTile(
+                                notification: notif,
+                                onTap: () =>
+                                    runtime.markNotificationRead(notif.id),
+                              ),
+                            );
+                          }),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+        );
+      },
     );
   }
 
-  Widget _buildEmpty() {
+  Widget _buildEmpty(BuildContext context) {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-      children: const [
+      children: [
         FeatureHeroCard(
           eyebrow: 'Notifications',
-          title: 'Nothing new in this local inbox',
-          subtitle:
-              'This screen holds mock-backed notification history for the current build and remains intentionally backend-free.',
+          title: 'Nothing new in this inbox',
+          subtitle: context.l10n.text('notification.emptySubtitle'),
           icon: Icons.notifications_none_rounded,
           badge: '0 unread',
         ),
-        SizedBox(height: 16),
+        const SizedBox(height: 16),
         InfoPill(
           icon: Icons.info_outline_rounded,
-          label: 'Local read-state only',
+          label: context.l10n.text('notification.sessionReadState'),
           highlight: true,
         ),
-        SizedBox(height: 24),
+        const SizedBox(height: 24),
         EmptyState(
           icon: Icons.notifications_none_rounded,
           title: 'No notifications',
-          subtitle:
-              "You're all caught up. We'll let you know when something new arrives.",
+          subtitle: context.l10n.text('notification.emptySubtitle'),
         ),
       ],
     );
@@ -172,7 +144,7 @@ class _NotificationTile extends StatelessWidget {
     final isUnread = !notification.isRead;
 
     return Material(
-      color: isUnread ? const Color(0xFFFFFAF9) : Colors.white,
+      color: isUnread ? AppTheme.primaryMist : AppTheme.white,
       borderRadius: BorderRadius.circular(18),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -192,7 +164,7 @@ class _NotificationTile extends StatelessWidget {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
+                color: AppTheme.inkColor.withValues(alpha: 0.03),
                 blurRadius: 16,
                 offset: const Offset(0, 8),
               ),
@@ -230,7 +202,7 @@ class _NotificationTile extends StatelessWidget {
                         children: [
                           Expanded(
                             child: Text(
-                              notification.title,
+                              context.l10n.raw(notification.title),
                               style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: isUnread
@@ -254,7 +226,7 @@ class _NotificationTile extends StatelessWidget {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        notification.body,
+                        context.l10n.raw(notification.body),
                         style: TextStyle(
                           fontSize: 13,
                           color: AppTheme.textSecondary,
@@ -266,7 +238,10 @@ class _NotificationTile extends StatelessWidget {
                       const SizedBox(height: 10),
                       InfoPill(
                         icon: Icons.schedule_rounded,
-                        label: formatRelativeTime(notification.createdAt),
+                        label: formatRelativeTime(
+                          notification.createdAt,
+                          languageCode: context.l10n.locale.languageCode,
+                        ),
                       ),
                     ],
                   ),

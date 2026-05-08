@@ -4,7 +4,7 @@ Status: Active
 Authority: Operational
 Surface: public-website
 Domains: support, customer-help, public-website
-Last updated: 2026-03-16
+Last updated: 2026-04-18
 Retrieve when:
 - editing the public support route
 - checking why the support route does not live under a `support/` feature folder
@@ -13,7 +13,6 @@ Related files:
 - public-website/src/app/(marketing)/support/page.tsx
 - public-website/src/features/customer-support/presentation/customer-support-screen.tsx
 - public-website/src/app/(marketing)/layout.tsx
-- public-website/src/shared/data/content-service.ts
 
 ## Purpose
 
@@ -36,12 +35,10 @@ This feature cluster is structurally mismatched today: the requested `public-web
 - `public-website/src/app/(marketing)/support/page.tsx`
 - `public-website/src/features/customer-support/presentation/customer-support-screen.tsx`
 - `public-website/src/app/(marketing)/layout.tsx`
-- `public-website/src/shared/data/content-service.ts`
 
 ## Related Shared and Domain Files
 
 - `public-website/src/shared/domain.ts`
-- `public-website/src/shared/data/public-content-repository.ts`
 
 ## Related Governance Docs
 
@@ -55,7 +52,7 @@ This feature cluster is structurally mismatched today: the requested `public-web
 
 - Support content is static and hardcoded in the `customer-support` screen.
 - Email/help paths are presentation content, not live integrations.
-- The repository-backed support content boundary is not wired into the live route.
+- There is no repository-backed or CMS-backed support content path today.
 - The feature-folder naming is inconsistent with the route and this README target.
 
 ## Safe Modification Guidance

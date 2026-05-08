@@ -34,6 +34,7 @@ This document does not authorize implementation by itself. It defines the execut
 - `docs/operations/payment-production-rollout-checklist-2026-05-04.md`
 - `docs/operations/vnpay-sandbox-guardrail-smoke-2026-05-04.md`
 - `output/vnpay-guardrail-smoke/phase1-vnpay-guardrail-smoke-2026-05-04T05-56-17.237Z/summary.json`
+- `GitHub Actions / Phase 1 VNPAY Sandbox Guardrail Smoke / 25303735665`
 - `docs/operations/phase-1-route-width-qa-2026-04-29.md`
 - `docs/operations/phase-1-target-browser-qa-2026-05-04.md`
 - `docs/operations/physical-target-device-qa-execution-plan-2026-05-04.md`

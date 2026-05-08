@@ -18,6 +18,8 @@ class CustomerAuthIdentity {
 
 enum CustomerAuthProvider {
   kakao,
+  google,
+  apple,
   zalo,
   phone,
 }
@@ -222,11 +224,8 @@ Uri _normalizeCustomerAuthCallbackUri(Uri uri) {
 
 CustomerAuthProvider? _resolveCallbackProvider(Uri uri) {
   if (CustomerAuthRedirectConfig.current.matches(uri)) {
-    final providerName = uri.queryParameters['provider']?.trim().toLowerCase();
-    if (providerName == 'zalo') {
-      return CustomerAuthProvider.zalo;
-    }
-    return CustomerAuthProvider.kakao;
+    return _resolveProviderName(uri.queryParameters['provider']) ??
+        CustomerAuthProvider.kakao;
   }
 
   final isWebCallback = uri.scheme == 'http' || uri.scheme == 'https';
@@ -234,9 +233,9 @@ CustomerAuthProvider? _resolveCallbackProvider(Uri uri) {
     return null;
   }
 
-  final providerName = uri.queryParameters['provider']?.trim().toLowerCase();
-  if (providerName == 'zalo') {
-    return CustomerAuthProvider.zalo;
+  final provider = _resolveProviderName(uri.queryParameters['provider']);
+  if (provider != null) {
+    return provider;
   }
 
   if (uri.queryParameters.containsKey('code') ||
@@ -245,6 +244,21 @@ CustomerAuthProvider? _resolveCallbackProvider(Uri uri) {
       uri.queryParameters.containsKey('access_token') ||
       uri.queryParameters.containsKey('refresh_token')) {
     return CustomerAuthProvider.kakao;
+  }
+
+  return null;
+}
+
+CustomerAuthProvider? _resolveProviderName(String? providerName) {
+  final normalized = providerName?.trim().toLowerCase();
+  if (normalized == null || normalized.isEmpty) {
+    return null;
+  }
+
+  for (final provider in CustomerAuthProvider.values) {
+    if (provider.name == normalized) {
+      return provider;
+    }
   }
 
   return null;

@@ -4,7 +4,7 @@ Status: Active
 Authority: Operational
 Surface: admin-console
 Domains: marketing, campaigns, admin
-Last updated: 2026-03-17
+Last updated: 2026-05-06
 Retrieve when:
 - editing the admin marketing route
 - tracing how campaign data reaches the screen
@@ -54,6 +54,8 @@ The route is access-enforced. Marketing data is fixture-backed and read-only.
 - Campaign data is fixture-backed.
 - Create/edit controls are local UI behavior only.
 - There is no live campaign orchestration backend.
+- Screen copy, date formatting, and enum labels now follow the admin locale layer rather than staying English-only.
+- Snapshot campaign titles now use Vietnam-market baseline content, but they still remain fixture-owned rather than CMS-backed.
 
 ## Safe Modification Guidance
 
@@ -64,5 +66,5 @@ The route is access-enforced. Marketing data is fixture-backed and read-only.
 ## What Not to Change Casually
 
 - Do not treat campaign actions as persisted admin mutations.
-- Do not bypass `adminQueryServices`.
+- Do not bypass `adminFixtureFacade`.
 - Do not imply live outbound messaging behavior.

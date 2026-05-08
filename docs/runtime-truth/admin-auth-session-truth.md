@@ -4,7 +4,8 @@ Status: Active
 Authority: Operational
 Surface: admin-console
 Domains: auth, session, platform-entry
-Last updated: 2026-03-17
+Last updated: 2026-05-06
+Last verified: 2026-05-06
 Retrieve when:
 - changing admin login or sign-out behavior
 - checking where admin session state is actually stored
@@ -34,6 +35,8 @@ Identify where admin session truth actually lives today and how it is enforced a
 - sign-in redirect to `/access-boundary`
 - sign-out redirect to `/login`
 - protected platform-route session requirement
+- login error reasons such as `session_required`, `session_expired`, `invalid_credentials`, and `auth_unavailable`
+- access-boundary redirect reasons such as `role_required` and route-level `access_denied`
 
 ## What Screens and Routes Depend on It
 
@@ -52,21 +55,24 @@ Identify where admin session truth actually lives today and how it is enforced a
   - session deletion in `signOutAdminAction()`
   - guard redirects in `ensureAdminPlatformAccess()`
   - middleware redirects for missing session on protected routes
+  - stale-cookie detection that treats a present `ADMIN_SESSION_COOKIE` plus unreadable hosted identity as `session_expired`
 - Derived:
   - login UI copy and field defaults
   - any visible “signed in” feeling created by the shell itself
 
 ## What Is Still Shallow, Partial, Fixture-Backed, or Local-Only
 
-- Auth is demo-safe only.
-- Credentials are not validated against a real provider.
-- Admin identity is hardcoded during sign-in.
-- Session truth is enforced at runtime and now carries actor attribution fields in the cookie, but it is still only cookie-backed and demo-safe.
+- Admin sign-in validates credentials against Supabase Auth.
+- Admin profile and role are loaded from `actor_profiles` and `admin_profiles`.
+- Local seed includes `admin@deliberry.local` with role `platform_admin` for smoke testing only.
+- Session truth is enforced at runtime and carries actor attribution fields in the cookie.
+- Login and route-entry UX now distinguish between a missing session, an expired/mismatched hosted session, a missing role selection, and a role-based access denial.
 
 ## Known Risks
 
 - Changing the cookie shape or key will silently break future enforcement work.
 - Middleware and layout guards can drift if they stop reading the same admin-local access rules.
+- Local seed credentials must not be copied into production configuration.
 
 ## Safe Modification Guidance
 

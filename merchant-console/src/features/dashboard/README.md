@@ -4,15 +4,15 @@ Status: Active
 Authority: Operational
 Surface: merchant-console
 Domains: dashboard, store-scoped-overview, merchant
-Last updated: 2026-03-17
+Last updated: 2026-04-24
 Retrieve when:
 - editing the merchant dashboard route or overview cards
 - tracing how store-scoped dashboard data reaches the screen
 Related files:
 - merchant-console/src/app/(console)/[storeId]/dashboard/page.tsx
 - merchant-console/src/features/dashboard/presentation/dashboard-screen.tsx
-- merchant-console/src/shared/data/merchant-query-services.ts
-- merchant-console/src/shared/data/merchant-repository.ts
+- merchant-console/src/shared/data/merchant-order-runtime-service.ts
+- merchant-console/src/shared/data/supabase-merchant-runtime-repository.ts
 
 ## Purpose
 
@@ -26,17 +26,17 @@ Owns the store-scoped merchant dashboard route and its overview of KPIs, recent 
 ## Source of Truth
 
 - Route store scope comes from `merchant-console/src/app/(console)/[storeId]/dashboard/page.tsx`
-- Read-path truth flows through `merchant-console/src/shared/data/merchant-query-services.ts`
-- Repository truth lives in `merchant-console/src/shared/data/merchant-repository.ts`
+- Read-path truth flows through `merchant-console/src/shared/data/merchant-order-runtime-service.ts`
+- Persisted repository truth lives in `merchant-console/src/shared/data/supabase-merchant-runtime-repository.ts`
 
-The live dashboard is store-scoped and fixture-backed. It does not own mutation truth.
+The dashboard is store-scoped and now reads through the runtime service. It can render persisted data or an explicit fixture fallback, but it does not own mutation truth.
 
 ## Key Files to Read First
 
 - `merchant-console/src/app/(console)/[storeId]/dashboard/page.tsx`
 - `merchant-console/src/features/dashboard/presentation/dashboard-screen.tsx`
-- `merchant-console/src/shared/data/merchant-query-services.ts`
-- `merchant-console/src/shared/data/merchant-repository.ts`
+- `merchant-console/src/shared/data/merchant-order-runtime-service.ts`
+- `merchant-console/src/shared/data/supabase-merchant-runtime-repository.ts`
 
 ## Related Shared and Domain Files
 
@@ -53,10 +53,13 @@ The live dashboard is store-scoped and fixture-backed. It does not own mutation 
 
 ## Known Limitations
 
-- Dashboard data is fixture-backed through the repository.
-- Alerts and KPI values are static mock-backed read models.
+- Dashboard data is now runtime-backed when persisted reads succeed.
+- Persisted dashboard alerts now derive from current store runtime state: active orders, ready handoff counts, visible menu items, and review follow-up.
+- Persisted and fallback dashboard KPIs now use store-scoped rating and prep-time values instead of mock defaults.
 - Order links are real route handoffs, but dashboard actions do not own any write path.
+- Runtime failures can still fall back to fixture data when merchant compatibility policy allows it.
 - Sidebar badge counts, recent-order status labels, and unanswered-review alert counts now derive from the current query/repository truth instead of hardcoded literals.
+- Local merchant development should not force `MERCHANT_AUTH_AUTHORITY=demo-cookie` if runtime-backed dashboard verification is the goal.
 
 ## Safe Modification Guidance
 
@@ -66,6 +69,6 @@ The live dashboard is store-scoped and fixture-backed. It does not own mutation 
 
 ## What Not to Change Casually
 
-- Do not bypass `merchantQueryServices` and read fixture files directly from the screen.
-- Do not treat dashboard KPIs as live backend truth.
+- Do not bypass the runtime service and read repository or fixture files directly from the screen.
+- Do not treat all dashboard KPI labels as fully live business semantics without checking the runtime repository shape.
 - Do not break the storeId path between route page and repository read methods.

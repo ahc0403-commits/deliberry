@@ -3,20 +3,21 @@
 Status: Active
 Authority: Operational
 Surface: admin-console
-Domains: disputes, platform-oversight, query-read-model
-Last updated: 2026-04-16
+Domains: disputes, platform-oversight, audited-status-mutations
+Last updated: 2026-05-04
 Retrieve when:
 - changing admin disputes route behavior, summary metrics, or action labels
 - debugging whether a disputes issue is in repository data or derived screen logic
-- checking whether dispute actions are runtime-real or display-only
+- checking whether dispute actions are runtime-real or still outside approved scope
 Related files:
 - admin-console/src/app/(platform)/disputes/page.tsx
 - admin-console/src/features/disputes/presentation/disputes-screen.tsx
+- admin-console/src/features/disputes/server/dispute-actions.ts
 - admin-console/src/shared/data/supabase-admin-runtime-repository.ts
 
 ## Purpose
 
-Describe the current admin disputes journey from platform route entry into persisted dispute visibility and derived summary state.
+Describe the current admin disputes journey from platform route entry into persisted dispute visibility and the approved audited status-transition path.
 
 ## Entry Points
 
@@ -30,14 +31,20 @@ Describe the current admin disputes journey from platform route entry into persi
 - page renders `AdminDisputesScreen`
 - `supabaseAdminRuntimeRepository.getDisputesData()` reads the persisted disputes bundle
 - screen derives summary counts and total dispute value from the current dispute list
-- table renders action labels `Assign`, `Review`, or `View` based on dispute status
-- those action labels remain non-mutating because admin dispute workflow is deferred in the current runtime
+- row action cells submit `transitionDisputeStatusAction`
+- server action enforces admin route access and allowed session roles
+- authenticated admin Supabase client calls `update_dispute_status_with_audit`
+- RPC validates admin actor identity, allowed dispute transitions, and idempotent replay
+- RPC writes one immutable `audit_logs` row and returns the updated dispute snapshot
+- page revalidation refreshes `/disputes` and `/dashboard`
 
 ## Source-of-Truth Files Involved
 
 - `admin-console/src/app/(platform)/disputes/page.tsx`
 - `admin-console/src/shared/data/supabase-admin-runtime-repository.ts`
 - `admin-console/src/features/disputes/presentation/disputes-screen.tsx`
+- `admin-console/src/features/disputes/server/dispute-actions.ts`
+- `supabase/migrations/20260504113000_add_admin_dispute_audit_rpc.sql`
 
 ## Key Dependent Screens and Files
 
@@ -50,22 +57,24 @@ Describe the current admin disputes journey from platform route entry into persi
 - Authoritative:
   - repository-returned disputes data
   - runtime-repository read path for disputes
+  - audited RPC status transition rules
 - Derived:
   - total/open/escalated counts
   - total dispute value
-  - action labels and badge presentation
+  - action button availability and badge presentation
 
 ## Known Shallow, Partial, Fixture-Backed, or Local-Only Limits
 
 - Disputes are persisted and read from Supabase.
-- No assign, review, or case-update path exists; admin dispute mutation remains deferred by current governance scope.
+- Approved writes are limited to status transitions only.
+- No assign, reopen, refund, or payout-side control path exists in the current governance scope.
 - Summary metrics are derived on render from the current persisted dispute set.
 - The platform route is session- and role-enforced before the page renders.
 
 ## Common Edit Mistakes
 
 - Treating summary cards as durable truth instead of derived calculations.
-- Strengthening action language without adding a mutation path.
+- Adding new action language without extending the audited RPC and evidence runner.
 - Mixing permission-enforcement assumptions into disputes UI edits.
 
 ## Related Filemaps

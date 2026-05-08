@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/router/route_names.dart';
+import '../../../core/i18n/app_localizations.dart';
 import '../../../core/session/customer_auth_adapter.dart';
 import '../../../core/session/customer_session_controller.dart';
 import '../../../core/theme/app_theme.dart';
@@ -10,8 +11,10 @@ class AuthScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppTheme.backgroundGrey,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
@@ -33,15 +36,15 @@ class AuthScreen extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.red.shade50,
+                          color: AppTheme.primarySoft,
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.red.shade200),
+                          border: Border.all(color: AppTheme.primaryTint),
                         ),
                         child: Text(
-                          error,
+                          context.l10n.authCallbackError(error),
                           style: TextStyle(
                             fontSize: 13,
-                            color: Colors.red.shade800,
+                            color: AppTheme.errorColor,
                           ),
                         ),
                       ),
@@ -64,7 +67,7 @@ class AuthScreen extends StatelessWidget {
                           fontSize: 32,
                           fontWeight: FontWeight.w900,
                           color: AppTheme.primaryColor,
-                          letterSpacing: -1,
+                          letterSpacing: 0,
                         ),
                       ),
                     ),
@@ -72,18 +75,18 @@ class AuthScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 28),
                 Text(
-                  'Welcome back',
+                  l10n.text('auth.welcome'),
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.w800,
                     color: Theme.of(context).colorScheme.onSurface,
-                    letterSpacing: -0.8,
+                    letterSpacing: 0,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Sign in to track orders, save favourites,\nand get personalised recommendations.',
+                  l10n.text('auth.subtitle'),
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 15,
@@ -101,7 +104,7 @@ class AuthScreen extends StatelessWidget {
                       if (!context.mounted) return;
                       if (!result.isReady) {
                         final message = result.message ??
-                            'Zalo login is not available right now.';
+                            l10n.providerUnavailable('Zalo');
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(message),
@@ -113,15 +116,17 @@ class AuthScreen extends StatelessWidget {
                       if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('Zalo sign-in error: $error'),
+                          content: Text(
+                            l10n.providerError('Zalo', error),
+                          ),
                           duration: const Duration(seconds: 10),
-                          backgroundColor: Colors.red,
+                          backgroundColor: AppTheme.errorColor,
                         ),
                       );
                     }
                   },
                   icon: const Icon(Icons.chat_bubble_rounded, size: 20),
-                  label: const Text('Continue with Zalo'),
+                  label: Text(l10n.text('auth.zalo')),
                 ),
                 const SizedBox(height: 12),
 
@@ -133,12 +138,12 @@ class AuthScreen extends StatelessWidget {
                     Navigator.of(context).pushNamed(RouteNames.authPhone);
                   },
                   style: FilledButton.styleFrom(
-                    backgroundColor: Colors.white,
+                    backgroundColor: AppTheme.white,
                     foregroundColor: AppTheme.primaryColor,
                     side: BorderSide(color: AppTheme.borderColor),
                   ),
                   icon: const Icon(Icons.phone_iphone_rounded, size: 20),
-                  label: const Text('Use Phone Instead'),
+                  label: Text(l10n.text('auth.phone')),
                 ),
                 const SizedBox(height: 16),
 
@@ -151,7 +156,7 @@ class AuthScreen extends StatelessWidget {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Text(
-                        'or',
+                        l10n.text('auth.or'),
                         style: TextStyle(
                           fontSize: 13,
                           color: AppTheme.textSecondary,
@@ -168,22 +173,23 @@ class AuthScreen extends StatelessWidget {
 
                 // Social login options
                 _SocialLoginButton(
+                  icon: const _GoogleIcon(),
+                  label: l10n.text('auth.google'),
+                  onTap: () => _beginSocialSignIn(
+                    context,
+                    CustomerAuthProvider.google,
+                    'Google',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _SocialLoginButton(
                   icon: const _KakaoIcon(),
-                  label: 'Continue with Kakao',
-                  onTap: () async {
-                    final result = await CustomerSessionController.instance
-                        .beginSignIn(CustomerAuthProvider.kakao);
-                    if (!context.mounted) return;
-                    if (!result.isReady) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            result.message ?? 'Kakao sign-in is unavailable.',
-                          ),
-                        ),
-                      );
-                    }
-                  },
+                  label: l10n.text('auth.kakao'),
+                  onTap: () => _beginSocialSignIn(
+                    context,
+                    CustomerAuthProvider.kakao,
+                    'Kakao',
+                  ),
                 ),
                 const SizedBox(height: 32),
 
@@ -200,14 +206,14 @@ class AuthScreen extends StatelessWidget {
                     ),
                     child: RichText(
                       text: TextSpan(
-                        text: 'Just browsing? ',
+                        text: l10n.text('auth.justBrowsing'),
                         style: TextStyle(
                           fontSize: 14,
                           color: AppTheme.textSecondary,
                         ),
-                        children: const [
+                        children: [
                           TextSpan(
-                            text: 'Continue as Guest',
+                            text: l10n.text('entry.guest'),
                             style: TextStyle(
                               color: AppTheme.primaryColor,
                               fontWeight: FontWeight.w700,
@@ -221,7 +227,7 @@ class AuthScreen extends StatelessWidget {
                 const SizedBox(height: 24),
                 Center(
                   child: Text(
-                    'Zalo is the primary sign-in path. Phone verification remains available as fallback.',
+                    l10n.text('auth.providerHint'),
                     style: TextStyle(
                       fontSize: 12,
                       color: AppTheme.textSecondary,
@@ -232,7 +238,7 @@ class AuthScreen extends StatelessWidget {
                 const SizedBox(height: 12),
                 Center(
                   child: Text(
-                    'By continuing you agree to our Terms & Privacy Policy',
+                    l10n.text('auth.terms'),
                     style: TextStyle(
                       fontSize: 11,
                       color: AppTheme.textSecondary,
@@ -246,6 +252,37 @@ class AuthScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _beginSocialSignIn(
+    BuildContext context,
+    CustomerAuthProvider provider,
+    String providerLabel,
+  ) async {
+    try {
+      final result =
+          await CustomerSessionController.instance.beginSignIn(provider);
+      if (!context.mounted) return;
+      if (!result.isReady) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              result.message ?? context.l10n.providerUnavailable(providerLabel),
+            ),
+            duration: const Duration(seconds: 6),
+          ),
+        );
+      }
+    } catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.l10n.providerError(providerLabel, error)),
+          duration: const Duration(seconds: 10),
+          backgroundColor: AppTheme.errorColor,
+        ),
+      );
+    }
   }
 }
 
@@ -302,6 +339,33 @@ class _KakaoIcon extends StatelessWidget {
       ),
       child: const Center(
         child: Icon(Icons.chat_bubble, size: 13, color: Color(0xFF3C1E1E)),
+      ),
+    );
+  }
+}
+
+class _GoogleIcon extends StatelessWidget {
+  const _GoogleIcon();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 22,
+      height: 22,
+      decoration: BoxDecoration(
+        color: AppTheme.white,
+        shape: BoxShape.circle,
+        border: Border.all(color: AppTheme.borderColor),
+      ),
+      child: const Center(
+        child: Text(
+          'G',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w800,
+            color: Color(0xFF4285F4),
+          ),
+        ),
       ),
     );
   }

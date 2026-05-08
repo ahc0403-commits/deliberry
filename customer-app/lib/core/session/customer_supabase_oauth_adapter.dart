@@ -9,7 +9,13 @@ class CustomerSupabaseOAuthAdapter {
   const CustomerSupabaseOAuthAdapter();
 
   bool supports(CustomerAuthProvider provider) {
-    return provider == CustomerAuthProvider.kakao;
+    return switch (provider) {
+      CustomerAuthProvider.kakao ||
+      CustomerAuthProvider.google ||
+      CustomerAuthProvider.apple =>
+        true,
+      CustomerAuthProvider.zalo || CustomerAuthProvider.phone => false,
+    };
   }
 
   Future<CustomerAuthStartResult> beginSignIn(
@@ -42,14 +48,9 @@ class CustomerSupabaseOAuthAdapter {
       );
     }
 
-    final oauthProvider = switch (provider) {
-      CustomerAuthProvider.kakao => OAuthProvider.kakao,
-      _ => OAuthProvider.kakao,
-    };
+    final oauthProvider = _toSupabaseProvider(provider);
 
-    final redirectTo = kIsWeb
-        ? null
-        : CustomerAuthRedirectConfig.current.callbackUri.toString();
+    final redirectTo = _redirectUriFor(provider).toString();
 
     await client.auth.signInWithOAuth(
       oauthProvider,
@@ -76,7 +77,7 @@ class CustomerSupabaseOAuthAdapter {
     Uri callbackUri,
   ) async {
     final callback = detectCustomerAuthCallback(callbackUri);
-    if (callback == null || callback.provider != CustomerAuthProvider.kakao) {
+    if (callback == null || !supports(callback.provider)) {
       throw StateError(
         'Customer auth callback did not match the configured callback URI.',
       );
@@ -117,7 +118,7 @@ class CustomerSupabaseOAuthAdapter {
     }
 
     return CustomerAuthCompletionResult(
-      provider: CustomerAuthProvider.kakao,
+      provider: callback.provider,
       callback: callback,
       sessionTransport: CustomerAuthSessionTransport.existingSupabaseSession,
     );
@@ -139,20 +140,77 @@ class CustomerSupabaseOAuthAdapter {
         (userMetadata?['actor_type'] as String?) ??
         'customer';
     final displayName = (userMetadata?['display_name'] as String?)?.trim();
-    final providerName = (appMetadata['provider'] as String?)?.toLowerCase();
-    if (providerName != null &&
-        providerName.isNotEmpty &&
-        providerName != 'kakao') {
+    final provider = _resolveSupabaseIdentityProvider(appMetadata);
+    if (provider == null) {
       return null;
     }
 
     return CustomerAuthIdentity(
       actorId: user.id,
       actorType: actorType,
-      provider: CustomerAuthProvider.kakao,
-      displayName: displayName?.isEmpty == true ? null : displayName,
+      provider: provider,
+      displayName: _resolveDisplayName(userMetadata, displayName),
       phoneNumber: user.phone,
       needsOnboarding: (userMetadata?['needs_onboarding'] as bool?) ?? false,
     );
+  }
+
+  OAuthProvider _toSupabaseProvider(CustomerAuthProvider provider) {
+    return switch (provider) {
+      CustomerAuthProvider.kakao => OAuthProvider.kakao,
+      CustomerAuthProvider.google => OAuthProvider.google,
+      CustomerAuthProvider.apple => OAuthProvider.apple,
+      CustomerAuthProvider.zalo ||
+      CustomerAuthProvider.phone =>
+        throw StateError('Unsupported Supabase OAuth provider: $provider'),
+    };
+  }
+
+  Uri _redirectUriFor(CustomerAuthProvider provider) {
+    if (kIsWeb) {
+      final current = Uri.base;
+      final query = <String, String>{
+        ...current.queryParameters,
+        'provider': provider.name,
+      };
+      return current.replace(queryParameters: query, fragment: '');
+    }
+
+    return CustomerAuthRedirectConfig.current.callbackUri.replace(
+      queryParameters: {'provider': provider.name},
+    );
+  }
+
+  CustomerAuthProvider? _resolveSupabaseIdentityProvider(
+    Map<String, dynamic> appMetadata,
+  ) {
+    final providerName = (appMetadata['provider'] as String?)?.toLowerCase();
+    return switch (providerName) {
+      'kakao' => CustomerAuthProvider.kakao,
+      'google' => CustomerAuthProvider.google,
+      'apple' => CustomerAuthProvider.apple,
+      _ => null,
+    };
+  }
+
+  String? _resolveDisplayName(
+    Map<String, dynamic>? userMetadata,
+    String? displayName,
+  ) {
+    final candidates = [
+      displayName,
+      userMetadata?['full_name'] as String?,
+      userMetadata?['name'] as String?,
+      userMetadata?['preferred_username'] as String?,
+    ];
+
+    for (final candidate in candidates) {
+      final trimmed = candidate?.trim();
+      if (trimmed != null && trimmed.isNotEmpty) {
+        return trimmed;
+      }
+    }
+
+    return null;
   }
 }

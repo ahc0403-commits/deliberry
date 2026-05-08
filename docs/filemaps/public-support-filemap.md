@@ -35,8 +35,6 @@ Show the narrow file cluster for the public support route, including the current
 - `public-website/src/features/support/README.md`
 - `public-website/src/features/legal/presentation/refund-policy-screen.tsx`
 - `public-website/src/app/(marketing)/merchant/page.tsx`
-- `public-website/src/shared/data/content-service.ts`
-- `public-website/src/shared/data/public-content-repository.ts`
 
 ## Source-of-Truth Files
 
@@ -48,8 +46,6 @@ The live truth is split: support-page content is hardcoded in `customer-support-
 ## Files Often Mistaken as Source of Truth but Are Not
 
 - `public-website/src/features/support/README.md`
-- `public-website/src/shared/data/content-service.ts`
-- `public-website/src/shared/data/public-content-repository.ts`
 
 The README is a retrieval shim only, and the repository/service layer does not currently drive the live support route.
 

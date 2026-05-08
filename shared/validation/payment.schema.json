@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Payment Placeholder Contract",
+  "type": "object",
+  "properties": {
+    "payment_method": {
+      "type": "string",
+      "enum": ["cash", "card", "digital_wallet"]
+    },
+    "payment_status": {
+      "type": "string",
+      "enum": ["pending", "captured", "settled", "failed", "refunded", "partially_refunded"]
+    },
+    "order_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "provider": {
+      "type": "string",
+      "enum": ["cash", "vnpay", "other"]
+    },
+    "environment": {
+      "type": "string",
+      "enum": ["sandbox", "production"]
+    },
+    "idempotency_key": {
+      "type": "string",
+      "minLength": 1
+    },
+    "amount_centavos": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "currency": {
+      "type": "string",
+      "enum": ["VND", "USD"]
+    }
+  },
+  "required": ["payment_method", "payment_status", "order_id"]
+}
